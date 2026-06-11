@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nokia Sprint Platform — Phase 1</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f5f5f3;
+      --bg-tertiary: #eeede9;
+      --text-primary: #1a1a18;
+      --text-secondary: #5f5e5a;
+      --text-tertiary: #888780;
+      --border-light: rgba(0,0,0,0.12);
+      --border-medium: rgba(0,0,0,0.22);
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --blue-50: #E6F1FB;
+      --blue-200: #85B7EB;
+      --blue-400: #378ADD;
+      --blue-600: #185FA5;
+      --blue-800: #0C447C;
+      --green-50: #EAF3DE;
+      --green-600: #3B6D11;
+      --green-800: #27500A;
+      --red-50: #FCEBEB;
+      --red-600: #A32D2D;
+      --red-800: #791F1F;
+      --amber-50: #FAEEDA;
+      --amber-600: #854F0B;
+      --gray-100: #D3D1C7;
+      --gray-400: #888780;
+      --teal-50: #E1F5EE;
+      --teal-600: #0F6E56;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary: #1e1e1c;
+        --bg-secondary: #262624;
+        --bg-tertiary: #2e2e2c;
+        --text-primary: #f0efe9;
+        --text-secondary: #b4b2a9;
+        --text-tertiary: #888780;
+        --border-light: rgba(255,255,255,0.1);
+        --border-medium: rgba(255,255,255,0.2);
+      }
+    }
+
+    body {
+      font-family: -apple-system, 'Segoe UI', sans-serif;
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ─── UTILITIES ─── */
+    .hidden { display: none !important; }
+    .flex { display: flex; }
+    .flex-col { display: flex; flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-2 { gap: 8px; }
+    .gap-3 { gap: 12px; }
+    .gap-4 { gap: 16px; }
+    .w-full { width: 100%; }
+    .text-sm { font-size: 13px; }
+    .text-xs { font-size: 11px; }
+    .text-muted { color: var(--text-secondary); }
+    .font-medium { font-weight: 500; }
+    .mt-1 { margin-top: 4px; }
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 12px; }
+    .mb-2 { margin-bottom: 8px; }
+    .mb-3 { margin-bottom: 12px; }
+    .mb-4 { margin-bottom: 16px; }
+
+    /* ─── BUTTONS ─── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: var(--radius-md);
+      font-size: 13px; font-family: inherit; cursor: pointer;
+      border: 0.5px solid var(--border-medium);
+      background: var(--bg-primary); color: var(--text-primary);
+      transition: background 0.13s, transform 0.1s;
+    }
+    .btn:hover { background: var(--bg-secondary); }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: var(--blue-600); color: #fff; border-color: var(--blue-600); }
+    .btn-primary:hover { background: var(--blue-800); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-icon { padding: 6px; }
+    .btn-full { width: 100%; justify-content: center; }
+
+    /* ─── FORM ELEMENTS ─── */
+    label { font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 5px; }
+    input, select, textarea {
+      width: 100%; padding: 8px 10px;
+      border: 0.5px solid var(--border-medium); border-radius: var(--radius-md);
+      font-size: 13px; font-family: inherit;
+      background: var(--bg-primary); color: var(--text-primary);
+      transition: border-color 0.13s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none; border-color: var(--blue-400);
+      box-shadow: 0 0 0 3px rgba(55,138,221,0.12);
+    }
+    .field { margin-bottom: 12px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media(max-width: 540px) { .form-grid { grid-template-columns: 1fr; } }
+
+    /* ─── CARDS ─── */
+    .card {
+      background: var(--bg-primary); border-radius: var(--radius-lg);
+      border: 0.5px solid var(--border-light); padding: 1.25rem;
+      margin-bottom: 14px;
+    }
+    .card-title { font-size: 14px; font-weight: 500; margin-bottom: 12px; }
+
+    /* ─── METRIC CARDS ─── */
+    .metric-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px; margin-bottom: 18px;
+    }
+    .metric-card {
+      background: var(--bg-secondary); border-radius: var(--radius-md); padding: 14px;
+    }
+    .metric-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .metric-value { font-size: 24px; font-weight: 500; line-height: 1; }
+    .metric-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 4px; }
+    .metric-positive { color: var(--green-600); }
+    .metric-negative { color: var(--red-600); }
+
+    /* ─── TABLE ─── */
+    .table-wrap { border-radius: var(--radius-lg); border: 0.5px solid var(--border-light); overflow: hidden; margin-bottom: 14px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th { font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); padding: 10px 12px; text-align: left; border-bottom: 0.5px solid var(--border-light); background: var(--bg-secondary); }
+    tbody td { padding: 9px 12px; border-bottom: 0.5px solid var(--border-light); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--bg-secondary); }
+
+    /* ─── STATUS BADGES ─── */
+    .badge {
+      display: inline-block; font-size: 11px; padding: 2px 8px;
+      border-radius: 100px; font-weight: 500;
+    }
+    .badge-done    { background: var(--green-50); color: var(--green-800); }
+    .badge-progress { background: var(--blue-50); color: var(--blue-800); }
+    .badge-blocked  { background: var(--red-50); color: var(--red-800); }
+    .badge-todo    { background: var(--bg-secondary); color: var(--text-secondary); }
+    .badge-manager  { background: var(--blue-50); color: var(--blue-600); }
+    .badge-employee { background: var(--teal-50); color: var(--teal-600); }
+
+    /* ─── PROGRESS BAR ─── */
+    .pb-wrap { display: flex; align-items: center; gap: 7px; }
+    .pb-track { flex: 1; height: 7px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden; }
+    .pb-fill  { height: 100%; background: var(--blue-600); border-radius: 4px; transition: width 0.4s; }
+    .pb-label { font-size: 11px; color: var(--text-tertiary); min-width: 30px; text-align: right; }
+
+    /* ─── AVATAR ─── */
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--blue-50); color: var(--blue-800);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 500; border: 0.5px solid var(--blue-200);
+      flex-shrink: 0;
+    }
+    .avatar-lg { width: 44px; height: 44px; font-size: 15px; }
+
+    /* ─── ALERTS ─── */
+    .alert { padding: 10px 14px; border-radius: var(--radius-md); font-size: 13px; margin-bottom: 14px; }
+    .alert-info    { background: var(--blue-50); color: var(--blue-800); border: 0.5px solid var(--blue-200); }
+    .alert-success { background: var(--green-50); color: var(--green-800); border: 0.5px solid #C0DD97; }
+    .alert-warning { background: var(--amber-50); color: var(--amber-600); border: 0.5px solid #FAC775; }
+
+    /* ─── LOGIN ─── */
+    #loginView {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 2rem;
+    }
+    .login-logo { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 2rem; }
+    .login-logo span { color: var(--blue-600); }
+    .login-card {
+      background: var(--bg-primary); border: 0.5px solid var(--border-light);
+      border-radius: var(--radius-lg); padding: 2rem; width: 100%; max-width: 420px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+    .login-card h2 { font-size: 18px; font-weight: 500; margin-bottom: 4px; }
+    .login-subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 1.5rem; }
+    .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+    .role-option {
+      border: 0.5px solid var(--border-medium); border-radius: var(--radius-md);
+      padding: 14px; cursor: pointer; text-align: center; transition: all 0.13s;
+    }
+    .role-option:hover { border-color: var(--blue-400); background: var(--blue-50); }
+    .role-option.active { border: 2px solid var(--blue-600); background: var(--blue-50); }
+    .role-option .role-icon { font-size: 22px; margin-bottom: 6px; }
+    .role-option h3 { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+    .role-option p  { font-size: 11px; color: var(--text-secondary); }
+
+    /* ─── APP SHELL ─── */
+    #mainView { display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* Top bar */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 20px; height: 52px;
+      background: var(--bg-primary); border-bottom: 0.5px solid var(--border-light);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .topbar-logo { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+    .topbar-logo span { color: var(--blue-600); }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+    .user-info { display: flex; align-items: center; gap: 8px; }
+    .user-name { font-size: 13px; font-weight: 500; }
+
+    /* Sidebar */
+    .layout { display: flex; flex: 1; overflow: hidden; }
+    .sidebar {
+      width: 200px; background: var(--bg-primary); border-right: 0.5px solid var(--border-light);
+      padding: 16px 8px; display: flex; flex-direction: column; gap: 2px;
+      flex-shrink: 0;
+    }
+    .sidebar-section { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-tertiary); padding: 8px 10px 4px; margin-top: 8px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 10px; border-radius: var(--radius-md);
+      font-size: 13px; cursor: pointer; color: var(--text-secondary);
+      border: none; background: transparent; font-family: inherit;
+      width: 100%; text-align: left; transition: all 0.12s;
+    }
+    .nav-item:hover { background: var(--bg-secondary); color: var(--text-primary); }
+    .nav-item.active { background: var(--blue-50); color: var(--blue-800); font-weight: 500; }
+    .nav-item .nav-icon { width: 16px; text-align: center; font-size: 14px; }
+
+    /* Main content */
+    .main-content {
+      flex: 1; overflow-y: auto; padding: 24px;
+      background: var(--bg-tertiary);
+    }
+    .page-header { margin-bottom: 20px; }
+    .page-header h1 { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
+    .page-header p  { font-size: 13px; color: var(--text-secondary); }
+
+    /* ─── TWO-COL GRID ─── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media(max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+    /* ─── HEATMAP ─── */
+    .heatmap { display: grid; gap: 4px; font-size: 11px; }
+    .heatmap-cell {
+      padding: 7px 4px; border-radius: 4px;
+      text-align: center; font-size: 11px; font-weight: 500;
+    }
+
+    /* ─── SPRINT CARD ─── */
+    .sprint-card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 12px; }
+    .sprint-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+
+    /* ─── EMPLOYEE CARD GRID ─── */
+    .emp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+
+    /* ─── MODAL ─── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+      display: flex; align-items: center; justify-content: center; z-index: 200; padding: 1rem;
+    }
+    .modal-box {
+      background: var(--bg-primary); border-radius: var(--radius-lg);
+      border: 0.5px solid var(--border-light); padding: 1.5rem;
+      width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+    .modal-header h2 { font-size: 16px; font-weight: 500; }
+
+    /* ─── TAG ─── */
+    .tag {
+      display: inline-block; font-size: 11px; padding: 2px 7px;
+      border-radius: 100px; background: var(--bg-secondary);
+      color: var(--text-secondary); margin: 2px;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--gray-100); border-radius: 3px; }
+
+    /* Responsive sidebar */
+    @media(max-width: 640px) {
+      .sidebar { display: none; }
+      .topbar { padding: 0 14px; }
+      .main-content { padding: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════ LOGIN ═══════════════ -->
+<div id="loginView">
+  <div class="login-logo">Nokia <span>Sprint</span></div>
+  <div class="login-card">
+    <h2>Welcome back</h2>
+    <p class="login-subtitle">Sprint Management Platform — Phase 1</p>
+
+    <div class="field">
+      <label>Email address</label>
+      <input type="email" id="loginEmail" value="manager@nokia.com" autocomplete="email"/>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="loginPass" value="••••••••"/>
+    </div>
+    <div class="field">
+      <label>Sign in as</label>
+      <div class="role-grid">
+        <div class="role-option active" id="roleManager" onclick="selectRole('manager')">
+          <div class="role-icon">👤</div>
+          <h3>Manager</h3>
+          <p>Full visibility & control</p>
+        </div>
+        <div class="role-option" id="roleEmployee" onclick="selectRole('employee')">
+          <div class="role-icon">💼</div>
+          <h3>Employee</h3>
+          <p>My tasks & progress</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="loginError" class="alert alert-warning hidden" style="margin-top:10px"></div>
+    <button class="btn btn-primary btn-full" style="margin-top:1rem;padding:10px" onclick="doLogin()">Sign in</button>
+  </div>
+</div>
+
+<!-- ═══════════════ MAIN APP ═══════════════ -->
+<div id="mainView" class="hidden">
+  <nav class="topbar">
+    <div class="topbar-logo">Nokia <span>Sprint</span></div>
+    <div class="topbar-right">
+      <span class="badge" id="topRoleBadge"></span>
+      <div class="user-info">
+        <div class="avatar" id="userAvatar"></div>
+        <span class="user-name" id="userName"></span>
+      </div>
+      <button class="btn btn-sm" onclick="doLogout()">Sign out</button>
+    </div>
+  </nav>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main-content" id="contentArea"></main>
+  </div>
+</div>
+
+<!-- ═══════════════ MODALS ═══════════════ -->
+<div id="modalOverlay" class="modal-overlay hidden" onclick="closeModalOutside(event)">
+  <div class="modal-box" id="modalBox"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  DATA  (replace with real API / import)
+// ═══════════════════════════════════════════════
+/*
+ * NOTE: All tasks, sprint dates, and effort numbers below are
+ * PLACEHOLDER / DEMO data created to illustrate the platform UI.
+ * Replace the `tasks`, `employees`, and `sprints` arrays with
+ * real data from your master sheet or backend API.
+ */
+
+let currentRole = 'manager';
+let currentUser = null;
+
+const employees = [
+  { id:1, name:'Rishit Mahapatra', email:'rishit@nokia.com',  team:'Core',       subTeam:'Backend'   },
+  { id:2, name:'Ritu Kanchi',      email:'ritu@nokia.com',    team:'Core',       subTeam:'Frontend'  },
+  { id:3, name:'Geet Shukla',      email:'geet@nokia.com',    team:'Platform',   subTeam:'DevOps'    },
+  { id:4, name:'Yuvraj Katara',    email:'yuvraj@nokia.com',  team:'Platform',   subTeam:'QA'        },
+  { id:5, name:'Dr. Sapna R',      email:'sapna@nokia.com',   team:'Management', subTeam:'Strategy'  },
+];
+
+const sprints = [
+  { fb:'FB-23', start:'2025-04-14', end:'2025-04-25' },
+  { fb:'FB-24', start:'2025-04-28', end:'2025-05-09' },
+  { fb:'FB-25', start:'2025-05-12', end:'2025-05-23' },
+];
+
+let tasks = [
+  // ── FB-23 ──────────────────────────────────────────────
+  { id:1,  fb:'FB-23', empId:1, featureId:'F-101', featureDesc:'Authentication Module',  activity:'Development', description:'Implement JWT auth flow',           status:'Done',        est:8,  spent:9  },
+  { id:2,  fb:'FB-23', empId:1, featureId:'F-102', featureDesc:'User Management',        activity:'Development', description:'CRUD endpoints for users',          status:'In Progress', est:12, spent:7  },
+  { id:3,  fb:'FB-23', empId:2, featureId:'F-103', featureDesc:'Dashboard UI',           activity:'Design',      description:'Sprint burndown component',         status:'Done',        est:6,  spent:5  },
+  { id:4,  fb:'FB-23', empId:2, featureId:'F-104', featureDesc:'Dashboard UI',           activity:'Development', description:'React chart integration',           status:'In Progress', est:10, spent:6  },
+  { id:5,  fb:'FB-23', empId:3, featureId:'F-105', featureDesc:'CI/CD Pipeline',         activity:'DevOps',      description:'GitHub Actions workflow setup',     status:'Done',        est:5,  spent:5  },
+  { id:6,  fb:'FB-23', empId:4, featureId:'F-106', featureDesc:'API Testing',            activity:'Testing',     description:'Postman automated test suite',      status:'Blocked',     est:4,  spent:1  },
+  // ── FB-24 ──────────────────────────────────────────────
+  { id:7,  fb:'FB-24', empId:1, featureId:'F-201', featureDesc:'Notification Service',   activity:'Development', description:'Email notification system',         status:'To Do',       est:10, spent:0  },
+  { id:8,  fb:'FB-24', empId:2, featureId:'F-202', featureDesc:'Mobile Responsive',      activity:'Development', description:'Responsive layout overhaul',        status:'In Progress', est:8,  spent:3  },
+  { id:9,  fb:'FB-24', empId:3, featureId:'F-203', featureDesc:'Database Migration',     activity:'DevOps',      description:'Postgres schema migration script',  status:'To Do',       est:6,  spent:0  },
+  { id:10, fb:'FB-24', empId:4, featureId:'F-204', featureDesc:'E2E Testing Suite',      activity:'Testing',     description:'Cypress end-to-end test setup',     status:'In Progress', est:7,  spent:4  },
+  { id:11, fb:'FB-24', empId:5, featureId:'F-205', featureDesc:'Sprint Reporting',       activity:'Analysis',    description:'PDF report templates design',       status:'In Progress', est:5,  spent:3  },
+];
+
+let nextTaskId = 12;
+
+// ═══════════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════════
+function selectRole(role) {
+  currentRole = role;
+  document.getElementById('roleManager').classList.toggle('active', role === 'manager');
+  document.getElementById('roleEmployee').classList.toggle('active', role === 'employee');
+}
+
+function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  if (!email) {
+    showLoginError('Please enter an email address.');
+    return;
+  }
+  currentUser = currentRole === 'manager'
+    ? { id: 0, name: 'Sprint Manager', email, initials: 'SM' }
+    : { ...employees[0], initials: 'RM' };
+
+  document.getElementById('loginView').classList.add('hidden');
+  document.getElementById('mainView').classList.remove('hidden');
+
+  document.getElementById('topRoleBadge').textContent = currentRole === 'manager' ? 'Manager' : 'Employee';
+  document.getElementById('topRoleBadge').className = 'badge ' + (currentRole === 'manager' ? 'badge-manager' : 'badge-employee');
+  document.getElementById('userName').textContent = currentUser.name;
+  document.getElementById('userAvatar').textContent = currentUser.initials || currentUser.name.slice(0,2).toUpperCase();
+
+  buildSidebar();
+  navigate(currentRole === 'manager' ? 'dashboard' : 'my-tasks');
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+function doLogout() {
+  destroyCharts();
+  document.getElementById('mainView').classList.add('hidden');
+  document.getElementById('loginView').classList.remove('hidden');
+  document.getElementById('loginError').classList.add('hidden');
+}
+
+// ═══════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════
+const managerNav = [
+  { section: 'Overview' },
+  { id: 'dashboard',  label: 'Dashboard',   icon: '📊' },
+  { section: 'Sprint' },
+  { id: 'sprints',    label: 'Sprints',      icon: '🗓️' },
+  { id: 'tasks',      label: 'All Tasks',    icon: '✅' },
+  { section: 'Team' },
+  { id: 'employees',  label: 'Team',         icon: '👥' },
+  { section: 'Reports' },
+  { id: 'reports',    label: 'Reports',      icon: '📄' },
+  { id: 'reminders',  label: 'Reminders',    icon: '🔔' },
+];
+
+const employeeNav = [
+  { section: 'My Work' },
+  { id: 'my-tasks',   label: 'My Tasks',     icon: '✅' },
+  { id: 'log-task',   label: 'Log Task',     icon: '➕' },
+  { section: 'Analytics' },
+  { id: 'my-progress',label: 'My Progress',  icon: '📈' },
+];
+
+function buildSidebar() {
+  const nav = currentRole === 'manager' ? managerNav : employeeNav;
+  const sidebar = document.getElementById('sidebar');
+  sidebar.innerHTML = nav.map(item => {
+    if (item.section) return `<div class="sidebar-section">${item.section}</div>`;
+    return `<button class="nav-item" id="nav-${item.id}" onclick="navigate('${item.id}')">
+      <span class="nav-icon">${item.icon}</span>${item.label}
+    </button>`;
+  }).join('');
+}
+
+let chartInstances = {};
+
+function destroyCharts() {
+  Object.values(chartInstances).forEach(c => { try { c.destroy(); } catch(e) {} });
+  chartInstances = {};
+}
+
+function navigate(id) {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const navEl = document.getElementById('nav-' + id);
+  if (navEl) navEl.classList.add('active');
+  destroyCharts();
+
+  const content = document.getElementById('contentArea');
+  const pages = {
+    'dashboard':   renderDashboard,
+    'sprints':     renderSprints,
+    'tasks':       renderTasks,
+    'employees':   renderEmployees,
+    'reports':     renderReports,
+    'reminders':   renderReminders,
+    'my-tasks':    renderMyTasks,
+    'log-task':    renderLogTask,
+    'my-progress': renderMyProgress,
+  };
+  content.innerHTML = pages[id] ? pages[id]() : '<div class="page-header"><h1>Page not found</h1></div>';
+  initCharts(id);
+}
+
+// ═══════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════
+function statusBadge(s) {
+  const map = { 'Done': 'done', 'In Progress': 'progress', 'Blocked': 'blocked', 'To Do': 'todo' };
+  return `<span class="badge badge-${map[s] || 'todo'}">${s}</span>`;
+}
+
+function progressBar(est, spent) {
+  const pct = est > 0 ? Math.min(100, Math.round((spent / est) * 100)) : 0;
+  const color = pct > 100 ? '#A32D2D' : '#185FA5';
+  return `<div class="pb-wrap">
+    <div class="pb-track"><div class="pb-fill" style="width:${pct}%;background:${color}"></div></div>
+    <span class="pb-label">${pct}%</span>
+  </div>`;
+}
+
+function initials(name) {
+  return name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase();
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function getEmp(id) { return employees.find(e => e.id === id); }
+
+function sprintStats(fb) {
+  const t = tasks.filter(x => x.fb === fb);
+  const done = t.filter(x => x.status === 'Done').length;
+  const totEst = t.reduce((a, x) => a + x.est, 0);
+  const totSpent = t.reduce((a, x) => a + x.spent, 0);
+  return { tasks: t, done, total: t.length, totEst, totSpent };
+}
+
+function openModal(html) {
+  document.getElementById('modalBox').innerHTML = html;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.add('hidden');
+}
+
+function closeModalOutside(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+// ═══════════════════════════════════════════════
+//  PAGE: DASHBOARD (Manager)
+// ═══════════════════════════════════════════════
+function renderDashboard() {
+  const active = sprintStats('FB-23');
+  const variance = active.totEst > 0
+    ? Math.round(((active.totSpent - active.totEst) / active.totEst) * 100) : 0;
+  const velocity = active.total > 0 ? Math.round((active.done / active.total) * 100) : 0;
+
+  return `
+<div class="page-header">
+  <h1>Dashboard</h1>
+  <p>Active sprint: <strong>FB-23</strong> &nbsp;·&nbsp; ${fmtDate('2025-04-14')} → ${fmtDate('2025-04-25')}</p>
+</div>
+
+<div class="metric-grid">
+  <div class="metric-card">
+    <div class="metric-label">Sprint Velocity</div>
+    <div class="metric-value">${velocity}%</div>
+    <div class="metric-sub">FB-23 completion</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Tasks Completed</div>
+    <div class="metric-value">${active.done} / ${active.total}</div>
+    <div class="metric-sub">Active sprint</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Effort Variance</div>
+    <div class="metric-value ${variance > 10 ? 'metric-negative' : variance < -10 ? 'metric-positive' : ''}">${variance > 0 ? '+' : ''}${variance}%</div>
+    <div class="metric-sub">Spent vs estimated</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Team Size</div>
+    <div class="metric-value">${employees.length}</div>
+    <div class="metric-sub">Active members</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Total Est. Hours</div>
+    <div class="metric-value">${active.totEst}h</div>
+    <div class="metric-sub">FB-23</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Hours Logged</div>
+    <div class="metric-value">${active.totSpent}h</div>
+    <div class="metric-sub">FB-23</div>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <div class="card-title">Sprint Burndown — FB-23</div>
+    <div style="position:relative;height:210px">
+      <canvas id="burndownChart" role="img" aria-label="Sprint burndown chart: ideal line from 6 tasks to 0 over 10 days, actual line shows progress slightly behind ideal.">Burndown: 6 tasks over 10 days. Actual slightly behind ideal.</canvas>
+    </div>
+    <div style="display:flex;gap:14px;margin-top:10px">
+      <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary)"><span style="width:18px;height:2px;background:#B4B2A9;display:inline-block;border-top:2px dashed #B4B2A9"></span>Ideal</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary)"><span style="width:18px;height:2px;background:#185FA5;display:inline-block"></span>Actual</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Task Status Breakdown</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+      ${[['Done','#639922'],['In Progress','#378ADD'],['Blocked','#E24B4A'],['To Do','#888780']].map(([s,c])=>`
+        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary)">
+          <span style="width:10px;height:10px;border-radius:2px;background:${c};display:inline-block"></span>${s}
+        </span>`).join('')}
+    </div>
+    <div style="position:relative;height:185px">
+      <canvas id="statusChart" role="img" aria-label="Donut chart: Done 3, In Progress 2, Blocked 1, To Do 0.">Done 3, In Progress 2, Blocked 1.</canvas>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Team Workload Heatmap — Hours per Day</div>
+  <div id="heatmapContainer"></div>
+</div>
+
+<div class="card">
+  <div class="card-title">Effort: Estimated vs Spent per Employee</div>
+  <div style="position:relative;height:200px">
+    <canvas id="effortChart" role="img" aria-label="Grouped bar chart comparing estimated and spent hours per employee.">Estimated vs spent hours per team member.</canvas>
+  </div>
+  <div style="display:flex;gap:14px;margin-top:10px">
+    <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary)"><span style="width:10px;height:10px;border-radius:2px;background:#B5D4F4;display:inline-block"></span>Estimated</span>
+    <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary)"><span style="width:10px;height:10px;border-radius:2px;background:#185FA5;display:inline-block"></span>Spent</span>
+  </div>
+</div>`;
+}
+
+function buildHeatmap() {
+  const container = document.getElementById('heatmapContainer');
+  if (!container) return;
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  // Simulated hours per employee per day (replace with real data)
+  const data = [
+    [6, 8, 7, 5, 4],
+    [4, 6, 8, 9, 7],
+    [5, 3, 5, 6, 8],
+    [7, 8, 6, 4, 5],
+  ];
+  const emps = employees.slice(0, 4);
+  const colors = ['#E6F1FB','#B5D4F4','#85B7EB','#378ADD','#185FA5'];
+  const textC = ['#0C447C','#0C447C','#0C447C','#fff','#fff'];
+
+  let html = `<div style="display:grid;grid-template-columns:90px repeat(5,1fr);gap:4px;font-size:11px">
+    <div></div>`;
+  days.forEach(d => html += `<div style="text-align:center;font-weight:500;color:var(--text-secondary);padding:4px">${d}</div>`);
+
+  emps.forEach((e, i) => {
+    html += `<div style="display:flex;align-items:center;color:var(--text-secondary);font-size:11px">${e.name.split(' ')[0]}</div>`;
+    data[i].forEach(v => {
+      const ci = Math.min(Math.floor(v / 2), 4);
+      html += `<div class="heatmap-cell" style="background:${colors[ci]};color:${textC[ci]}">${v}h</div>`;
+    });
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════
+//  PAGE: SPRINTS
+// ═══════════════════════════════════════════════
+function renderSprints() {
+  return `
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
+  <div><h1>Sprints</h1><p>Manage sprint schedules and monitor progress</p></div>
+  <button class="btn btn-primary" onclick="openAddSprintModal()">+ New Sprint</button>
+</div>
+
+${sprints.map((s, idx) => {
+  const st = sprintStats(s.fb);
+  const pct = st.total > 0 ? Math.round((st.done / st.total) * 100) : 0;
+  const isActive = idx === 0;
+  return `<div class="sprint-card">
+    <div class="sprint-card-header">
+      <div>
+        <span style="font-size:16px;font-weight:500">${s.fb}</span>
+        ${isActive ? '<span class="badge badge-progress" style="margin-left:8px">Active</span>' : ''}
+      </div>
+      <button class="btn btn-sm" onclick="openSprintDetail('${s.fb}')">View tasks →</button>
+    </div>
+    <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px">${fmtDate(s.start)} → ${fmtDate(s.end)} &nbsp;·&nbsp; ${st.total} tasks &nbsp;·&nbsp; ${st.totEst}h estimated</div>
+    ${progressBar(st.total, st.done)}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      ${['Done','In Progress','Blocked','To Do'].map(status => {
+        const c = st.tasks.filter(t => t.status === status).length;
+        return c ? `<span style="font-size:12px">${statusBadge(status)} <span style="color:var(--text-secondary)">${c}</span></span>` : '';
+      }).join('')}
+    </div>
+  </div>`;
+}).join('')}`;
+}
+
+function openAddSprintModal() {
+  openModal(`
+<div class="modal-header">
+  <h2>New Sprint</h2>
+  <button class="btn btn-sm btn-icon" onclick="closeModal()">✕</button>
+</div>
+<div class="form-grid">
+  <div class="field"><label>FB Number</label><input id="mFb" placeholder="FB-26"/></div>
+  <div class="field"><label>Start Date</label><input type="date" id="mStart"/></div>
+</div>
+<div class="field"><label>End Date</label><input type="date" id="mEnd"/></div>
+<div id="sprintFormMsg"></div>
+<div style="display:flex;gap:8px;margin-top:8px">
+  <button class="btn btn-primary" onclick="saveNewSprint()">Save Sprint</button>
+  <button class="btn" onclick="closeModal()">Cancel</button>
+</div>`);
+}
+
+function saveNewSprint() {
+  const fb = document.getElementById('mFb').value.trim();
+  const start = document.getElementById('mStart').value;
+  const end = document.getElementById('mEnd').value;
+  const msg = document.getElementById('sprintFormMsg');
+  if (!fb || !start || !end) { msg.innerHTML = '<div class="alert alert-warning">Please fill all fields.</div>'; return; }
+  sprints.push({ fb, start, end });
+  closeModal();
+  navigate('sprints');
+}
+
+function openSprintDetail(fb) {
+  const fbTasks = tasks.filter(t => t.fb === fb);
+  openModal(`
+<div class="modal-header">
+  <h2>Tasks — ${fb}</h2>
+  <button class="btn btn-sm btn-icon" onclick="closeModal()">✕</button>
+</div>
+<div style="overflow-x:auto">
+<table>
+  <thead><tr><th>Employee</th><th>Feature</th><th>Activity</th><th>Status</th><th>Est</th><th>Spent</th></tr></thead>
+  <tbody>
+    ${fbTasks.map(t => {
+      const e = getEmp(t.empId);
+      return `<tr>
+        <td>${e ? e.name.split(' ')[0] : '—'}</td>
+        <td>${t.featureDesc}</td>
+        <td>${t.activity}</td>
+        <td>${statusBadge(t.status)}</td>
+        <td>${t.est}h</td>
+        <td>${t.spent}h</td>
+      </tr>`;
+    }).join('')}
+  </tbody>
+</table>
+</div>`);
+}
+
+// ═══════════════════════════════════════════════
+//  PAGE: ALL TASKS
+// ═══════════════════════════════════════════════
+let taskFilter = 'all';
+
+function renderTasks() {
+  const filtered = taskFilter === 'all' ? tasks : tasks.filter(t => t.fb === taskFilter);
+  return `
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
+  <div><h1>All Tasks</h1><p>${filtered.length} task${filtered.length !== 1 ? 's' : ''}</p></div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <select onchange="setTaskFilter(this.value)" style="width:auto;padding:6px 10px">
+      <option value="all" ${taskFilter==='all'?'selected':''}>All sprints</option>
+      ${sprints.map(s => `<option value="${s.fb}" ${taskFilter===s.fb?'selected':''}>${s.fb}</option>`).join('')}
+    </select>
+  </div>
+</div>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>FB</th><th>Employee</th><th>Feature ID</th><th>Feature</th><th>Activity</th><th>Status</th><th>Progress</th><th>Est</th><th>Spent</th></tr></thead>
+  <tbody>
+  ${filtered.map(t => {
+    const e = getEmp(t.empId);
+    return `<tr>
+      <td><span class="tag">${t.fb}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:7px">
+          <div class="avatar" style="width:26px;height:26px;font-size:10px">${e ? initials(e.name) : '?'}</div>
+          <span>${e ? e.name.split(' ')[0] : '—'}</span>
+        </div>
+      </td>
+      <td style="font-family:monospace;font-size:12px">${t.featureId}</td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.featureDesc}</td>
+      <td>${t.activity}</td>
+      <td>${statusBadge(t.status)}</td>
+      <td style="min-width:110px">${progressBar(t.est, t.spent)}</td>
+      <td>${t.est}h</td>
+      <td>${t.spent}h</td>
+    </tr>`;
+  }).join('')}
+  </tbody>
+</table>
+</div>`;
+}
+
+function setTaskFilter(val) { taskFilter = val; navigate('tasks'); }
+
+// ═══════════════════════════════════════════════
+//  PAGE: EMPLOYEES
+// ═══════════════════════════════════════════════
+function renderEmployees() {
+  return `
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
+  <div><h1>Team</h1><p>${employees.length} members across ${[...new Set(employees.map(e=>e.team))].length} teams</p></div>
+  <button class="btn btn-primary" onclick="openAddEmpModal()">+ Add Member</button>
+</div>
+<div class="emp-grid">
+${employees.map(e => {
+  const empTasks = tasks.filter(t => t.empId === e.id);
+  const done = empTasks.filter(t => t.status === 'Done').length;
+  const totEst = empTasks.reduce((a, t) => a + t.est, 0);
+  const totSpent = empTasks.reduce((a, t) => a + t.spent, 0);
+  return `<div class="card" style="margin-bottom:0">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div class="avatar avatar-lg">${initials(e.name)}</div>
+      <div>
+        <div style="font-weight:500">${e.name}</div>
+        <div style="font-size:12px;color:var(--text-secondary)">${e.subTeam} · ${e.team}</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px">${e.email}</div>
+    <div style="border-top:0.5px solid var(--border-light);padding-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      ${[['Tasks', empTasks.length], ['Done', done], ['Est hrs', totEst+'h'], ['Spent', totSpent+'h']].map(([l,v]) =>
+        `<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:0.3px;color:var(--text-tertiary)">${l}</div>
+         <div style="font-size:15px;font-weight:500">${v}</div></div>`
+      ).join('')}
+    </div>
+    ${progressBar(totEst, totSpent)}
+  </div>`;
+}).join('')}
+</div>`;
+}
+
+function openAddEmpModal() {
+  openModal(`
+<div class="modal-header">
+  <h2>Add Team Member</h2>
+  <button class="btn btn-sm btn-icon" onclick="closeModal()">✕</button>
+</div>
+<div class="form-grid">
+  <div class="field"><label>Full Name</label><input id="eName" placeholder="Jane Smith"/></div>
+  <div class="field"><label>Email</label><input id="eEmail" placeholder="jane@nokia.com"/></div>
+</div>
+<div class="form-grid">
+  <div class="field"><label>Team</label><input id="eTeam" placeholder="Core"/></div>
+  <div class="field"><label>Sub-Team</label><input id="eSub" placeholder="Backend"/></div>
+</div>
+<div id="empFormMsg"></div>
+<div style="display:flex;gap:8px;margin-top:8px">
+  <button class="btn btn-primary" onclick="saveNewEmp()">Save Member</button>
+  <button class="btn" onclick="closeModal()">Cancel</button>
+</div>`);
+}
+
+function saveNewEmp() {
+  const name  = document.getElementById('eName').value.trim();
+  const email = document.getElementById('eEmail').value.trim();
+  const team  = document.getElementById('eTeam').value.trim();
+  const sub   = document.getElementById('eSub').value.trim();
+  const msg   = document.getElementById('empFormMsg');
+  if (!name || !email) { msg.innerHTML = '<div class="alert alert-warning">Name and email are required.</div>'; return; }
+  employees.push({ id: employees.length + 1, name, email, team: team || 'Core', subTeam: sub || 'General' });
+  closeModal();
+  navigate('employees');
+}
+
+// ═══════════════════════════════════════════════
+//  PAGE: REPORTS
+// ═══════════════════════════════════════════════
+function renderReports() {
+  return `
+<div class="page-header"><h1>Reports</h1><p>Sprint analytics and PDF export</p></div>
+
+<div class="two-col">
+  <div class="card">
+    <div class="card-title">Sprint Velocity Trend</div>
+    <div style="position:relative;height:200px">
+      <canvas id="velocityChart" role="img" aria-label="Line chart of sprint velocity: FB-23 67%, FB-24 40%.">FB-23: 67%, FB-24: 40%.</canvas>
+    </div>
+    <div style="display:flex;gap:14px;margin-top:10px">
+      <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary)"><span style="width:18px;height:2px;background:#185FA5;display:inline-block"></span>Actual</span>
+      <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary)"><span style="width:18px;height:2px;background:#B4B2A9;border-top:2px dashed #B4B2A9;display:inline-block"></span>Target (70%)</span>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Estimation Accuracy by Member</div>
+    <div style="position:relative;height:200px">
+      <canvas id="accuracyChart" role="img" aria-label="Horizontal bar chart of estimation accuracy per employee.">Accuracy: Rishit 88%, Ritu 92%, Geet 95%, Yuvraj 78%, Sapna 90%.</canvas>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Workload Imbalance Index — FB-23</div>
+  <div style="position:relative;height:180px">
+    <canvas id="workloadChart" role="img" aria-label="Bar chart of total hours allocated per team member.">Hours per employee comparison.</canvas>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Generate Sprint PDF</div>
+  <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px">Creates employee-wise formatted sprint reports matching master sheet layout.</p>
+  <div class="form-grid">
+    <div class="field">
+      <label>Sprint</label>
+      <select id="pdfFb" style="">
+        ${sprints.map(s => `<option value="${s.fb}">${s.fb}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field">
+      <label>Employee</label>
+      <select id="pdfEmp">
+        <option value="all">All Employees</option>
+        ${employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('')}
+      </select>
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="generatePDFReport()">Generate & Download PDF</button>
+  <div id="pdfMsg" style="margin-top:10px"></div>
+</div>`;
+}
+
+function generatePDFReport() {
+  const fb  = document.getElementById('pdfFb').value;
+  const emp = document.getElementById('pdfEmp').value;
+  const msg = document.getElementById('pdfMsg');
+  // In a real backend this calls the PDF generation endpoint.
+  // Here we show a confirmation and open the print dialog as a proxy.
+  msg.innerHTML = `<div class="alert alert-success">Report for <strong>${fb}</strong> — ${emp === 'all' ? 'All Employees' : getEmp(parseInt(emp))?.name} is ready. Opening print/save dialog...</div>`;
+  setTimeout(() => {
+    const fbTasks = emp === 'all' ? tasks.filter(t=>t.fb===fb) : tasks.filter(t=>t.fb===fb && t.empId===parseInt(emp));
+    const printWin = window.open('', '_blank');
+    const rows = fbTasks.map(t => {
+      const e = getEmp(t.empId);
+      return `<tr><td>${t.featureId}</td><td>${t.featureDesc}</td><td>${t.activity}</td><td>${t.description}</td><td>${t.status}</td><td>${t.est}h</td><td>${t.spent}h</td></tr>`;
+    }).join('');
+    printWin.document.write(`<!DOCTYPE html><html><head><title>Sprint Report — ${fb}</title>
+<style>body{font-family:Arial,sans-serif;padding:2rem}h1{font-size:18px}h2{font-size:14px;color:#555;margin-top:0}table{width:100%;border-collapse:collapse;margin-top:1rem}th,td{border:1px solid #ddd;padding:7px 10px;text-align:left;font-size:12px}th{background:#f5f5f5;font-weight:600}@media print{button{display:none}}</style>
+</head><body>
+<h1>Nokia Sprint Report — ${fb}</h1>
+<h2>Generated: ${new Date().toLocaleString()} &nbsp;|&nbsp; ${emp === 'all' ? 'All Employees' : getEmp(parseInt(emp))?.name}</h2>
+<table><thead><tr><th>Feature ID</th><th>Feature Description</th><th>Activity Type</th><th>Description</th><th>Status</th><th>Est Effort</th><th>Spent Effort</th></tr></thead><tbody>${rows}</tbody></table>
+<br><button onclick="window.print()">🖨️ Print / Save as PDF</button>
+</body></html>`);
+    printWin.document.close();
+  }, 800);
+}
+
+// ═══════════════════════════════════════════════
+//  PAGE: REMINDERS
+// ═══════════════════════════════════════════════
+function renderReminders() {
+  return `
+<div class="page-header"><h1>Reminders</h1><p>Send sprint notifications and calendar invites to employees</p></div>
+
+<div class="alert alert-info">In production this triggers real Outlook emails + calendar invites via the VBA automation or a backend mail service.</div>
+
+<div class="card">
+  <div class="card-title">Sprint Start Reminder</div>
+  <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px">Sends sprint start date, end date, daily schedule, and Outlook calendar block.</p>
+  <div class="form-grid">
+    <div class="field">
+      <label>Sprint</label>
+      <select id="remFb">
+        ${sprints.map(s=>`<option>${s.fb}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field">
+      <label>Send To</label>
+      <select id="remEmp">
+        <option value="all">All Employees</option>
+        ${employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join('')}
+      </select>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-primary" onclick="sendReminder('start')">Send Sprint Start</button>
+    <button class="btn" onclick="sendReminder('end')">Send End Reminder</button>
+    <button class="btn" onclick="sendReminder('daily')">Send Daily Digest</button>
+  </div>
+  <div id="remMsg" style="margin-top:10px"></div>
+</div>
+
+<div class="card">
+  <div class="card-title">Reminder Preview</div>
+  <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px">Sample email that employees receive:</p>
+  <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:1rem;font-size:13px;border:0.5px solid var(--border-light)">
+    <div style="margin-bottom:8px"><strong>Subject:</strong> Nokia Sprint — FB-23 starts Monday, Apr 14</div>
+    <div style="margin-bottom:8px"><strong>To:</strong> rishit@nokia.com</div>
+    <hr style="border:none;border-top:0.5px solid var(--border-light);margin:8px 0">
+    <p>Hi Rishit,</p>
+    <p style="margin-top:6px">Your upcoming sprint details:</p>
+    <ul style="margin:8px 0 8px 18px;line-height:1.8">
+      <li><strong>Sprint:</strong> FB-23</li>
+      <li><strong>Start:</strong> Monday, 14 April 2025</li>
+      <li><strong>End:</strong> Friday, 25 April 2025</li>
+      <li><strong>Your tasks:</strong> 2 assigned</li>
+      <li><strong>Estimated hours:</strong> 20h</li>
+    </ul>
+    <p>A calendar invite has been added to your Outlook. Please update your task status daily.</p>
+    <p style="margin-top:8px;color:var(--text-secondary)">— Nokia Sprint Management System</p>
+  </div>
+</div>`;
+}
+
+function sendReminder(type) {
+  const labels = { start: 'Sprint Start', end: 'Sprint End', daily: 'Daily Digest' };
+  const fb = document.getElementById('remFb').value;
+  const emp = document.getElementById('remEmp').value;
+  document.getElementById('remMsg').innerHTML = `<div class="alert alert-success">
+    ✓ ${labels[type]} reminder sent for <strong>${fb}</strong> to ${emp === 'all' ? 'all employees' : getEmp(parseInt(emp))?.name}.
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  PAGE: MY TASKS (Employee)
+// ═══════════════════════════════════════════════
+function renderMyTasks() {
+  const myTasks = tasks.filter(t => t.empId === 1);
+  const done = myTasks.filter(t => t.status === 'Done').length;
+  const totEst = myTasks.reduce((a,t) => a+t.est, 0);
+  const totSpent = myTasks.reduce((a,t) => a+t.spent, 0);
+
+  return `
+<div class="page-header"><h1>My Tasks</h1><p>Logged in as ${employees[0].name}</p></div>
+
+<div class="metric-grid">
+  <div class="metric-card"><div class="metric-label">Total Tasks</div><div class="metric-value">${myTasks.length}</div></div>
+  <div class="metric-card"><div class="metric-label">Completed</div><div class="metric-value">${done}</div></div>
+  <div class="metric-card"><div class="metric-label">Est. Hours</div><div class="metric-value">${totEst}h</div></div>
+  <div class="metric-card"><div class="metric-label">Hours Logged</div><div class="metric-value">${totSpent}h</div></div>
+</div>
+
+<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+  <button class="btn btn-primary" onclick="navigate('log-task')">+ Log New Task</button>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>FB</th><th>Feature ID</th><th>Feature</th><th>Activity</th><th>Description</th><th>Status</th><th>Progress</th><th>Est</th><th>Spent</th></tr></thead>
+  <tbody>
+  ${myTasks.map(t => `<tr>
+    <td><span class="tag">${t.fb}</span></td>
+    <td style="font-family:monospace;font-size:12px">${t.featureId}</td>
+    <td>${t.featureDesc}</td>
+    <td>${t.activity}</td>
+    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--text-secondary)">${t.description}</td>
+    <td>
+      <select onchange="updateTaskStatus(${t.id}, this.value)" style="width:auto;padding:4px 6px;font-size:12px">
+        ${['To Do','In Progress','Done','Blocked'].map(s => `<option ${t.status===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+    </td>
+    <td style="min-width:110px">${progressBar(t.est, t.spent)}</td>
+    <td>${t.est}h</td>
+    <td><input type="number" value="${t.spent}" min="0" style="width:56px;padding:4px 6px;font-size:12px" onchange="updateSpentEffort(${t.id}, this.value)"/></td>
+  </tr>`).join('')}
+  </tbody>
+</table>
+</div>`;
+}
+
+function updateTaskStatus(id, val) {
+  const t = tasks.find(t => t.id === id);
+  if (t) t.status = val;
+}
+
+function updateSpentEffort(id, val) {
+  const t = tasks.find(t => t.id === id);
+  if (t) t.spent = parseFloat(val) || 0;
+}
+
+// ═══════════════════════════════════════════════
+//  PAGE: LOG TASK (Employee)
+// ═══════════════════════════════════════════════
+function renderLogTask() {
+  return `
+<div class="page-header"><h1>Log New Task</h1><p>Add a task to your sprint</p></div>
+<div class="card" style="max-width:600px">
+  <div class="form-grid">
+    <div class="field">
+      <label>Sprint (FB)</label>
+      <select id="ltFb">
+        ${sprints.map(s => `<option value="${s.fb}">${s.fb}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field"><label>Feature ID</label><input id="ltFid" placeholder="F-301"/></div>
+  </div>
+  <div class="field"><label>Feature Description</label><input id="ltFdesc" placeholder="Short description of the feature"/></div>
+  <div class="form-grid">
+    <div class="field">
+      <label>Activity Type</label>
+      <select id="ltAtype">
+        <option>Development</option><option>Design</option><option>Testing</option>
+        <option>DevOps</option><option>Analysis</option><option>Documentation</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Activity Status</label>
+      <select id="ltStatus">
+        <option>To Do</option><option>In Progress</option><option>Done</option><option>Blocked</option>
+      </select>
+    </div>
+  </div>
+  <div class="field"><label>Activity Description</label><input id="ltAdesc" placeholder="What specifically are you working on?"/></div>
+  <div class="form-grid">
+    <div class="field"><label>Estimated Effort (hrs)</label><input type="number" id="ltEst" placeholder="0" min="0" step="0.5"/></div>
+    <div class="field"><label>Spent Effort (hrs)</label><input type="number" id="ltSpent" placeholder="0" min="0" step="0.5"/></div>
+  </div>
+  <div id="ltMsg"></div>
+  <div style="display:flex;gap:8px;margin-top:4px">
+    <button class="btn btn-primary" onclick="submitLogTask()">Submit Task</button>
+    <button class="btn" onclick="navigate('my-tasks')">Cancel</button>
+  </div>
+</div>`;
+}
+
+function submitLogTask() {
+  const fb     = document.getElementById('ltFb').value;
+  const fid    = document.getElementById('ltFid').value.trim();
+  const fdesc  = document.getElementById('ltFdesc').value.trim();
+  const atype  = document.getElementById('ltAtype').value;
+  const status = document.getElementById('ltStatus').value;
+  const adesc  = document.getElementById('ltAdesc').value.trim();
+  const est    = parseFloat(document.getElementById('ltEst').value) || 0;
+  const spent  = parseFloat(document.getElementById('ltSpent').value) || 0;
+  const msg    = document.getElementById('ltMsg');
+
+  if (!fid || !fdesc) {
+    msg.innerHTML = '<div class="alert alert-warning">Feature ID and Description are required.</div>';
+    return;
+  }
+  tasks.push({ id: nextTaskId++, fb, empId: 1, featureId: fid, featureDesc: fdesc, activity: atype, description: adesc, status, est, spent });
+  msg.innerHTML = '<div class="alert alert-success">✓ Task logged successfully! Redirecting...</div>';
+  setTimeout(() => navigate('my-tasks'), 1000);
+}
+
+// ═══════════════════════════════════════════════
+//  PAGE: MY PROGRESS (Employee)
+// ═══════════════════════════════════════════════
+function renderMyProgress() {
+  const myTasks = tasks.filter(t => t.empId === 1);
+  const totEst  = myTasks.reduce((a,t) => a+t.est, 0);
+  const totSpent = myTasks.reduce((a,t) => a+t.spent, 0);
+  const accuracy = totEst > 0 ? Math.round((1 - Math.abs(totSpent - totEst) / totEst) * 100) : 100;
+  const completion = myTasks.length > 0 ? Math.round((myTasks.filter(t=>t.status==='Done').length / myTasks.length) * 100) : 0;
+
+  return `
+<div class="page-header"><h1>My Progress</h1><p>Personal sprint analytics</p></div>
+
+<div class="metric-grid">
+  <div class="metric-card"><div class="metric-label">Completion Rate</div><div class="metric-value">${completion}%</div></div>
+  <div class="metric-card"><div class="metric-label">Est. Accuracy</div><div class="metric-value">${accuracy}%</div></div>
+  <div class="metric-card"><div class="metric-label">Total Est. Hrs</div><div class="metric-value">${totEst}h</div></div>
+  <div class="metric-card"><div class="metric-label">Total Logged</div><div class="metric-value">${totSpent}h</div></div>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <div class="card-title">Effort per Task</div>
+    <div style="position:relative;height:220px">
+      <canvas id="myEffortChart" role="img" aria-label="Bar chart of estimated vs spent hours per task.">Effort per task.</canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Status Overview</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+      ${[['Done','#639922'],['In Progress','#378ADD'],['Blocked','#E24B4A'],['To Do','#888780']].map(([s,c])=>`
+        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary)">
+          <span style="width:10px;height:10px;border-radius:2px;background:${c};display:inline-block"></span>${s}
+        </span>`).join('')}
+    </div>
+    <div style="position:relative;height:195px">
+      <canvas id="myStatusChart" role="img" aria-label="Donut chart of my task statuses.">My task statuses.</canvas>
+    </div>
+  </div>
+</div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  CHART INIT
+// ═══════════════════════════════════════════════
+function initCharts(tab) {
+  setTimeout(() => {
+    if (tab === 'dashboard') {
+      buildHeatmap();
+
+      const bd = document.getElementById('burndownChart');
+      if (bd) chartInstances.burndown = new Chart(bd, {
+        type: 'line',
+        data: {
+          labels: ['D1','D2','D3','D4','D5','D6','D7','D8','D9','D10'],
+          datasets: [
+            { label:'Ideal',  data:[6,5.4,4.8,4.2,3.6,3,2.4,1.8,1.2,0], borderColor:'#B4B2A9', borderDash:[5,4], tension:0.1, pointRadius:0, fill:false },
+            { label:'Actual', data:[6,6,5,5,4,4,3,null,null,null],        borderColor:'#185FA5', tension:0.3, pointRadius:3, fill:false }
+          ]
+        },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ y:{beginAtZero:true, grid:{color:'rgba(128,128,128,0.1)'}}, x:{grid:{color:'rgba(128,128,128,0.1)'}} } }
+      });
+
+      const active = sprintStats('FB-23');
+      const statusCounts = ['Done','In Progress','Blocked','To Do'].map(s => active.tasks.filter(t=>t.status===s).length);
+      const sc = document.getElementById('statusChart');
+      if (sc) chartInstances.status = new Chart(sc, {
+        type: 'doughnut',
+        data: { labels:['Done','In Progress','Blocked','To Do'], datasets:[{ data:statusCounts, backgroundColor:['#639922','#378ADD','#E24B4A','#888780'], borderWidth:0 }] },
+        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, cutout:'65%' }
+      });
+
+      const ec = document.getElementById('effortChart');
+      if (ec) {
+        const names  = employees.slice(0,4).map(e => e.name.split(' ')[0]);
+        const ests   = employees.slice(0,4).map(e => tasks.filter(t=>t.empId===e.id).reduce((a,t)=>a+t.est,0));
+        const spents = employees.slice(0,4).map(e => tasks.filter(t=>t.empId===e.id).reduce((a,t)=>a+t.spent,0));
+        chartInstances.effort = new Chart(ec, {
+          type: 'bar',
+          data: { labels:names, datasets:[{ label:'Estimated', data:ests, backgroundColor:'#B5D4F4' },{ label:'Spent', data:spents, backgroundColor:'#185FA5', borderRadius:3 }] },
+          options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true, grid:{color:'rgba(128,128,128,0.1)'}}, x:{grid:{display:false}} } }
+        });
+      }
+    }
+
+    if (tab === 'reports') {
+      const vc = document.getElementById('velocityChart');
+      if (vc) chartInstances.vel = new Chart(vc, {
+        type: 'line',
+        data: { labels:['FB-23','FB-24','FB-25'], datasets:[
+          { label:'Actual', data:[67,40,null], borderColor:'#185FA5', tension:0.4, pointRadius:5, fill:false },
+          { label:'Target', data:[70,70,70], borderColor:'#B4B2A9', borderDash:[5,4], pointRadius:0, fill:false }
+        ]},
+        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{min:0,max:100, grid:{color:'rgba(128,128,128,0.1)'}}, x:{grid:{display:false}} } }
+      });
+
+      const ac = document.getElementById('accuracyChart');
+      if (ac) chartInstances.acc = new Chart(ac, {
+        type: 'bar',
+        data: { labels: employees.map(e=>e.name.split(' ')[0]), datasets:[{ data:[88,92,95,78,90], backgroundColor:'#5DCAA5', borderRadius:4 }] },
+        options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{min:0,max:100, grid:{color:'rgba(128,128,128,0.1)'}}, y:{grid:{display:false}} } }
+      });
+
+      const wc = document.getElementById('workloadChart');
+      if (wc) {
+        const hours = employees.map(e => tasks.filter(t=>t.empId===e.id).reduce((a,t)=>a+t.est,0));
+        chartInstances.wl = new Chart(wc, {
+          type: 'bar',
+          data: { labels: employees.map(e=>e.name.split(' ')[0]), datasets:[{ data:hours, backgroundColor:['#B5D4F4','#85B7EB','#378ADD','#185FA5','#0C447C'], borderRadius:4 }] },
+          options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true, grid:{color:'rgba(128,128,128,0.1)'}}, x:{grid:{display:false}} } }
+        });
+      }
+    }
+
+    if (tab === 'my-progress') {
+      const myTasks = tasks.filter(t => t.empId === 1);
+      const mec = document.getElementById('myEffortChart');
+      if (mec) chartInstances.myEff = new Chart(mec, {
+        type: 'bar',
+        data: { labels: myTasks.map(t=>t.featureId), datasets:[
+          { label:'Est',   data:myTasks.map(t=>t.est),   backgroundColor:'#B5D4F4' },
+          { label:'Spent', data:myTasks.map(t=>t.spent), backgroundColor:'#185FA5', borderRadius:3 }
+        ]},
+        options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true}, x:{grid:{display:false}, ticks:{autoSkip:false,maxRotation:0,font:{size:10}}} } }
+      });
+
+      const msc = document.getElementById('myStatusChart');
+      if (msc) {
+        const counts = ['Done','In Progress','Blocked','To Do'].map(s => myTasks.filter(t=>t.status===s).length);
+        chartInstances.mySt = new Chart(msc, {
+          type: 'doughnut',
+          data: { labels:['Done','In Progress','Blocked','To Do'], datasets:[{ data:counts, backgroundColor:['#639922','#378ADD','#E24B4A','#888780'], borderWidth:0 }] },
+          options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, cutout:'65%' }
+        });
+      }
+    }
+  }, 80);
+}
+</script>
+</body>
+</html>

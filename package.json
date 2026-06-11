@@ -1,0 +1,27 @@
+{
+  "name": "nokia-sprint-platform",
+  "version": "1.0.0",
+  "description": "Nokia Sprint Management Platform — Phase 1",
+  "main": "server.js",
+  "scripts": {
+    "init-db": "node db/init.js",
+    "clear-db": "node db/clear.js",
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "sprint",
+    "nokia",
+    "project-management"
+  ],
+  "author": "Nokia Sprint Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.10.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  }
+}

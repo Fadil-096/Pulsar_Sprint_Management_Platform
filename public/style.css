@@ -1,0 +1,1158 @@
+/* =============================================
+   Nokia Sprint Platform — B2B Corporate Redesign
+   Inspired by Nokia's Minimalist Corporate Visual Style
+   ============================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Nokia Corporate Brand Colors */
+  --nokia-blue:        #005AFF;   /* Electric vivid Nokia Blue */
+  --nokia-blue-dark:   #004acc;   /* CTA hover */
+  --nokia-blue-light:  #00B4FF;   /* Secondary / Estimated KPI */
+  --nokia-blue-glow:   rgba(0, 90, 255, 0.1);
+  --nokia-teal:        #00D4A0;   /* Muted teal accent */
+
+  /* B2B Layout & Surfaces */
+  --bg-app:            #F4F4F4;   /* Light gray app background / section breaks */
+  --bg-primary:        #FFFFFF;   /* Main content area */
+  --bg-secondary:      #FAFAFA;   /* Alternating table rows */
+  --bg-topbar:         #00003C;   /* Deep Navy top bar */
+  --bg-sidebar:        #000028;   /* Slightly darker Deep Navy for sidebar */
+
+  /* High-Contrast Typography */
+  --text-primary:      #0D0D0D;   /* Dark charcoal */
+  --text-secondary:    #555555;   /* Secondary body text */
+  --text-tertiary:     #777777;   /* Muted details */
+  --text-light:        #FFFFFF;   /* Sidebar / Topbar labels */
+
+  /* Crisp Borders */
+  --border-default:    #E0E0E0;   /* Razor-thin 1px border */
+  --border-active:     #005AFF;   /* Electric blue highlight */
+
+  /* Sharp Radii (Corporate, non-pill style) */
+  --radius-card:       4px;       /* Max 4px on cards */
+  --radius-btn:        3px;       /* Max 3px on buttons */
+  --radius-sm:         2px;
+
+  /* No shadows for flat minimalist design */
+  --shadow-none:       none;
+}
+
+/* ── Base ─────────────────────────────────────── */
+body {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Utilities ─────────────────────────────────── */
+.hidden { display: none !important; }
+
+/* ── Buttons ──────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--radius-btn);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--nokia-blue);
+  color: var(--text-light);
+  border: none;
+}
+.btn-primary:hover {
+  background: var(--nokia-blue-dark);
+}
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-secondary, .btn:not(.btn-primary):not(.btn-danger) {
+  background: var(--bg-primary);
+  border: 1.5px solid var(--nokia-blue);
+  color: var(--nokia-blue);
+}
+.btn-secondary:hover, .btn:not(.btn-primary):not(.btn-danger):hover {
+  background: var(--nokia-blue-glow);
+}
+
+.btn-danger {
+  background: #CC0000;
+  color: var(--text-light);
+  border: none;
+}
+.btn-danger:hover {
+  background: #A00000;
+}
+
+.btn-sm {
+  padding: 5px 12px;
+  font-size: 12px;
+}
+.btn-full {
+  width: 100%;
+}
+
+/* ── Split-Screen Login ────────────────────────── */
+#loginView {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: row;
+  background: var(--bg-primary);
+}
+
+.login-left-pane {
+  flex: 1;
+  background: var(--bg-topbar);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  box-sizing: border-box;
+}
+
+.login-left-content {
+  max-width: 480px;
+  text-align: center;
+}
+
+.login-logo-large {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.logo-divider-vertical {
+  width: 1px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.logo-sprint-text {
+  color: var(--nokia-blue);
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -1px;
+}
+
+.login-tagline {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 400;
+  letter-spacing: -0.2px;
+}
+
+.login-right-pane {
+  width: 480px;
+  flex-shrink: 0;
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  box-sizing: border-box;
+  border-left: 1px solid var(--border-default);
+}
+
+@media (max-width: 900px) {
+  #loginView { flex-direction: column; }
+  .login-left-pane { padding: 40px 24px; flex-shrink: 0; }
+  .login-right-pane { width: 100%; border-left: none; border-top: 1px solid var(--border-default); padding: 40px 24px; }
+}
+
+.login-form-wrap {
+  width: 100%;
+  max-width: 340px;
+}
+
+.login-form-heading {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+
+.login-form-subheading {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 32px;
+}
+
+.field {
+  margin-bottom: 20px;
+}
+
+.field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.field input[type="email"],
+.field input[type="password"],
+.field input[type="text"],
+.field input[type="number"],
+.field input:not([type]),
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-btn);
+  font-size: 14px;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--nokia-blue);
+}
+
+.login-field-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.login-field-header label {
+  margin-bottom: 0;
+}
+
+.forgot-link {
+  font-size: 11px;
+  color: var(--nokia-blue);
+  text-decoration: none;
+}
+.forgot-link:hover {
+  text-decoration: underline;
+}
+
+/* Segmented Control for Roles */
+.role-segmented-control {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--bg-app);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-btn);
+  padding: 2px;
+  gap: 2px;
+}
+
+.role-segmented-control .role-segment {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 8px;
+  margin: 0 !important;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.role-segmented-control .role-segment.active {
+  background: var(--nokia-blue);
+  margin: 0 !important;
+}
+
+.role-segment input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.role-segment span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.role-segment.active {
+  background: var(--nokia-blue);
+}
+
+.role-segment.active span {
+  color: var(--text-light);
+}
+
+.btn-login {
+  margin-top: 8px;
+  padding: 11px;
+}
+
+/* ── Corporate Shell / Sidebar Layout ──────────────── */
+#mainView {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Top bar (full width) */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 58px;
+  background: var(--bg-topbar);
+  border-bottom: 1px solid var(--nokia-blue);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.logo-sprint {
+  color: var(--nokia-blue);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.role-topbadge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius-btn);
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--nokia-blue);
+  color: var(--text-light);
+  font-weight: 700;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Flex row below topbar */
+.main-layout-row {
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  overflow: hidden;
+}
+
+/* Left Sidebar Navigation */
+.sidebar {
+  width: 220px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 0;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+
+.sidebar-section-title {
+  padding: 8px 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.nav-tab {
+  width: 100%;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.nav-tab:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-light);
+}
+
+.nav-tab.active {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-light);
+  border-left-color: var(--nokia-blue);
+  font-weight: 600;
+}
+
+/* Main Content Area */
+.content {
+  flex: 1;
+  background: var(--bg-primary);
+  padding: 32px;
+  overflow-y: auto;
+}
+
+/* Prevent extra margin gap at bottom of content pane */
+.content > *:last-child {
+  margin-bottom: 0 !important;
+}
+
+@media (max-width: 768px) {
+  #mainView {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+  .main-layout-row {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+  .sidebar {
+    width: 100%;
+    padding: 12px 0;
+    height: auto;
+    overflow: visible;
+  }
+  .content {
+    padding: 20px;
+    height: auto;
+    overflow: visible;
+  }
+}
+
+/* ── Dashboard Full-Width Hero Strip ───────────── */
+.content > .metric-grid {
+  margin: -32px -32px 32px -32px;
+  padding: 24px 32px;
+  background: var(--bg-topbar);
+  color: var(--text-light);
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 2px solid var(--nokia-blue);
+}
+
+.content > .metric-grid > .metric-card {
+  background: transparent;
+  border: none !important;
+  border-left: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+}
+
+.content > .metric-grid > .metric-card::before {
+  display: none !important;
+}
+
+.content > .metric-grid > .metric-card .metric-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0;
+}
+
+.content > .metric-grid > .metric-card .metric-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-light);
+  line-height: 1.2;
+}
+
+.content > .metric-grid > .metric-card .metric-sub {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 11px;
+  margin-top: 0;
+}
+
+/* ── Standard Cards & Containers ───────────────── */
+.card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-none);
+}
+
+/* Standard Metric Card (used outside Dashboard Hero) */
+.metric-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-left: 4px solid var(--nokia-blue);
+  border-radius: var(--radius-card);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: var(--shadow-none);
+}
+
+.metric-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.metric-sub {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.metric-up { color: #007A4D; }
+.metric-down { color: #CC0000; }
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+@media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* ── Add Sprint form — unified input sizing & border ── */
+#addSprintForm .field input[type="text"],
+#addSprintForm .field input:not([type]) {
+  width: 100%;
+  padding: 7px 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-btn);
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+#addSprintForm .field input[type="text"]:hover,
+#addSprintForm .field input:not([type]):hover {
+  border-color: #a0a0b8;
+}
+#addSprintForm .field input[type="text"]:focus,
+#addSprintForm .field input:not([type]):focus {
+  border-color: var(--nokia-blue);
+}
+#addSprintForm .date-picker-wrap {
+  padding: 7px 12px;
+  min-height: 36px;
+  font-size: 13px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.section-title-lg {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  letter-spacing: -0.3px;
+}
+
+/* ── Tables ────────────────────────────────────── */
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+table.data-table th {
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+  background: var(--bg-app);
+  padding: 8px 12px;
+  border: 1px solid var(--border-default);
+  text-align: left;
+  position: sticky;
+  top: 0;
+}
+
+table.data-table td {
+  padding: 7px 12px;
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+table.data-table tbody tr {
+  background: var(--bg-primary);
+}
+
+table.data-table tbody tr:nth-child(even) {
+  background: var(--bg-secondary);
+}
+
+table.data-table tbody tr:hover td {
+  background: var(--nokia-blue-glow) !important;
+}
+
+/* Compact status select within table cells */
+table.data-table .cell-select {
+  padding: 4px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-btn);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+table.data-table .cell-select:hover {
+  border-color: #a0a0b8;
+}
+
+table.data-table .cell-select:focus {
+  border-color: var(--nokia-blue);
+}
+
+/* ── Status Badges ─────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-btn);
+  color: var(--text-light) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  min-width: 80px;
+  text-align: center;
+}
+
+.badge-done { background: #007A4D; }
+.badge-progress { background: var(--nokia-blue); }
+.badge-blocked { background: #CC0000; }
+.badge-todo { background: #6B6B6B; }
+.badge-active { background: var(--nokia-blue); }
+.badge-manager { background: var(--nokia-blue); }
+.badge-employee { background: #007A4D; }
+
+/* ── Progress Bar ──────────────────────────────── */
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 110px;
+}
+
+.progress-track {
+  flex: 1;
+  background: var(--border-default);
+  border-radius: 0;
+  height: 6px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 6px;
+  border-radius: 0;
+  background: var(--nokia-blue);
+  transition: width 0.4s ease;
+}
+
+.progress-pct {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* ── Charts ────────────────────────────────────── */
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  background: var(--bg-app);
+  border-radius: var(--radius-card);
+  padding: 16px;
+  box-sizing: border-box;
+  border: 1px solid var(--border-default);
+}
+
+/* ── Heatmap ───────────────────────────────────── */
+.heatmap-grid {
+  display: grid;
+  gap: 4px;
+}
+
+.heatmap-cell {
+  padding: 8px 4px;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.heatmap-label {
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding-right: 6px;
+}
+
+.heatmap-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Sprint Card ───────────────────────────────── */
+.sprint-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.sprint-meta {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+/* ── Employee Grid ─────────────────────────────── */
+.emp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+/* ── Scrollbars ────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+
+/* ── Modal ─────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+}
+
+.modal-box {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-header h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+}
+
+/* ── File Upload / Drag-and-Drop ────────────────── */
+.upload-field {
+  margin-bottom: 24px !important;
+}
+
+.upload-dropzone {
+  border: 1.5px dashed var(--border-default);
+  background: var(--bg-app);
+  border-radius: var(--radius-btn);
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.upload-dropzone:hover, .upload-dropzone.dragover {
+  border-color: var(--nokia-blue);
+  background: var(--nokia-blue-glow);
+}
+
+.upload-icon {
+  font-size: 24px;
+}
+
+.upload-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.upload-link {
+  color: var(--nokia-blue);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.upload-filename {
+  font-size: 13px;
+  font-weight: 600;
+  color: #007A4D;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.upload-error {
+  color: #CC0000;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 6px;
+  padding: 8px;
+  background: rgba(204, 0, 0, 0.05);
+  border: 1px solid rgba(204, 0, 0, 0.15);
+  border-radius: var(--radius-btn);
+}
+
+/* Spinner */
+.upload-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-default);
+  border-top-color: var(--nokia-blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Custom Calendar Date Picker ─────────────────────── */
+
+/* Trigger button */
+.date-picker-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s;
+  min-height: 40px;
+  width: 100%;
+}
+.date-picker-wrap:hover  { border-color: #a0a0b8; }
+.date-picker-wrap:focus  { outline: none; border-color: var(--nokia-blue); }
+
+.dp-icon {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.date-picker-wrap:hover .dp-icon,
+.date-picker-wrap:focus .dp-icon { color: var(--nokia-blue); }
+
+.dp-display {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-primary);
+}
+.dp-empty { color: var(--text-tertiary); }
+
+/* Floating calendar popup */
+.cal-popup {
+  position: absolute;
+  z-index: 9999;
+  width: 280px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  overflow: hidden;
+  animation: calFadeIn 0.12s ease;
+}
+@keyframes calFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Header — month navigation */
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px 8px;
+  border-bottom: 1px solid var(--border-default);
+}
+.cal-month-year {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.2px;
+}
+.cal-nav {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  color: var(--text-secondary);
+  padding: 0 6px;
+  line-height: 1;
+  border-radius: var(--radius-sm);
+  transition: color 0.12s, background 0.12s;
+}
+.cal-nav:hover {
+  color: var(--nokia-blue);
+  background: var(--nokia-blue-glow);
+}
+
+/* Day-of-week header row */
+.cal-day-names {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 8px 10px 4px;
+}
+.cal-day-name {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Days grid */
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 0 10px 10px;
+  gap: 1px;
+}
+.cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+.cal-day:hover:not(.cal-blank) {
+  background: var(--nokia-blue-glow);
+  color: var(--nokia-blue);
+}
+.cal-blank { cursor: default; }
+
+/* Today indicator */
+.cal-today {
+  font-weight: 700;
+  color: var(--nokia-blue);
+  border: 1px solid rgba(0,90,255,0.3);
+}
+
+/* Range start / end */
+.cal-sel {
+  background: var(--nokia-blue) !important;
+  color: #fff !important;
+  font-weight: 700;
+  border-radius: 3px;
+}
+.cal-range-start { border-radius: 3px 0 0 3px; }
+.cal-range-end   { border-radius: 0 3px 3px 0; }
+
+/* Days between start and end */
+.cal-in-range {
+  background: rgba(0, 90, 255, 0.08);
+  color: var(--nokia-blue);
+  border-radius: 0;
+}
+
+/* Footer — start/end tab display */
+.cal-footer {
+  border-top: 1px solid var(--border-default);
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+}
+.cal-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.cal-tab {
+  background: none;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-btn);
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.12s;
+  font-family: inherit;
+}
+.cal-tab:hover { border-color: var(--nokia-blue); color: var(--nokia-blue); }
+.cal-tab-active {
+  background: var(--nokia-blue);
+  border-color: var(--nokia-blue);
+  color: #fff;
+}
+.cal-tab-val {
+  font-weight: 400;
+  opacity: 0.85;
+}
+.cal-tab-arrow {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.cal-hint {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+}

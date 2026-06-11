@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f3;
+    --bg-tertiary: #eeede9;
+    --text-primary: #1a1a18;
+    --text-secondary: #5f5e5a;
+    --text-tertiary: #888780;
+    --border-light: rgba(0,0,0,0.12);
+    --border-medium: rgba(0,0,0,0.22);
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --blue-50: #E5F0FF;
+    --blue-200: #99C2FF;
+    --blue-400: #3385FF;
+    --blue-600: #005AFF;
+    --blue-800: #003DAB;
+    --green-50: #EAF3DE;
+    --green-600: #3B6D11;
+    --green-800: #27500A;
+    --red-50: #FCEBEB;
+    --red-600: #A32D2D;
+    --red-800: #791F1F;
+    --amber-50: #FAEEDA;
+    --amber-600: #854F0B;
+    --teal-50: #E1F5EE;
+    --teal-600: #0F6E56;
+  }
+
+
+
+  body {
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center gap-1.5 px-3.5 py-[7px] rounded-md text-[13px] border-[0.5px] border-border-medium bg-bg-primary text-text-primary transition-all duration-150 cursor-pointer;
+  }
+  .btn:hover {
+    @apply bg-bg-secondary;
+  }
+  .btn:active {
+    @apply scale-[0.98];
+  }
+  .btn-primary {
+    @apply bg-blue-600 text-white border-blue-600;
+  }
+  .btn-primary:hover {
+    @apply bg-blue-800;
+  }
+  .btn-sm {
+    @apply px-2.5 py-[5px] text-[12px];
+  }
+
+  .card {
+    @apply bg-bg-primary rounded-lg border-[0.5px] border-border-light p-5 mb-3.5;
+  }
+  .card-title {
+    @apply text-[14px] font-medium mb-3;
+  }
+
+  .badge {
+    @apply inline-block text-[11px] px-2 py-0.5 rounded-full font-medium;
+  }
+  .badge-done    { @apply bg-green-50 text-green-800; }
+  .badge-progress { @apply bg-blue-50 text-blue-800; }
+  .badge-blocked  { @apply bg-red-50 text-red-800; }
+  .badge-todo    { @apply bg-bg-secondary text-text-secondary; }
+  .badge-manager  { @apply bg-blue-50 text-blue-600; }
+  .badge-employee { @apply bg-teal-50 text-teal-600; }
+
+  .input-field {
+    @apply w-full px-2.5 py-2 border-[0.5px] border-border-medium rounded-md text-[13px] bg-bg-primary text-text-primary transition-colors focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(136, 135, 128, 0.3); border-radius: 3px; }
