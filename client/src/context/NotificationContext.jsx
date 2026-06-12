@@ -12,7 +12,7 @@ export const NotificationProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchNotifications = useCallback(async () => {
-    if (!token || user?.role !== 'manager') return;
+    if (!token) return;
     try {
       const res = await axios.get(`/api/notifications?_t=${Date.now()}`, {
         headers: { 

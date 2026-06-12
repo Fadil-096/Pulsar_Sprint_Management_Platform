@@ -11,9 +11,15 @@ import Reports from './pages/manager/Reports';
 import Reminders from './pages/manager/Reminders';
 import Notifications from './pages/manager/Notifications';
 import Settings from './pages/manager/Settings';
+import ManagerLeaves from './pages/manager/ManagerLeaves';
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 import EmployeeLogTask from './pages/employee/EmployeeLogTask';
 import EmployeeProgress from './pages/employee/EmployeeProgress';
+import EmployeeLeave from './pages/employee/EmployeeLeave';
+import EmployeeNotifications from './pages/employee/EmployeeNotifications';
+import EmployeeSettings from './pages/employee/EmployeeSettings';
+import AttendanceLog from './pages/shared/AttendanceLog';
+import TeamAttendance from './pages/manager/TeamAttendance';
 
 const ProtectedRoute = ({ children, allowedRole }) => {
   const { user, loading } = useAuth();
@@ -50,12 +56,20 @@ function App() {
               <Route path="reminders" element={<Reminders />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="attendance" element={<AttendanceLog />} />
+              <Route path="team-attendance" element={<TeamAttendance />} />
+              <Route path="leaves" element={<ManagerLeaves />} />
             </Route>
 
             <Route path="/employee" element={<ProtectedRoute allowedRole="employee"><AppLayout /></ProtectedRoute>}>
+              <Route path="dashboard" element={<Navigate to="/employee/tasks" replace />} />
               <Route path="tasks" element={<EmployeeDashboard />} />
               <Route path="log" element={<EmployeeLogTask />} />
               <Route path="progress" element={<EmployeeProgress />} />
+              <Route path="attendance" element={<AttendanceLog />} />
+              <Route path="leaves" element={<EmployeeLeave />} />
+              <Route path="notifications" element={<EmployeeNotifications />} />
+              <Route path="settings" element={<EmployeeSettings />} />
             </Route>
           </Routes>
         </BrowserRouter>

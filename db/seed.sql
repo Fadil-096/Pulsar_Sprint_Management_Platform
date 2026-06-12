@@ -258,3 +258,39 @@ VALUES (6, NULL, 'sprint', 'Sprint Started', 'Sprint S4321 "Machinary Automation
 
 INSERT INTO notifications (recipient_id, sender_id, type, title, message, is_read, reference_id, created_at)
 VALUES (7, NULL, 'sprint', 'Sprint Started', 'Sprint S4321 "Machinary Automation" is now LIVE. Timer has started.', 1, 'S4321', '2026-06-08 09:00:00');
+
+-- =====================================================
+-- 9. ATTENDANCE
+-- =====================================================
+
+-- Manager Kaisa (1)
+INSERT INTO attendance (user_id, date, check_in, check_out, total_hours, status)
+VALUES (1, '2026-06-01', '09:00', '17:30', 8.5, 'Present');
+INSERT INTO attendance (user_id, date, check_in, check_out, total_hours, status)
+VALUES (1, '2026-06-02', '08:45', '17:00', 8.25, 'Present');
+INSERT INTO attendance (user_id, date, check_in, check_out, total_hours, status)
+VALUES (1, '2026-06-03', '09:15', '18:00', 8.75, 'Present');
+INSERT INTO attendance (user_id, date, check_in, check_out, total_hours, status)
+VALUES (1, '2026-06-04', '09:00', '13:00', 4.0, 'Half-Day');
+INSERT INTO attendance (user_id, date, check_in, check_out, total_hours, status)
+VALUES (1, '2026-06-05', '09:00', '17:30', 8.5, 'Present');
+INSERT INTO attendance (user_id, date, check_in, check_out, total_hours, status)
+VALUES (1, '2026-06-08', '08:50', '17:10', 8.33, 'Present');
+INSERT INTO attendance (user_id, date, check_in, check_out, total_hours, status)
+VALUES (1, '2026-06-09', '09:05', '17:30', 8.41, 'Present');
+
+-- Employee Mikko (2)
+INSERT INTO attendance (user_id, date, check_in, check_out, total_hours, status)
+VALUES (2, '2026-06-01', '09:00', '17:00', 8.0, 'Present');
+INSERT INTO attendance (user_id, date, check_in, check_out, total_hours, status)
+VALUES (2, '2026-06-02', '09:30', '17:30', 8.0, 'Present');
+INSERT INTO attendance (user_id, date, check_in, check_out, total_hours, status)
+VALUES (2, '2026-06-03', '09:00', '17:00', 8.0, 'Present');
+INSERT INTO attendance (user_id, date, check_in, check_out, total_hours, status)
+VALUES (2, '2026-06-04', NULL, NULL, 0, 'Absent');
+INSERT INTO attendance (user_id, date, check_in, check_out, total_hours, status)
+VALUES (2, '2026-06-05', '09:00', '17:00', 8.0, 'Present');
+INSERT INTO attendance (user_id, date, check_in, check_out, total_hours, status)
+VALUES (2, '2026-06-08', '09:00', '17:00', 8.0, 'Present');
+INSERT INTO attendance (user_id, date, check_in, check_out, total_hours, status)
+VALUES (2, '2026-06-09', '09:10', '17:10', 8.0, 'Present');

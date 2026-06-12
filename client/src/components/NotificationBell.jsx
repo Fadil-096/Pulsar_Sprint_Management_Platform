@@ -31,13 +31,15 @@ export default function NotificationBell() {
     markAsRead(notification.id);
     setIsOpen(false);
     
+    const baseRoute = user?.role === 'manager' ? '/manager' : '/employee';
+    
     // Route based on type
     if (notification.type === 'leave') {
-      navigate('/manager/notifications?filter=leave');
+      navigate(`${baseRoute}/leaves${notification.reference_id ? `?leaveId=${notification.reference_id}` : ''}`);
     } else if (notification.type === 'query' || notification.type === 'sprint' || notification.type === 'task' || notification.type === 'subtask') {
-      navigate('/manager/sprints'); 
+      navigate(`${baseRoute}/${user?.role === 'manager' ? 'sprints' : 'tasks'}`); 
     } else {
-      navigate('/manager/notifications');
+      navigate(`${baseRoute}/notifications`);
     }
   };
 
@@ -51,8 +53,6 @@ export default function NotificationBell() {
       default: return <AlertCircle size={16} className="text-orange-500" />;
     }
   };
-
-  if (user?.role !== 'manager') return null;
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -131,7 +131,7 @@ export default function NotificationBell() {
           
           <div className="p-2 border-t border-gray-100 bg-gray-50 text-center">
             <Link 
-              to="/manager/notifications" 
+              to={user?.role === 'manager' ? '/manager/notifications' : '/employee/notifications'} 
               onClick={() => setIsOpen(false)}
               className="text-[12px] font-bold text-[#005AFF] hover:underline uppercase tracking-wider"
             >

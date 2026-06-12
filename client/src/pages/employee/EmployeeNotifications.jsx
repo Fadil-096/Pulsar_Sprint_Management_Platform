@@ -5,7 +5,7 @@ import { useNotification } from '../../context/NotificationContext';
 import { Bell, CheckCircle2, MessageSquare, Calendar, AlertCircle, Trash2, Search, Filter, CheckSquare, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-export default function Notifications() {
+export default function EmployeeNotifications() {
   const { token } = useAuth();
   const navigate = useNavigate();
   const { 
@@ -15,25 +15,9 @@ export default function Notifications() {
     deleteNotifications 
   } = useNotification();
   
-  const [leaves, setLeaves] = useState([]);
   const [activeTab, setActiveTab] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState([]);
-  const [selectedLeave, setSelectedLeave] = useState(null);
-
-  const fetchLeaves = async () => {
-    if (!token) return;
-    try {
-      const leaveRes = await axios.get('/api/leaves', { headers: { Authorization: `Bearer ${token}` } });
-      setLeaves(leaveRes.data);
-    } catch (err) {
-      console.error('Failed to fetch leaves', err);
-    }
-  };
-
-  useEffect(() => {
-    fetchLeaves();
-  }, [token]);
 
   const handleBulkMarkRead = async () => {
     await markSelectedAsRead(selectedIds);
@@ -46,22 +30,12 @@ export default function Notifications() {
     setSelectedIds([]);
   };
 
-  const handleActionLeave = async (id, status) => {
-    try {
-      await axios.put(`/api/leaves/${id}/status`, { status }, { headers: { Authorization: `Bearer ${token}` } });
-      setSelectedLeave(null);
-      fetchLeaves();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   const toggleSelect = (id) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.length === filteredNotifications.length) {
+    if (selectedIds.length === filteredNotifications.length && filteredNotifications.length > 0) {
       setSelectedIds([]);
     } else {
       setSelectedIds(filteredNotifications.map(n => n.id));
@@ -71,8 +45,8 @@ export default function Notifications() {
   const filteredNotifications = notifications.filter(n => {
     if (activeTab === 'Unread' && n.is_read) return false;
     if (activeTab === 'Queries' && n.type !== 'query') return false;
-    if (activeTab === 'Leave Requests' && n.type !== 'leave') return false;
-    if (activeTab === 'Sprint' && !['sprint', 'task', 'subtask'].includes(n.type)) return false;
+    if (activeTab === 'Leave Updates' && n.type !== 'leave') return false;
+    if (activeTab === 'Sprint & Tasks' && !['sprint', 'task', 'subtask'].includes(n.type)) return false;
     if (activeTab === 'General' && !['system', 'general'].includes(n.type)) return false;
     
     if (searchTerm) {
@@ -93,20 +67,22 @@ export default function Notifications() {
     }
   };
 
+  const handleNotificationClick = (notification) => {
+    if (!notification.is_read) markAsRead(notification.id);
+    
+    if (notification.type === 'leave') {
+      navigate(`/employee/leaves${notification.reference_id ? `?leaveId=${notification.reference_id}` : ''}`);
+    } else if (['query', 'sprint', 'task', 'subtask'].includes(notification.type)) {
+      navigate('/employee/tasks');
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-[#020024]">Notifications Manager</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage team updates, queries, and leave requests.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setActiveTab('Leave Requests')}
-            className="px-4 py-2 bg-purple-50 text-purple-700 font-bold rounded-lg text-sm border border-purple-100 hover:bg-purple-100 transition-colors"
-          >
-            Pending Leaves ({leaves.filter(l => l.status === 'pending').length})
-          </button>
+          <h1 className="text-2xl font-bold text-[#020024]">My Notifications</h1>
+          <p className="text-gray-500 text-sm mt-1">Stay updated with your tasks, sprints, and leave requests.</p>
         </div>
       </div>
 
@@ -114,7 +90,7 @@ export default function Notifications() {
         {/* Toolbar */}
         <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar w-full md:w-auto">
-            {['All', 'Unread', 'Queries', 'Leave Requests', 'Sprint', 'General'].map(tab => (
+            {['All', 'Unread', 'Queries', 'Leave Updates', 'Sprint & Tasks', 'General'].map(tab => (
               <button
                 key={tab}
                 onClick={() => { setActiveTab(tab); setSelectedIds([]); }}
@@ -187,12 +163,7 @@ export default function Notifications() {
               <div 
                 key={notification.id} 
                 className={`p-4 flex items-start gap-4 transition-colors hover:bg-gray-50 ${!notification.is_read ? 'bg-blue-50/20' : ''}`}
-                onClick={() => {
-                  if (!notification.is_read) markAsRead(notification.id);
-                  if (notification.type === 'leave') {
-                    navigate(`/manager/leaves${notification.reference_id ? `?leaveId=${notification.reference_id}` : ''}`);
-                  }
-                }}
+                onClick={() => handleNotificationClick(notification)}
               >
                 <div className="mt-1 flex items-center h-full" onClick={(e) => e.stopPropagation()}>
                   <input 
@@ -229,85 +200,6 @@ export default function Notifications() {
           )}
         </div>
       </div>
-
-      {/* Leave Request Modal */}
-      {selectedLeave && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-[#020024] text-white">
-              <h2 className="text-lg font-bold">Leave Request Details</h2>
-              <button onClick={() => setSelectedLeave(null)} className="text-white/70 hover:text-white">
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div className="flex items-center gap-4 pb-4 border-b border-gray-100">
-                <div className="w-12 h-12 rounded-full bg-blue-100 text-[#005AFF] flex items-center justify-center font-bold text-lg">
-                  {selectedLeave.employeeInitials}
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">{selectedLeave.employeeName}</h3>
-                  <p className="text-sm text-gray-500">{selectedLeave.role} • {selectedLeave.department}</p>
-                </div>
-                <div className="ml-auto">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                    selectedLeave.status === 'approved' ? 'bg-green-100 text-green-700' :
-                    selectedLeave.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                    'bg-yellow-100 text-yellow-700'
-                  }`}>
-                    {selectedLeave.status}
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[11px] font-bold text-gray-500 uppercase">Leave Type</label>
-                  <p className="font-medium text-gray-900 capitalize">{selectedLeave.leave_type}</p>
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold text-gray-500 uppercase">Duration</label>
-                  <p className="font-medium text-gray-900">{selectedLeave.duration_days} Day(s)</p>
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold text-gray-500 uppercase">Start Date</label>
-                  <p className="font-medium text-gray-900">{selectedLeave.start_date}</p>
-                </div>
-                <div>
-                  <label className="text-[11px] font-bold text-gray-500 uppercase">End Date</label>
-                  <p className="font-medium text-gray-900">{selectedLeave.end_date}</p>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[11px] font-bold text-gray-500 uppercase">Reason provided</label>
-                <div className="mt-1 p-3 bg-gray-50 rounded-lg text-sm text-gray-700 border border-gray-100 min-h-[80px]">
-                  {selectedLeave.reason}
-                </div>
-              </div>
-            </div>
-
-            {selectedLeave.status === 'pending' && (
-              <div className="p-4 border-t border-gray-100 bg-gray-50 flex gap-3 justify-end">
-                <button 
-                  onClick={() => handleActionLeave(selectedLeave.id, 'rejected')}
-                  className="px-5 py-2 text-sm font-bold text-red-600 bg-white border border-red-200 hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  Reject
-                </button>
-                <button 
-                  onClick={() => handleActionLeave(selectedLeave.id, 'approved')}
-                  className="px-5 py-2 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm transition-colors"
-                >
-                  Approve Leave
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }

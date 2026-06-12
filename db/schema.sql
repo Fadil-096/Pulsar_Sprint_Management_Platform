@@ -107,6 +107,18 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at     TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS attendance (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id      INTEGER NOT NULL REFERENCES employees(id),
+  date         TEXT NOT NULL,
+  check_in     TEXT DEFAULT NULL,
+  check_out    TEXT DEFAULT NULL,
+  total_hours  REAL DEFAULT 0,
+  status       TEXT NOT NULL DEFAULT 'Present' CHECK(status IN ('Present','Absent','Half-Day','On Leave','Holiday','Late')),
+  created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(user_id, date)
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_tasks_sprint ON tasks(sprint_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_assigned ON tasks(assigned_to);
@@ -118,3 +130,34 @@ CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON notifications(recipien
 CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(is_read);
 CREATE INDEX IF NOT EXISTS idx_leaves_employee ON leaves(employee_id);
 CREATE INDEX IF NOT EXISTS idx_leaves_manager ON leaves(manager_id);
+
+CREATE TABLE IF NOT EXISTS sprint_notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sprint_id TEXT NOT NULL REFERENCES sprints(sprint_id),
+  title TEXT NOT NULL,
+  content TEXT,
+  created_by INTEGER REFERENCES employees(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS sprint_attachments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sprint_id TEXT NOT NULL REFERENCES sprints(sprint_id),
+  file_name TEXT NOT NULL,
+  file_url TEXT NOT NULL,
+  is_external INTEGER DEFAULT 0,
+  uploaded_by INTEGER REFERENCES employees(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS timer_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  subtask_id TEXT NOT NULL REFERENCES subtasks(subtask_id),
+  employee_id INTEGER NOT NULL REFERENCES employees(id),
+  start_time TEXT NOT NULL DEFAULT (datetime('now')),
+  end_time TEXT DEFAULT NULL,
+  duration REAL DEFAULT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_timer_sessions_employee ON timer_sessions(employee_id);
+CREATE INDEX IF NOT EXISTS idx_timer_sessions_subtask ON timer_sessions(subtask_id);

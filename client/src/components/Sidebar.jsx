@@ -1,20 +1,44 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LayoutDashboard, KanbanSquare, BarChart2, Settings } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 
 export default function Sidebar() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const isManager = user?.role === 'manager';
+  
+  const [pendingLeavesCount, setPendingLeavesCount] = useState(0);
+  const [expandedMenus, setExpandedMenus] = useState(new Set(['team'])); // Auto-expand team menu
+
+  useEffect(() => {
+    if (isManager && token) {
+      axios.get('/api/leaves', { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => {
+          const pending = res.data.filter(l => l.status === 'pending').length;
+          setPendingLeavesCount(pending);
+        })
+        .catch(err => console.error(err));
+    }
+  }, [isManager, token]);
 
   const managerNav = [
     { section: 'Navigation' },
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/manager/dashboard' },
     { id: 'sprints', label: 'Sprints', icon: <KanbanSquare size={20} />, path: '/manager/sprints' },
     { id: 'tasks', label: 'All Tasks', path: '/manager/tasks' },
-    { id: 'employees', label: 'Team', path: '/manager/team' },
+    { 
+      id: 'team', 
+      label: 'Team', 
+      isMenu: true,
+      children: [
+        { id: 'employees', label: 'Team Directory', path: '/manager/team' },
+        { id: 'team-attendance', label: 'Team Attendance', path: '/manager/team-attendance' }
+      ]
+    },
     { id: 'leaves', label: 'Leaves', path: '/manager/leaves' },
     { id: 'reports', label: 'Reports', icon: <BarChart2 size={20} />, path: '/manager/reports' },
-    { id: 'settings', label: 'Settings', icon: <Settings size={20} />, path: '/manager/settings' },
   ];
 
   const employeeNav = [
@@ -28,6 +52,13 @@ export default function Sidebar() {
 
   const nav = isManager ? managerNav : employeeNav;
 
+  const toggleMenu = (id) => {
+    const next = new Set(expandedMenus);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setExpandedMenus(next);
+  };
+
   return (
     <aside className="w-[240px] bg-[#020024] flex-shrink-0 flex flex-col hidden sm:flex pt-6">
       {nav.map((item, idx) => {
@@ -39,19 +70,58 @@ export default function Sidebar() {
           );
         }
         
+        if (item.isMenu) {
+          const isExpanded = expandedMenus.has(item.id);
+          return (
+            <div key={item.id}>
+              <button
+                onClick={() => toggleMenu(item.id)}
+                className="w-full text-left px-6 py-3.5 text-[14px] font-medium text-gray-400 hover:bg-[#0B1536]/50 hover:text-white transition-colors flex items-center justify-between border-l-4 border-transparent"
+              >
+                <span>{item.label}</span>
+                {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              </button>
+              {isExpanded && (
+                <div className="bg-[#050B1E]">
+                  {item.children.map(child => (
+                    <NavLink
+                      key={child.id}
+                      to={child.path}
+                      className={({ isActive }) => `
+                        block px-10 py-2.5 text-[13px] font-medium transition-colors border-l-4
+                        ${isActive 
+                          ? 'bg-[#0B1536] text-white border-blue-600' 
+                          : 'text-gray-400 border-transparent hover:bg-[#0B1536]/50 hover:text-white'
+                        }
+                      `}
+                    >
+                      {child.label}
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        }
+
         return (
           <NavLink
             key={item.id}
             to={item.path}
             className={({ isActive }) => `
-              block px-6 py-3.5 text-[14px] font-medium transition-colors border-l-4
+              block px-6 py-3.5 text-[14px] font-medium transition-colors border-l-4 flex items-center justify-between
               ${isActive 
                 ? 'bg-[#0B1536] text-white border-blue-600' 
                 : 'text-gray-400 border-transparent hover:bg-[#0B1536]/50 hover:text-white'
               }
             `}
           >
-            {item.label}
+            <span>{item.label}</span>
+            {item.id === 'leaves' && isManager && pendingLeavesCount > 0 && (
+              <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                {pendingLeavesCount}
+              </span>
+            )}
           </NavLink>
         );
       })}

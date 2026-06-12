@@ -1,9 +1,23 @@
+import { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogOut } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 
 export default function Topbar() {
   const { user, logout } = useAuth();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setProfileOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <nav className="flex items-center justify-between px-6 h-[64px] bg-[#020024] border-b-[1px] border-[#1A2342] sticky top-0 z-50 text-white">
@@ -21,11 +35,35 @@ export default function Topbar() {
         <span className="border-[1px] border-white/30 text-white text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-widest">
           {user?.role === 'manager' ? 'Manager' : 'Employee'}
         </span>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-[12px] font-bold">
-            {user?.initials}
+        <div className="relative" ref={profileRef}>
+          <div 
+            className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => setProfileOpen(!profileOpen)}
+          >
+            <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-[12px] font-bold">
+              {user?.initials}
+            </div>
+            <span className="text-[14px] font-medium tracking-wide select-none">{user?.name}</span>
           </div>
-          <span className="text-[14px] font-medium tracking-wide">{user?.name}</span>
+          
+          {profileOpen && (
+            <div className="absolute right-0 mt-3 w-48 bg-white rounded-md shadow-xl py-1 border border-gray-100 z-50 text-gray-700 animate-in fade-in slide-in-from-top-2 duration-200">
+              <Link 
+                to={`/${user?.role === 'manager' ? 'manager' : 'employee'}/attendance`} 
+                className="block px-4 py-2.5 text-[13px] font-medium hover:bg-gray-50 transition-colors"
+                onClick={() => setProfileOpen(false)}
+              >
+                Attendance Log
+              </Link>
+              <Link 
+                to={`/${user?.role === 'manager' ? 'manager' : 'employee'}/settings`} 
+                className="block px-4 py-2.5 text-[13px] font-medium hover:bg-gray-50 transition-colors"
+                onClick={() => setProfileOpen(false)}
+              >
+                Settings
+              </Link>
+            </div>
+          )}
         </div>
         <NotificationBell />
         <button 

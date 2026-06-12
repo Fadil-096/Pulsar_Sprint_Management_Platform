@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { Calendar, Users, CheckCircle, Clock, Edit2, Trash2, Plus, X, AlertCircle } from 'lucide-react';
+import { Calendar, Users, CheckCircle, Clock, Edit2, Trash2, Plus, X, AlertCircle, FileText } from 'lucide-react';
 
 export default function Sprints() {
   const { token } = useAuth();
@@ -12,6 +12,7 @@ export default function Sprints() {
 
   const [showModal, setShowModal] = useState(false);
   const [editSprintId, setEditSprintId] = useState(null);
+  const [editSprintStatus, setEditSprintStatus] = useState(null);
   const [formError, setFormError] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   
@@ -25,7 +26,9 @@ export default function Sprints() {
     priority: 'medium',
     sprintGoal: '',
     description: '',
-    members: []
+    members: [],
+    notes: [],
+    attachments: []
   });
 
   useEffect(() => {
@@ -41,40 +44,38 @@ export default function Sprints() {
   };
 
   const fetchEmployees = () => {
-    axios.get('/api/users/employees', { headers: { Authorization: `Bearer ${token}` } })
+    axios.get('/api/users', { headers: { Authorization: `Bearer ${token}` } })
       .then(res => setEmployees(res.data))
       .catch(err => console.error(err));
   };
 
   const openModal = (sprint = null) => {
+    if (employees.length === 0) fetchEmployees();
     if (sprint) {
       setEditSprintId(sprint.sprintId);
+      setEditSprintStatus(sprint.status);
       // Fetch full sprint details to get members
       axios.get(`/api/sprints/${sprint.sprintId}`, { headers: { Authorization: `Bearer ${token}` } })
         .then(res => {
           const data = res.data;
-          const mappedMembers = data.tasks.map(t => {
-            const memberInfo = data.members.find(m => m.userId === t.assignedTo) || {};
+          const mappedMembers = data.members.map(m => {
+            const memberTasks = data.tasks.filter(t => t.assignedTo === m.userId);
+            
+            // Assume featureId is the same for all tasks of a member (as per current schema constraints in UI)
+            const featureId = memberTasks.length > 0 ? (memberTasks[0].featureId || memberTasks[0].feature_id || '') : '';
+            
             return {
-              userId: t.assignedTo,
-              role: memberInfo.role || '',
-              taskTitle: t.title,
-              featureId: t.feature_id || '',
-              estimatedHours: t.estimatedHours || 0
+              userId: m.userId,
+              role: m.role || '',
+              featureId: featureId,
+              tasks: memberTasks.length > 0 ? memberTasks.map(t => ({
+                title: t.title || '',
+                description: t.description || '',
+                estimatedHours: t.estimatedHours || 0,
+                priority: t.priority || 'medium',
+                subtasksList: t.subtasksList || []
+              })) : [{ title: '', description: '', estimatedHours: '', priority: 'medium', subtasksList: [] }]
             };
-          });
-
-          // Also include members who have no tasks
-          data.members.forEach(m => {
-            if (!mappedMembers.find(mm => mm.userId === m.userId)) {
-              mappedMembers.push({
-                userId: m.userId,
-                role: m.role || '',
-                taskTitle: '',
-                featureId: '',
-                estimatedHours: m.estimatedHours || 0
-              });
-            }
           });
 
           setFormData({
@@ -84,7 +85,9 @@ export default function Sprints() {
             priority: data.priority || 'medium',
             sprintGoal: data.sprintGoal || '',
             description: data.description || '',
-            members: mappedMembers
+            members: mappedMembers,
+            notes: data.notes || [],
+            attachments: data.attachments || []
           });
           setFormError('');
           setShowModal(true);
@@ -95,6 +98,7 @@ export default function Sprints() {
         });
     } else {
       setEditSprintId(null);
+      setEditSprintStatus(null);
       setFormData({
         sprintName: '',
         startDate: '',
@@ -102,7 +106,9 @@ export default function Sprints() {
         priority: 'medium',
         sprintGoal: '',
         description: '',
-        members: []
+        members: [],
+        notes: [],
+        attachments: []
       });
       setFormError('');
       setShowModal(true);
@@ -180,7 +186,12 @@ export default function Sprints() {
     if (formData.members.find(m => m.userId === parseInt(userId))) return;
     setFormData({
       ...formData,
-      members: [...formData.members, { userId: parseInt(userId), role: '', taskTitle: '', featureId: '', estimatedHours: '' }]
+      members: [...formData.members, { 
+        userId: parseInt(userId), 
+        role: '', 
+        featureId: '',
+        tasks: [{ title: '', description: '', estimatedHours: '', priority: 'medium' }]
+      }]
     });
   };
 
@@ -188,6 +199,56 @@ export default function Sprints() {
     const updated = [...formData.members];
     updated[index][field] = value;
     setFormData({ ...formData, members: updated });
+  };
+
+  const updateMemberTask = (memberIndex, taskIndex, field, value) => {
+    const updated = [...formData.members];
+    updated[memberIndex].tasks[taskIndex][field] = value;
+    setFormData({ ...formData, members: updated });
+  };
+
+  const addMemberTask = (memberIndex) => {
+    const updated = [...formData.members];
+    updated[memberIndex].tasks.push({ title: '', description: '', estimatedHours: '', priority: 'medium' });
+    setFormData({ ...formData, members: updated });
+  };
+
+  const removeMemberTask = (memberIndex, taskIndex) => {
+    const updated = [...formData.members];
+    updated[memberIndex].tasks.splice(taskIndex, 1);
+    setFormData({ ...formData, members: updated });
+  };
+
+  const updateNote = (index, field, value) => {
+    const updated = [...formData.notes];
+    updated[index][field] = value;
+    setFormData({ ...formData, notes: updated });
+  };
+
+  const addNote = () => {
+    setFormData({ ...formData, notes: [...formData.notes, { title: '', content: '' }] });
+  };
+
+  const removeNote = (index) => {
+    const updated = [...formData.notes];
+    updated.splice(index, 1);
+    setFormData({ ...formData, notes: updated });
+  };
+
+  const updateAttachment = (index, field, value) => {
+    const updated = [...formData.attachments];
+    updated[index][field] = value;
+    setFormData({ ...formData, attachments: updated });
+  };
+
+  const addAttachment = () => {
+    setFormData({ ...formData, attachments: [...formData.attachments, { fileName: '', fileUrl: '', isExternal: true }] });
+  };
+
+  const removeAttachment = (index) => {
+    const updated = [...formData.attachments];
+    updated.splice(index, 1);
+    setFormData({ ...formData, attachments: updated });
   };
 
   const removeMember = (index) => {
@@ -251,11 +312,15 @@ export default function Sprints() {
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  {(sprint.status === 'created' || sprint.status === 'planner') && (
+                  {(sprint.status === 'created' || sprint.status === 'planner') ? (
                     <button onClick={() => openModal(sprint)} className="text-gray-400 hover:text-[#005AFF] transition-colors p-1" title="Edit Sprint">
                       <Edit2 size={16} />
                     </button>
-                  )}
+                  ) : (sprint.status === 'active' && (
+                    <button onClick={() => openModal(sprint)} className="text-gray-400 hover:text-[#005AFF] transition-colors p-1" title="View Details">
+                      <FileText size={16} />
+                    </button>
+                  ))}
                   {confirmDeleteId === sprint.sprintId ? (
                     <button onClick={() => handleDeleteSprint(sprint.sprintId)} className="bg-red-500 text-white px-2 py-1 rounded text-xs font-bold hover:bg-red-600 transition-colors">
                       Confirm Delete
@@ -355,23 +420,23 @@ export default function Sprints() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Sprint Name *</label>
-                      <input type="text" className="w-full px-3 py-2 border-[1.5px] border-gray-300 rounded-md text-sm focus:border-[#005AFF] focus:ring-2 focus:ring-blue-600/10 outline-none" value={formData.sprintName} onChange={e => setFormData({...formData, sprintName: e.target.value})} />
+                      <input type="text" className="w-full px-3 py-2 border-[1.5px] border-gray-300 rounded-md text-sm focus:border-[#005AFF] focus:ring-2 focus:ring-blue-600/10 outline-none disabled:bg-gray-50 disabled:text-gray-600" disabled={editSprintStatus === 'active'} value={formData.sprintName} onChange={e => setFormData({...formData, sprintName: e.target.value})} />
                     </div>
                     <div>
                       <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Sprint Goal</label>
-                      <input type="text" className="w-full px-3 py-2 border-[1.5px] border-gray-300 rounded-md text-sm focus:border-[#005AFF] focus:ring-2 focus:ring-blue-600/10 outline-none" value={formData.sprintGoal} onChange={e => setFormData({...formData, sprintGoal: e.target.value})} />
+                      <input type="text" className="w-full px-3 py-2 border-[1.5px] border-gray-300 rounded-md text-sm focus:border-[#005AFF] focus:ring-2 focus:ring-blue-600/10 outline-none disabled:bg-gray-50 disabled:text-gray-600" disabled={editSprintStatus === 'active'} value={formData.sprintGoal} onChange={e => setFormData({...formData, sprintGoal: e.target.value})} />
                     </div>
                     <div>
                       <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Start Date *</label>
-                      <input type="date" className="w-full px-3 py-2 border-[1.5px] border-gray-300 rounded-md text-sm focus:border-[#005AFF] focus:ring-2 focus:ring-blue-600/10 outline-none" value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} />
+                      <input type="date" className="w-full px-3 py-2 border-[1.5px] border-gray-300 rounded-md text-sm focus:border-[#005AFF] focus:ring-2 focus:ring-blue-600/10 outline-none disabled:bg-gray-50 disabled:text-gray-600" disabled={editSprintStatus === 'active'} value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} />
                     </div>
                     <div>
                       <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">End Date *</label>
-                      <input type="date" className="w-full px-3 py-2 border-[1.5px] border-gray-300 rounded-md text-sm focus:border-[#005AFF] focus:ring-2 focus:ring-blue-600/10 outline-none" value={formData.endDate} onChange={e => setFormData({...formData, endDate: e.target.value})} />
+                      <input type="date" className="w-full px-3 py-2 border-[1.5px] border-gray-300 rounded-md text-sm focus:border-[#005AFF] focus:ring-2 focus:ring-blue-600/10 outline-none disabled:bg-gray-50 disabled:text-gray-600" disabled={editSprintStatus === 'active'} value={formData.endDate} onChange={e => setFormData({...formData, endDate: e.target.value})} />
                     </div>
                     <div className="col-span-2">
                       <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Description</label>
-                      <textarea className="w-full px-3 py-2 border-[1.5px] border-gray-300 rounded-md text-sm focus:border-[#005AFF] focus:ring-2 focus:ring-blue-600/10 outline-none" rows="2" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}></textarea>
+                      <textarea className="w-full px-3 py-2 border-[1.5px] border-gray-300 rounded-md text-sm focus:border-[#005AFF] focus:ring-2 focus:ring-blue-600/10 outline-none disabled:bg-gray-50 disabled:text-gray-600" disabled={editSprintStatus === 'active'} rows="2" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}></textarea>
                     </div>
                   </div>
                 </div>
@@ -380,14 +445,16 @@ export default function Sprints() {
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Team Member Assignment</h3>
-                    <div className="flex items-center gap-2">
-                      <select className="px-3 py-1.5 border-[1.5px] border-gray-300 rounded-md text-xs focus:border-[#005AFF] outline-none" onChange={(e) => { addMember(e.target.value); e.target.value = ''; }}>
-                        <option value="">+ Assign Member</option>
-                        {employees.map(emp => (
-                          <option key={emp.id} value={emp.id}>{emp.name} ({emp.role})</option>
-                        ))}
-                      </select>
-                    </div>
+                    {editSprintStatus !== 'active' && (
+                      <div className="flex items-center gap-2">
+                        <select className="px-3 py-1.5 border-[1.5px] border-gray-300 rounded-md text-xs focus:border-[#005AFF] outline-none" onChange={(e) => { addMember(e.target.value); e.target.value = ''; }}>
+                          <option value="">{employees.length === 0 ? 'Loading members...' : '+ Assign Member'}</option>
+                          {employees.map(emp => (
+                            <option key={emp.id} value={emp.id}>{emp.name} ({emp.role})</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-3">
@@ -395,18 +462,20 @@ export default function Sprints() {
                       const empDetails = employees.find(e => e.id === member.userId);
                       return (
                         <div key={idx} className="bg-white p-3 border border-gray-200 rounded-md relative shadow-sm">
-                          <button type="button" onClick={() => removeMember(idx)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500"><X size={14}/></button>
+                          {editSprintStatus !== 'active' && (
+                            <button type="button" onClick={() => removeMember(idx)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500"><X size={14}/></button>
+                          )}
                           
                           <div className="font-bold text-sm text-[#020024] mb-3">{empDetails?.name || 'Unknown'}</div>
                           
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                             <div>
                               <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Feature ID</label>
-                              <input type="text" placeholder="e.g. FEAT-101" className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:border-[#005AFF] outline-none" value={member.featureId} onChange={e => updateMember(idx, 'featureId', e.target.value)} />
+                              <input type="text" placeholder="e.g. FEAT-101" className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:border-[#005AFF] outline-none disabled:bg-gray-50 disabled:text-gray-600" disabled={editSprintStatus === 'active'} value={member.featureId} onChange={e => updateMember(idx, 'featureId', e.target.value)} />
                             </div>
                             <div>
                               <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Role</label>
-                              <select className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:border-[#005AFF] outline-none" value={member.role} onChange={e => updateMember(idx, 'role', e.target.value)}>
+                              <select className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:border-[#005AFF] outline-none disabled:bg-gray-50 disabled:text-gray-600" disabled={editSprintStatus === 'active'} value={member.role} onChange={e => updateMember(idx, 'role', e.target.value)}>
                                 <option value="">Select Role...</option>
                                 <option value="Developer">Developer</option>
                                 <option value="Tester">Tester</option>
@@ -414,14 +483,77 @@ export default function Sprints() {
                                 <option value="DevOps">DevOps</option>
                               </select>
                             </div>
-                            <div>
-                              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Assigned Task</label>
-                              <input type="text" placeholder="Task summary" className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:border-[#005AFF] outline-none" value={member.taskTitle} onChange={e => updateMember(idx, 'taskTitle', e.target.value)} />
+                            <div className="col-span-2 flex items-end justify-end">
+                              <div className="text-right">
+                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1">Total Est. Hours</span>
+                                <span className="text-sm font-bold text-[#020024]">{(member.tasks || []).reduce((sum, t) => sum + (Number(t.estimatedHours) || 0), 0)} h</span>
+                              </div>
                             </div>
-                            <div>
-                              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Est. Hours</label>
-                              <input type="number" placeholder="0" className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:border-[#005AFF] outline-none" value={member.estimatedHours} onChange={e => updateMember(idx, 'estimatedHours', e.target.value)} />
+                          </div>
+
+                          <div className="bg-gray-50 p-3 rounded border border-gray-200 space-y-3">
+                            <div className="flex justify-between items-center">
+                              <h4 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Assigned Tasks</h4>
+                              {editSprintStatus !== 'active' && (
+                                <button type="button" onClick={() => addMemberTask(idx)} className="text-[10px] font-bold text-[#005AFF] hover:underline flex items-center gap-1">
+                                  <Plus size={12}/> Add Task
+                                </button>
+                              )}
                             </div>
+                            {(member.tasks || []).map((task, tIdx) => (
+                              <div key={tIdx} className="bg-white p-2.5 rounded border border-gray-200 relative flex flex-col gap-3">
+                                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+                                  <div className="col-span-12 md:col-span-4">
+                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Task Title</label>
+                                    <input type="text" placeholder="Task summary" className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:border-[#005AFF] outline-none disabled:bg-gray-50 disabled:text-gray-600" disabled={editSprintStatus === 'active'} value={task.title} onChange={e => updateMemberTask(idx, tIdx, 'title', e.target.value)} />
+                                  </div>
+                                  <div className="col-span-12 md:col-span-5">
+                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Description</label>
+                                    <input type="text" placeholder="Task description..." className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:border-[#005AFF] outline-none disabled:bg-gray-50 disabled:text-gray-600" disabled={editSprintStatus === 'active'} value={task.description} onChange={e => updateMemberTask(idx, tIdx, 'description', e.target.value)} />
+                                  </div>
+                                  <div className="col-span-10 md:col-span-2">
+                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Est. Hours</label>
+                                    <input type="number" placeholder="0" className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:border-[#005AFF] outline-none disabled:bg-gray-50 disabled:text-gray-600" disabled={editSprintStatus === 'active'} value={task.estimatedHours} onChange={e => updateMemberTask(idx, tIdx, 'estimatedHours', e.target.value)} />
+                                  </div>
+                                  <div className="col-span-2 md:col-span-1 flex justify-end mt-4">
+                                    {editSprintStatus !== 'active' && (
+                                      <button type="button" onClick={() => removeMemberTask(idx, tIdx)} className="text-gray-400 hover:text-red-500 p-1"><X size={14}/></button>
+                                    )}
+                                  </div>
+                                </div>
+                                {task.subtasksList && task.subtasksList.length > 0 && (
+                                  <div className="mt-2 pl-4 border-l-2 border-gray-200">
+                                    <h5 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Subtasks Breakdown</h5>
+                                    <div className="space-y-2">
+                                      {task.subtasksList.map((sub, sIdx) => (
+                                        <div key={sIdx} className="flex justify-between items-center bg-gray-50 px-3 py-2 rounded border border-gray-100">
+                                          <div className="flex flex-col">
+                                            <span className="text-xs font-medium text-gray-800">{sub.title}</span>
+                                            {sub.description && <span className="text-[10px] text-gray-500">{sub.description}</span>}
+                                          </div>
+                                          <div className="flex items-center gap-4">
+                                            <div className="text-right">
+                                              <span className="block text-[9px] font-bold text-gray-400 uppercase">Hours (Spent / Est)</span>
+                                              <span className="text-xs font-medium text-gray-700">{sub.spentHours || 0}h / {sub.estimatedHours}h</span>
+                                            </div>
+                                            <span className={`text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide ${
+                                              sub.status === 'done' ? 'bg-green-100 text-green-700 border border-green-200' :
+                                              sub.status === 'inprogress' ? 'bg-blue-100 text-blue-700 border border-blue-200' :
+                                              'bg-gray-100 text-gray-600 border border-gray-200'
+                                            }`}>
+                                              {sub.status}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                            {(!member.tasks || member.tasks.length === 0) && (
+                              <div className="text-center py-2 text-xs text-gray-400">No tasks assigned yet.</div>
+                            )}
                           </div>
                         </div>
                       );
@@ -434,16 +566,83 @@ export default function Sprints() {
                   </div>
                 </div>
 
+                {/* Requirements & Notes */}
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Requirements & References</h3>
+                  </div>
+
+                  <div className="space-y-6">
+                    {/* Notes Section */}
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Notes & Descriptions</h4>
+                        <button type="button" onClick={addNote} className="text-[10px] font-bold text-[#005AFF] hover:underline flex items-center gap-1">
+                          <Plus size={12}/> Add Note
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        {formData.notes.map((note, idx) => (
+                          <div key={idx} className="bg-white p-3 rounded border border-gray-200 relative shadow-sm">
+                            {editSprintStatus !== 'active' && (
+                              <button type="button" onClick={() => removeNote(idx)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500"><X size={14}/></button>
+                            )}
+                            <div className="pr-6 mb-2">
+                              <input type="text" placeholder="Note Title (e.g., API Constraints)" className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs font-bold focus:border-[#005AFF] outline-none mb-2 disabled:bg-gray-50 disabled:text-gray-600" disabled={editSprintStatus === 'active'} value={note.title} onChange={e => updateNote(idx, 'title', e.target.value)} />
+                              <textarea placeholder="Note content..." className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:border-[#005AFF] outline-none disabled:bg-gray-50 disabled:text-gray-600" disabled={editSprintStatus === 'active'} rows="3" value={note.content} onChange={e => updateNote(idx, 'content', e.target.value)}></textarea>
+                            </div>
+                          </div>
+                        ))}
+                        {formData.notes.length === 0 && (
+                          <div className="text-center py-3 text-xs text-gray-400 bg-white border border-dashed border-gray-200 rounded-md">
+                            No notes added.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Attachments Section */}
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">External Documents</h4>
+                        <button type="button" onClick={addAttachment} className="text-[10px] font-bold text-[#005AFF] hover:underline flex items-center gap-1">
+                          <Plus size={12}/> Add Link
+                        </button>
+                      </div>
+                      <div className="space-y-3">
+                        {formData.attachments.map((att, idx) => (
+                          <div key={idx} className="bg-white p-3 rounded border border-gray-200 relative shadow-sm flex items-center gap-3">
+                            <div className="flex-1">
+                              <input type="text" placeholder="Document Name (e.g., Figma Design)" className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:border-[#005AFF] outline-none mb-2 disabled:bg-gray-50 disabled:text-gray-600" disabled={editSprintStatus === 'active'} value={att.fileName} onChange={e => updateAttachment(idx, 'fileName', e.target.value)} />
+                              <input type="url" placeholder="https://..." className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs focus:border-[#005AFF] outline-none disabled:bg-gray-50 disabled:text-gray-600" disabled={editSprintStatus === 'active'} value={att.fileUrl} onChange={e => updateAttachment(idx, 'fileUrl', e.target.value)} />
+                            </div>
+                            {editSprintStatus !== 'active' && (
+                              <button type="button" onClick={() => removeAttachment(idx)} className="text-gray-400 hover:text-red-500 p-2"><X size={16}/></button>
+                            )}
+                          </div>
+                        ))}
+                        {formData.attachments.length === 0 && (
+                          <div className="text-center py-3 text-xs text-gray-400 bg-white border border-dashed border-gray-200 rounded-md">
+                            No document links added.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
             
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 bg-gray-50/50">
               <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 text-sm font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-md transition-colors">
-                Cancel
+                {editSprintStatus === 'active' ? 'Close' : 'Cancel'}
               </button>
-              <button type="button" onClick={handleCreateOrEditSprint} className="px-6 py-2.5 text-sm font-bold bg-[#005AFF] text-white rounded-md hover:bg-blue-700 shadow-sm transition-colors uppercase tracking-wider">
-                {editSprintId ? 'Save Changes' : 'Create Sprint'}
-              </button>
+              {editSprintStatus !== 'active' && (
+                <button type="button" onClick={handleCreateOrEditSprint} className="px-6 py-2.5 text-sm font-bold bg-[#005AFF] text-white rounded-md hover:bg-blue-700 shadow-sm transition-colors uppercase tracking-wider">
+                  {editSprintId ? 'Save Changes' : 'Create Sprint'}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -475,8 +674,11 @@ export default function Sprints() {
                   <div className="text-sm font-bold text-[#020024]">{reportData.sprint.sprint_goal || 'None'}</div>
                 </div>
                 <div className="p-4 bg-green-50 rounded-lg border border-green-100">
-                  <div className="text-[10px] text-green-700 font-bold uppercase tracking-wider mb-1">Total Effort Logged</div>
-                  <div className="text-lg font-bold text-green-700">{reportData.members.reduce((sum, m) => sum + m.spentHours, 0)}h</div>
+                  <div className="text-[10px] text-green-700 font-bold uppercase tracking-wider mb-1">Effort (Actual / Est.)</div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-lg font-bold text-green-700">{reportData.members.reduce((sum, m) => sum + m.spentHours, 0)}h</span>
+                    <span className="text-sm font-bold text-green-700/70">/ {reportData.members.reduce((sum, m) => sum + m.estimatedHours, 0)}h</span>
+                  </div>
                 </div>
                 <div className="p-4 bg-amber-50 rounded-lg border border-amber-100">
                   <div className="text-[10px] text-amber-700 font-bold uppercase tracking-wider mb-1">Unresolved Queries</div>
