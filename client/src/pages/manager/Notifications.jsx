@@ -97,8 +97,8 @@ export default function Notifications() {
     <div className="max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-[#020024]">Notifications Manager</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage team updates, queries, and leave requests.</p>
+          <h1 className="text-2xl font-bold text-text-primary">Notifications Manager</h1>
+          <p className="text-text-secondary text-sm mt-1">Manage team updates, queries, and leave requests.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
@@ -110,16 +110,16 @@ export default function Notifications() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-bg-card rounded-xl shadow-sm border border-line-light overflow-hidden">
         {/* Toolbar */}
-        <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+        <div className="p-4 border-b border-line-light bg-gray-50/50 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar w-full md:w-auto">
             {['All', 'Unread', 'Queries', 'Leave Requests', 'Sprint', 'General'].map(tab => (
               <button
                 key={tab}
                 onClick={() => { setActiveTab(tab); setSelectedIds([]); }}
                 className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${
-                  activeTab === tab ? 'bg-[#020024] text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                  activeTab === tab ? 'bg-bg-sidebar text-white' : 'bg-bg-card text-text-secondary border border-line hover:bg-gray-50'
                 }`}
               >
                 {tab}
@@ -129,16 +129,16 @@ export default function Notifications() {
           
           <div className="flex items-center gap-3 w-full md:w-auto">
             <div className="relative flex-1 md:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
               <input 
                 type="text" 
                 placeholder="Search notifications..."
-                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF]"
+                className="w-full pl-9 pr-4 py-2 bg-bg-card border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <button className="p-2 border border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50 bg-white">
+            <button className="p-2 border border-line text-text-secondary rounded-lg hover:bg-gray-50 bg-bg-card">
               <Filter size={18} />
             </button>
           </div>
@@ -146,25 +146,25 @@ export default function Notifications() {
 
         {/* List Header & Bulk Actions */}
         {filteredNotifications.length > 0 && (
-          <div className={`px-4 py-3 border-b flex items-center justify-between transition-colors ${selectedIds.length > 0 ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 border-gray-100'}`}>
+          <div className={`px-4 py-3 border-b flex items-center justify-between transition-colors ${selectedIds.length > 0 ? 'bg-blue-50 border-blue-100' : 'bg-bg-secondary border-line-light'}`}>
             <div className="flex items-center gap-4">
               <input 
                 type="checkbox" 
                 checked={selectedIds.length === filteredNotifications.length && filteredNotifications.length > 0}
                 onChange={toggleSelectAll}
-                className="w-4 h-4 text-[#005AFF] rounded border-gray-300 focus:ring-[#005AFF]"
+                className="w-4 h-4 text-accent-blue rounded border-line focus:ring-[#005AFF]"
               />
-              <span className={`text-sm font-bold ${selectedIds.length > 0 ? 'text-blue-800' : 'text-gray-500 uppercase tracking-wider text-[11px]'}`}>
+              <span className={`text-sm font-bold ${selectedIds.length > 0 ? 'text-blue-800' : 'text-text-secondary uppercase tracking-wider text-[11px]'}`}>
                 {selectedIds.length > 0 ? `${selectedIds.length} selected` : 'Select All'}
               </span>
             </div>
             
             {selectedIds.length > 0 && (
               <div className="flex gap-2">
-                <button onClick={handleBulkMarkRead} className="px-3 py-1.5 bg-white text-blue-700 text-xs font-bold rounded border border-blue-200 shadow-sm hover:bg-blue-50">
+                <button onClick={handleBulkMarkRead} className="px-3 py-1.5 bg-bg-card text-blue-700 text-xs font-bold rounded border border-blue-200 shadow-sm hover:bg-blue-50">
                   Mark as Read
                 </button>
-                <button onClick={handleBulkDelete} className="px-3 py-1.5 bg-white text-red-600 text-xs font-bold rounded border border-red-200 shadow-sm hover:bg-red-50">
+                <button onClick={handleBulkDelete} className="px-3 py-1.5 bg-bg-card text-red-600 text-xs font-bold rounded border border-red-200 shadow-sm hover:bg-red-50">
                   Delete
                 </button>
               </div>
@@ -176,11 +176,11 @@ export default function Notifications() {
         <div className="divide-y divide-gray-100">
           {filteredNotifications.length === 0 ? (
             <div className="p-12 text-center">
-              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
                 <Bell className="text-gray-300" size={24} />
               </div>
-              <h3 className="text-lg font-bold text-gray-700">All Caught Up!</h3>
-              <p className="text-gray-500 mt-1">No notifications found for this filter.</p>
+              <h3 className="text-lg font-bold text-text-secondary">All Caught Up!</h3>
+              <p className="text-text-secondary mt-1">No notifications found for this filter.</p>
             </div>
           ) : (
             filteredNotifications.map(notification => (
@@ -199,12 +199,12 @@ export default function Notifications() {
                     type="checkbox" 
                     checked={selectedIds.includes(notification.id)}
                     onChange={() => toggleSelect(notification.id)}
-                    className="w-4 h-4 text-[#005AFF] rounded border-gray-300 focus:ring-[#005AFF]"
+                    className="w-4 h-4 text-accent-blue rounded border-line focus:ring-[#005AFF]"
                   />
                 </div>
                 
                 <div className="flex-shrink-0 mt-0.5">
-                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-bg-secondary flex items-center justify-center">
                     {getIcon(notification.type)}
                   </div>
                 </div>
@@ -212,17 +212,17 @@ export default function Notifications() {
                 <div className="flex-1 min-w-0 cursor-pointer">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
-                      {!notification.is_read && <span className="w-2 h-2 rounded-full bg-[#005AFF]"></span>}
-                      <span className="text-sm font-bold text-[#020024]">{notification.title}</span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600">
+                      {!notification.is_read && <span className="w-2 h-2 rounded-full bg-accent-blue"></span>}
+                      <span className="text-sm font-bold text-text-primary">{notification.title}</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-bg-secondary text-text-secondary">
                         {notification.type}
                       </span>
                     </div>
-                    <span className="text-xs text-gray-400 font-medium">
+                    <span className="text-xs text-text-muted font-medium">
                       {notification.created_at ? new Date(notification.created_at.replace(' ', 'T') + 'Z').toLocaleString() : ''}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600">{notification.message}</p>
+                  <p className="text-sm text-text-secondary">{notification.message}</p>
                 </div>
               </div>
             ))
@@ -233,8 +233,8 @@ export default function Notifications() {
       {/* Leave Request Modal */}
       {selectedLeave && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-[#020024] text-white">
+          <div className="bg-bg-card rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 border-b border-line-light flex justify-between items-center bg-bg-sidebar text-white">
               <h2 className="text-lg font-bold">Leave Request Details</h2>
               <button onClick={() => setSelectedLeave(null)} className="text-white/70 hover:text-white">
                 <X size={20} />
@@ -242,13 +242,13 @@ export default function Notifications() {
             </div>
             
             <div className="p-6 space-y-4">
-              <div className="flex items-center gap-4 pb-4 border-b border-gray-100">
-                <div className="w-12 h-12 rounded-full bg-blue-100 text-[#005AFF] flex items-center justify-center font-bold text-lg">
+              <div className="flex items-center gap-4 pb-4 border-b border-line-light">
+                <div className="w-12 h-12 rounded-full bg-blue-100 text-accent-blue flex items-center justify-center font-bold text-lg">
                   {selectedLeave.employeeInitials}
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900">{selectedLeave.employeeName}</h3>
-                  <p className="text-sm text-gray-500">{selectedLeave.role} • {selectedLeave.department}</p>
+                  <h3 className="font-bold text-text-primary">{selectedLeave.employeeName}</h3>
+                  <p className="text-sm text-text-secondary">{selectedLeave.role} • {selectedLeave.department}</p>
                 </div>
                 <div className="ml-auto">
                   <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
@@ -263,36 +263,36 @@ export default function Notifications() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[11px] font-bold text-gray-500 uppercase">Leave Type</label>
-                  <p className="font-medium text-gray-900 capitalize">{selectedLeave.leave_type}</p>
+                  <label className="text-[11px] font-bold text-text-secondary uppercase">Leave Type</label>
+                  <p className="font-medium text-text-primary capitalize">{selectedLeave.leave_type}</p>
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-gray-500 uppercase">Duration</label>
-                  <p className="font-medium text-gray-900">{selectedLeave.duration_days} Day(s)</p>
+                  <label className="text-[11px] font-bold text-text-secondary uppercase">Duration</label>
+                  <p className="font-medium text-text-primary">{selectedLeave.duration_days} Day(s)</p>
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-gray-500 uppercase">Start Date</label>
-                  <p className="font-medium text-gray-900">{selectedLeave.start_date}</p>
+                  <label className="text-[11px] font-bold text-text-secondary uppercase">Start Date</label>
+                  <p className="font-medium text-text-primary">{selectedLeave.start_date}</p>
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-gray-500 uppercase">End Date</label>
-                  <p className="font-medium text-gray-900">{selectedLeave.end_date}</p>
+                  <label className="text-[11px] font-bold text-text-secondary uppercase">End Date</label>
+                  <p className="font-medium text-text-primary">{selectedLeave.end_date}</p>
                 </div>
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-gray-500 uppercase">Reason provided</label>
-                <div className="mt-1 p-3 bg-gray-50 rounded-lg text-sm text-gray-700 border border-gray-100 min-h-[80px]">
+                <label className="text-[11px] font-bold text-text-secondary uppercase">Reason provided</label>
+                <div className="mt-1 p-3 bg-bg-secondary rounded-lg text-sm text-text-secondary border border-line-light min-h-[80px]">
                   {selectedLeave.reason}
                 </div>
               </div>
             </div>
 
             {selectedLeave.status === 'pending' && (
-              <div className="p-4 border-t border-gray-100 bg-gray-50 flex gap-3 justify-end">
+              <div className="p-4 border-t border-line-light bg-bg-secondary flex gap-3 justify-end">
                 <button 
                   onClick={() => handleActionLeave(selectedLeave.id, 'rejected')}
-                  className="px-5 py-2 text-sm font-bold text-red-600 bg-white border border-red-200 hover:bg-red-50 rounded-lg transition-colors"
+                  className="px-5 py-2 text-sm font-bold text-red-600 bg-bg-card border border-red-200 hover:bg-red-50 rounded-lg transition-colors"
                 >
                   Reject
                 </button>

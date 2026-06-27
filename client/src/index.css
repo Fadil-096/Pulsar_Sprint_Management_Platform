@@ -3,18 +3,61 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --bg-primary: #ffffff;
-    --bg-secondary: #f5f5f3;
-    --bg-tertiary: #eeede9;
-    --text-primary: #1a1a18;
-    --text-secondary: #5f5e5a;
-    --text-tertiary: #888780;
-    --border-light: rgba(0,0,0,0.12);
-    --border-medium: rgba(0,0,0,0.22);
-    --radius-sm: 6px;
-    --radius-md: 8px;
-    --radius-lg: 12px;
+  /* LIGHT MODE (default) */
+  :root, [data-theme="light"] {
+    --color-bg-primary: #FFFFFF;
+    --color-bg-secondary: #F8F9FA;
+    --color-bg-card: #FFFFFF;
+    --color-bg-sidebar: #0F172A;
+    --color-text-primary: #0F172A;
+    --color-text-secondary: #6B7280;
+    --color-text-muted: #9CA3AF;
+    --color-border: #E5E7EB;
+    --color-border-light: #F3F4F6;
+    --color-accent-blue: #0066CC;
+    --color-accent-blue-light: #EFF6FF;
+    --color-input-bg: #FFFFFF;
+    --color-input-border: #E2E8F0;
+    --color-table-header: #F9FAFB;
+    --color-table-row-alt: #FAFBFC;
+    --color-shadow: rgba(0, 0, 0, 0.08);
+    --color-shadow-md: rgba(0, 0, 0, 0.12);
+    --color-nav-bg: #0F172A;
+    --color-nav-text: #FFFFFF;
+    --color-badge-pending-bg: #FFF3CD;
+    --color-badge-pending-text: #856404;
+    --color-badge-approved-bg: #D1FAE5;
+    --color-badge-approved-text: #065F46;
+    --color-badge-rejected-bg: #FEE2E2;
+    --color-badge-rejected-text: #991B1B;
+    --color-badge-active-bg: #DBEAFE;
+    --color-badge-active-text: #1D4ED8;
+    --color-badge-planner-bg: #F3E8FF;
+    --color-badge-planner-text: #6B21A8;
+    --color-badge-completed-bg: #F1F5F9;
+    --color-badge-completed-text: #475569;
+    --color-badge-created-bg: #FFF3CD;
+    --color-badge-created-text: #856404;
+    
+    --color-dropdown-hover-bg: #F3F4F6;
+    --color-dropdown-hover-border: #E5E7EB;
+    --color-dropdown-active-bg: #EFF6FF;
+    --color-dropdown-active-text: #0066CC;
+    --color-sidebar-hover-bg: #1E293B;
+    --color-sidebar-active-bg: #1E293B;
+    --color-sidebar-hover-text: #FFFFFF;
+    --color-sidebar-active-text: #FFFFFF;
+    --color-placeholder: #9CA3AF;
+    --color-link: #0066CC;
+    --color-success-text: #065F46;
+    --color-warning-text: #856404;
+    --color-error-text: #991B1B;
+    --color-shadow-lg: rgba(0, 0, 0, 0.1);
+    --color-shadow-xl: rgba(0, 0, 0, 0.15);
+    
+    --color-overlay: rgba(0, 0, 0, 0.5);
+
+    /* Keep standard tailwind variables for backward compatibility if missed during refactoring */
     --blue-50: #E5F0FF;
     --blue-200: #99C2FF;
     --blue-400: #3385FF;
@@ -32,19 +75,92 @@
     --teal-600: #0F6E56;
   }
 
-
+  /* DARK MODE */
+  [data-theme="dark"] {
+    --color-bg-primary: #0F172A;
+    --color-bg-secondary: #1E293B;
+    --color-bg-card: #1E293B;
+    --color-bg-sidebar: #020617;
+    --color-text-primary: #F1F5F9;
+    --color-text-secondary: #CBD5E1;
+    --color-text-muted: #94A3B8;
+    --color-border: #334155;
+    --color-border-light: #1E293B;
+    --color-accent-blue: #3B82F6;
+    --color-accent-blue-light: #1E3A5F;
+    --color-input-bg: #1E293B;
+    --color-input-border: #334155;
+    --color-table-header: #1E293B;
+    --color-table-row-alt: #162032;
+    --color-shadow: rgba(0, 0, 0, 0.3);
+    --color-shadow-md: rgba(0, 0, 0, 0.4);
+    --color-nav-bg: #020617;
+    --color-nav-text: #F1F5F9;
+    --color-badge-pending-bg: #422006;
+    --color-badge-pending-text: #FCD34D;
+    --color-badge-approved-bg: #052E16;
+    --color-badge-approved-text: #4ADE80;
+    --color-badge-rejected-bg: #450A0A;
+    --color-badge-rejected-text: #FCA5A5;
+    --color-badge-active-bg: #052E16;
+    --color-badge-active-text: #4ADE80;
+    --color-badge-planner-bg: #1E3A5F;
+    --color-badge-planner-text: #93C5FD;
+    --color-badge-completed-bg: #1A1A2E;
+    --color-badge-completed-text: #94A3B8;
+    --color-badge-created-bg: #422006;
+    --color-badge-created-text: #FCD34D;
+    
+    --color-dropdown-hover-bg: #263548;
+    --color-dropdown-hover-border: #4B6280;
+    --color-dropdown-active-bg: #1E3A5F;
+    --color-dropdown-active-text: #93C5FD;
+    --color-sidebar-hover-bg: #0F172A;
+    --color-sidebar-active-bg: #1E293B;
+    --color-sidebar-hover-text: #CBD5E1;
+    --color-sidebar-active-text: #FFFFFF;
+    --color-placeholder: #64748B;
+    --color-link: #60A5FA;
+    --color-success-text: #4ADE80;
+    --color-warning-text: #FCD34D;
+    --color-error-text: #FCA5A5;
+    --color-shadow-lg: rgba(0, 0, 0, 0.4);
+    --color-shadow-xl: rgba(0, 0, 0, 0.5);
+    
+    --color-overlay: rgba(0, 0, 0, 0.7);
+  }
 
   body {
     font-family: -apple-system, 'Segoe UI', sans-serif;
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
     min-height: 100vh;
+  }
+  
+  /* FOUC Prevention */
+  .preload, .preload * {
+    transition: none !important;
+  }
+
+  /* Optimized Theme Toggling (active only during click) */
+  body.theme-switching * {
+    transition: background-color 150ms ease-out,
+                border-color 150ms ease-out,
+                color 80ms ease-out !important;
+  }
+
+  /* Accessibility: Reduced Motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      transition: none !important;
+      animation: none !important;
+    }
   }
 }
 
 @layer components {
   .btn {
-    @apply inline-flex items-center gap-1.5 px-3.5 py-[7px] rounded-md text-[13px] border-[0.5px] border-border-medium bg-bg-primary text-text-primary transition-all duration-150 cursor-pointer;
+    @apply inline-flex items-center gap-1.5 px-3.5 py-[7px] rounded-md text-[13px] border-[0.5px] border-line bg-bg-primary text-text-primary transition-all duration-150 cursor-pointer;
   }
   .btn:hover {
     @apply bg-bg-secondary;
@@ -53,17 +169,17 @@
     @apply scale-[0.98];
   }
   .btn-primary {
-    @apply bg-blue-600 text-white border-blue-600;
+    @apply bg-accent-blue text-white border-accent-blue;
   }
   .btn-primary:hover {
-    @apply bg-blue-800;
+    @apply bg-accent-blue opacity-90;
   }
   .btn-sm {
     @apply px-2.5 py-[5px] text-[12px];
   }
 
   .card {
-    @apply bg-bg-primary rounded-lg border-[0.5px] border-border-light p-5 mb-3.5;
+    @apply bg-bg-card rounded-lg border-[0.5px] border-line-light p-5 mb-3.5;
   }
   .card-title {
     @apply text-[14px] font-medium mb-3;
@@ -72,15 +188,15 @@
   .badge {
     @apply inline-block text-[11px] px-2 py-0.5 rounded-full font-medium;
   }
-  .badge-done    { @apply bg-green-50 text-green-800; }
-  .badge-progress { @apply bg-blue-50 text-blue-800; }
-  .badge-blocked  { @apply bg-red-50 text-red-800; }
-  .badge-todo    { @apply bg-bg-secondary text-text-secondary; }
-  .badge-manager  { @apply bg-blue-50 text-blue-600; }
-  .badge-employee { @apply bg-teal-50 text-teal-600; }
+  .badge-done    { @apply bg-badge-completed-bg text-badge-completed-text border border-line-light; }
+  .badge-progress { @apply bg-badge-active-bg text-badge-active-text border border-[#166534]; }
+  .badge-blocked  { @apply bg-badge-rejected-bg text-badge-rejected-text border border-badge-rejected-text; }
+  .badge-todo    { @apply bg-badge-pending-bg text-badge-pending-text border border-[#92400E]; }
+  .badge-manager  { @apply bg-badge-active-bg text-badge-active-text; }
+  .badge-employee { @apply bg-badge-pending-bg text-badge-pending-text; }
 
   .input-field {
-    @apply w-full px-2.5 py-2 border-[0.5px] border-border-medium rounded-md text-[13px] bg-bg-primary text-text-primary transition-colors focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200;
+    @apply w-full px-2.5 py-2 border-[0.5px] border-line rounded-md text-[13px] bg-input-bg text-text-primary transition-colors focus:outline-none focus:border-accent-blue focus:ring-2 focus:ring-accent-blue-light;
   }
 }
 

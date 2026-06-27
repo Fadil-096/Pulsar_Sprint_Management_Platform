@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bell, CheckCircle2, MessageSquare, Calendar, AlertCircle } from 'lucide-react';
+import { Bell, CheckCircle2, MessageSquare, Calendar, AlertCircle, Clock, ArrowRight, BellRing } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
@@ -28,12 +28,13 @@ export default function NotificationBell() {
   }, []);
 
   const handleNotificationClick = (notification) => {
-    markAsRead(notification.id);
+    if (!notification.is_read) {
+      markAsRead(notification.id);
+    }
     setIsOpen(false);
     
     const baseRoute = user?.role === 'manager' ? '/manager' : '/employee';
     
-    // Route based on type
     if (notification.type === 'leave') {
       navigate(`${baseRoute}/leaves${notification.reference_id ? `?leaveId=${notification.reference_id}` : ''}`);
     } else if (notification.type === 'query' || notification.type === 'sprint' || notification.type === 'task' || notification.type === 'subtask') {
@@ -43,15 +44,57 @@ export default function NotificationBell() {
     }
   };
 
-  const getIcon = (type) => {
+  const getTypeConfig = (type) => {
     switch(type) {
-      case 'leave': return <Calendar size={16} className="text-purple-500" />;
-      case 'query': return <MessageSquare size={16} className="text-blue-500" />;
-      case 'sprint': 
+      case 'leave': return { 
+        icon: <Calendar size={12} className="text-white" />, 
+        color: 'bg-purple-500', 
+        badgeLabel: 'Leave', 
+        badgeColor: 'text-badge-planner-text bg-badge-planner-bg border-badge-planner-text/30' 
+      };
+      case 'query': return { 
+        icon: <MessageSquare size={12} className="text-white" />, 
+        color: 'bg-orange-500', 
+        badgeLabel: 'Query', 
+        badgeColor: 'text-badge-created-text bg-badge-created-bg border-badge-created-text/30' 
+      };
+      case 'sprint': return { 
+        icon: <CheckCircle2 size={12} className="text-white" />, 
+        color: 'bg-blue-500', 
+        badgeLabel: 'Sprint', 
+        badgeColor: 'text-badge-active-text bg-badge-active-bg border-badge-active-text/30' 
+      };
       case 'task':
-      case 'subtask': return <CheckCircle2 size={16} className="text-green-500" />;
-      default: return <AlertCircle size={16} className="text-orange-500" />;
+      case 'subtask': return { 
+        icon: <CheckCircle2 size={12} className="text-white" />, 
+        color: 'bg-green-500', 
+        badgeLabel: 'Completed', 
+        badgeColor: 'text-badge-completed-text bg-badge-completed-bg border-badge-completed-text/30' 
+      };
+      default: return { 
+        icon: <AlertCircle size={12} className="text-white" />, 
+        color: 'bg-gray-500', 
+        badgeLabel: 'System', 
+        badgeColor: 'text-text-secondary bg-bg-secondary border-line' 
+      };
     }
+  };
+
+  const getRelativeTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString.replace(' ', 'T') + 'Z');
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours}h ago`;
+    }
+    if (diffInSeconds < 172800) return 'Yesterday';
+    
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   return (
@@ -72,70 +115,117 @@ export default function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-100 z-50 text-gray-800 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/50">
-            <h3 className="font-bold text-sm">Notifications</h3>
+        <div 
+          className="absolute right-0 mt-3 w-[400px] bg-bg-card rounded-xl border border-line z-50 overflow-hidden transform origin-top-right transition-all duration-150 ease-out shadow-xl"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-line">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-[16px] text-text-primary">Notifications</h3>
+              {unreadCount > 0 && (
+                <span className="px-2 py-0.5 bg-badge-active-bg text-badge-active-text text-xs font-bold rounded-full border border-badge-active-text/30">
+                  {unreadCount} New
+                </span>
+              )}
+            </div>
             {unreadCount > 0 && (
               <button 
                 onClick={markAllAsRead}
-                className="text-[11px] font-bold text-[#005AFF] hover:underline"
+                className="text-[13px] font-medium text-accent-blue hover:underline"
               >
                 Mark all as read
               </button>
             )}
           </div>
           
-          <div className="max-h-[320px] overflow-y-auto custom-scrollbar">
+          {/* List Area */}
+          <div className="max-h-[400px] overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#D1D5DB transparent' }}>
             {notifications.length === 0 ? (
-              <div className="p-6 text-center text-gray-500 text-sm">
-                No notifications yet.
+              <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+                <div className="w-12 h-12 rounded-full bg-bg-secondary flex items-center justify-center mb-3">
+                  <BellRing size={24} className="text-gray-300" />
+                </div>
+                <h4 className="text-[14px] font-bold text-text-primary">You're all caught up!</h4>
+                <p className="text-[13px] text-text-secondary mt-1">No new notifications right now</p>
               </div>
             ) : (
-              notifications.slice(0, 10).map(notification => (
-                <div 
-                  key={notification.id} 
-                  onClick={() => handleNotificationClick(notification)}
-                  className={`p-3 border-b border-gray-50 hover:bg-gray-50 cursor-pointer flex gap-3 transition-colors ${!notification.is_read ? 'bg-blue-50/30' : ''}`}
-                >
-                  <div className="flex-shrink-0 mt-1">
-                    {notification.senderInitials ? (
-                      <div className="w-8 h-8 rounded-full bg-blue-100 text-[#005AFF] flex items-center justify-center text-[10px] font-bold">
-                        {notification.senderInitials}
+              <div className="py-1">
+                {notifications.slice(0, 10).map((notification, index) => {
+                  const config = getTypeConfig(notification.type);
+                  return (
+                    <div key={notification.id}>
+                      <div 
+                        onClick={() => handleNotificationClick(notification)}
+                        className={`group relative px-5 py-3.5 cursor-pointer flex gap-4 transition-colors hover:bg-bg-secondary ${
+                          !notification.is_read ? 'bg-table-row-alt' : 'bg-bg-card opacity-90'
+                        }`}
+                      >
+                        {/* Type Border Accent */}
+                        <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${!notification.is_read ? config.color : 'bg-transparent group-hover:bg-line'}`} />
+                        
+                        {/* Avatar / Icon */}
+                        <div className="relative flex-shrink-0 mt-0.5">
+                          {notification.senderInitials ? (
+                            <div className="w-10 h-10 rounded-full bg-accent-blue text-white flex items-center justify-center text-[13px] font-bold shadow-sm">
+                              {notification.senderInitials}
+                            </div>
+                          ) : (
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-sm ${config.color}`}>
+                              {config.icon}
+                            </div>
+                          )}
+                          {/* Small overlap badge for avatar */}
+                          {notification.senderInitials && (
+                            <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center ${config.color}`}>
+                              {config.icon}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Content */}
+                        <div className="flex-1 min-w-0 pt-0.5">
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className={`text-[14px] ${!notification.is_read ? 'font-semibold text-text-primary' : 'font-medium text-text-primary opacity-90'}`}>
+                                {notification.title}
+                              </p>
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded border font-semibold ${config.badgeColor}`}>
+                                {config.badgeLabel}
+                              </span>
+                            </div>
+                            {/* Unread Dot */}
+                            {!notification.is_read && (
+                              <span className="w-2 h-2 rounded-full bg-accent-blue flex-shrink-0 mt-1.5"></span>
+                            )}
+                          </div>
+                          <p className="text-[13px] text-text-secondary leading-[1.4] line-clamp-2">
+                            {notification.message}
+                          </p>
+                          <div className="flex items-center gap-1 mt-1.5 text-[11px] text-text-muted">
+                            <Clock size={11} />
+                            <span>{getRelativeTime(notification.created_at)}</span>
+                          </div>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                        {getIcon(notification.type)}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className={`text-sm ${!notification.is_read ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
-                        {notification.title}
-                      </p>
-                      {!notification.is_read && (
-                        <span className="w-2 h-2 rounded-full bg-[#005AFF] flex-shrink-0 mt-1.5"></span>
+                      
+                      {/* Divider */}
+                      {index < Math.min(notifications.length - 1, 9) && (
+                        <div className="mx-4 h-[1px] bg-line-light"></div>
                       )}
                     </div>
-                    <p className="text-[12px] text-gray-500 line-clamp-2 mt-0.5">
-                      {notification.message}
-                    </p>
-                    <p className="text-[10px] text-gray-400 font-medium mt-1 uppercase tracking-wider">
-                      {notification.created_at ? new Date(notification.created_at.replace(' ', 'T') + 'Z').toLocaleString() : ''}
-                    </p>
-                  </div>
-                </div>
-              ))
+                  );
+                })}
+              </div>
             )}
           </div>
           
-          <div className="p-2 border-t border-gray-100 bg-gray-50 text-center">
+          <div className="border-t border-line bg-bg-card transition-colors hover:bg-bg-secondary">
             <Link 
               to={user?.role === 'manager' ? '/manager/notifications' : '/employee/notifications'} 
               onClick={() => setIsOpen(false)}
-              className="text-[12px] font-bold text-[#005AFF] hover:underline uppercase tracking-wider"
+              className="flex items-center justify-center gap-1 w-full py-3.5 text-[13px] font-medium text-accent-blue"
             >
-              View all notifications
+              View all notifications <ArrowRight size={14} />
             </Link>
           </div>
         </div>

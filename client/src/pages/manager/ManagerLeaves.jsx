@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { Calendar, CheckCircle2, XCircle, Clock, Search, Filter, MessageSquare, X } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
+import ExpandableTextCell from '../../components/ExpandableTextCell';
 
 export default function ManagerLeaves() {
   const { token } = useAuth();
@@ -14,7 +15,7 @@ export default function ManagerLeaves() {
   const [loading, setLoading] = useState(true);
 
   // Filters
-  const [activeTab, setActiveTab] = useState('All');
+  const [activeTab, setActiveTab] = useState('Pending');
   const [searchTerm, setSearchTerm] = useState('');
   
   // Rejection Modal
@@ -104,7 +105,7 @@ export default function ManagerLeaves() {
     <div className="max-w-6xl mx-auto pb-12">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-[#020024] flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-text-primary flex items-center gap-3">
             Leave Requests
             {pendingCount > 0 && (
               <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
@@ -112,20 +113,20 @@ export default function ManagerLeaves() {
               </span>
             )}
           </h1>
-          <p className="text-gray-500 text-sm mt-1">Review and manage time-off requests from your team.</p>
+          <p className="text-text-secondary text-sm mt-1">Review and manage time-off requests from your team.</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-bg-card rounded-xl shadow-sm border border-line-light overflow-hidden">
         {/* Toolbar */}
-        <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+        <div className="p-4 border-b border-line-light bg-bg-secondary/50 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar w-full md:w-auto">
             {['All', 'Pending', 'Accepted', 'Rejected'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${
-                  activeTab === tab ? 'bg-[#020024] text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                  activeTab === tab ? 'bg-bg-sidebar text-white' : 'bg-bg-card text-text-secondary border border-line hover:bg-table-row-alt'
                 }`}
               >
                 {tab}
@@ -135,42 +136,39 @@ export default function ManagerLeaves() {
           
           <div className="flex items-center gap-3 w-full md:w-auto">
             <div className="relative flex-1 md:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
               <input 
                 type="text" 
                 placeholder="Search by name, type, or reason..."
-                className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF]"
+                className="w-full pl-9 pr-4 py-2 bg-bg-card border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <button className="p-2 border border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50 bg-white">
-              <Filter size={18} />
-            </button>
           </div>
         </div>
 
         {/* List */}
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="p-12 text-center text-gray-500">Loading requests...</div>
+            <div className="p-12 text-center text-text-secondary">Loading requests...</div>
           ) : filteredLeaves.length === 0 ? (
             <div className="p-12 text-center">
-              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Calendar className="text-gray-300" size={24} />
+              <div className="w-16 h-16 bg-bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
+                <Calendar className="text-line" size={24} />
               </div>
-              <h3 className="text-lg font-bold text-gray-700">No requests found</h3>
-              <p className="text-gray-500 mt-1">There are no leave requests matching your filters.</p>
+              <h3 className="text-lg font-bold text-text-secondary">No requests found</h3>
+              <p className="text-text-secondary mt-1">There are no leave requests matching your filters.</p>
             </div>
           ) : (
             <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+              <thead className="bg-bg-secondary text-text-secondary text-xs uppercase tracking-wider">
                 <tr>
-                  <th className="px-6 py-4 font-bold border-b border-gray-100">Employee</th>
-                  <th className="px-6 py-4 font-bold border-b border-gray-100">Type & Dates</th>
-                  <th className="px-6 py-4 font-bold border-b border-gray-100 max-w-[250px]">Reason</th>
-                  <th className="px-6 py-4 font-bold border-b border-gray-100">Status</th>
-                  <th className="px-6 py-4 font-bold border-b border-gray-100 text-right">Actions</th>
+                  <th className="px-6 py-4 font-bold border-b border-line-light">Employee</th>
+                  <th className="px-6 py-4 font-bold border-b border-line-light">Type & Dates</th>
+                  <th className="px-6 py-4 font-bold border-b border-line-light max-w-[250px]">Reason</th>
+                  <th className="px-6 py-4 font-bold border-b border-line-light">Status</th>
+                  <th className="px-6 py-4 font-bold border-b border-line-light text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -180,30 +178,33 @@ export default function ManagerLeaves() {
                     <tr 
                       key={leave.id} 
                       ref={isHighlighted ? highlightedRef : null}
-                      className={`hover:bg-gray-50/50 transition-colors ${isHighlighted ? 'bg-blue-50/40 ring-2 ring-blue-200' : ''}`}
+                      className={`hover:bg-table-row-alt/50 transition-colors ${isHighlighted ? 'bg-blue-50/40 ring-2 ring-blue-200' : ''}`}
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-blue-100 text-[#005AFF] flex items-center justify-center text-xs font-bold">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 text-accent-blue flex items-center justify-center text-xs font-bold">
                             {leave.employeeInitials}
                           </div>
                           <div>
-                            <p className="font-bold text-[#020024]">{leave.employeeName}</p>
-                            <p className="text-xs text-gray-500">{leave.role} • {leave.department || 'N/A'}</p>
+                            <p className="font-bold text-text-primary">{leave.employeeName}</p>
+                            <p className="text-xs text-text-secondary">{leave.role} • {leave.department || 'N/A'}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="font-bold text-[#020024] capitalize">{leave.leaveType} <span className="text-gray-500 font-normal">({leave.durationDays} days)</span></p>
-                        <p className="text-xs text-gray-500 mt-0.5">{leave.startDate} to {leave.endDate}</p>
+                        <p className="font-bold text-text-primary capitalize">{leave.leaveType} <span className="text-text-secondary font-normal">({leave.durationDays} days)</span></p>
+                        <p className="text-xs text-text-secondary mt-0.5">{leave.startDate} to {leave.endDate}</p>
                       </td>
                       <td className="px-6 py-4 max-w-[250px] whitespace-normal">
-                        <div className="text-gray-600 break-words">
-                          {leave.reason}
-                        </div>
-                        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider mt-1">
-                          Applied: {new Date(leave.appliedAt.replace(' ', 'T') + 'Z').toLocaleDateString()}
-                        </p>
+                        <ExpandableTextCell 
+                          text={leave.reason} 
+                          modalTitle="Leave Reason Details"
+                          extraDetails={
+                            <p className="text-xs text-text-muted font-medium uppercase tracking-wider">
+                              Applied: {new Date(leave.appliedAt.replace(' ', 'T') + 'Z').toLocaleDateString()}
+                            </p>
+                          }
+                        />
                       </td>
                       <td className="px-6 py-4">
                         {getStatusBadge(leave.status)}
@@ -231,7 +232,7 @@ export default function ManagerLeaves() {
                             </button>
                           </div>
                         ) : (
-                          <span className="text-xs text-gray-400 font-medium italic">No actions</span>
+                          <span className="text-xs text-text-muted font-medium italic">No actions</span>
                         )}
                       </td>
                     </tr>
@@ -246,32 +247,32 @@ export default function ManagerLeaves() {
       {/* Reject Modal */}
       {rejectingLeave && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-[#020024] text-white">
+          <div className="bg-bg-card rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-4 border-b border-line-light flex justify-between items-center bg-bg-sidebar text-white">
               <h2 className="text-lg font-bold">Reject Leave Request</h2>
               <button onClick={() => setRejectingLeave(null)} className="text-white/70 hover:text-white">
                 <X size={20} />
               </button>
             </div>
             <div className="p-6">
-              <div className="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                <p className="text-sm font-bold text-gray-800">{rejectingLeave.employeeName}</p>
-                <p className="text-xs text-gray-500 capitalize">{rejectingLeave.leaveType} Leave ({rejectingLeave.startDate} - {rejectingLeave.endDate})</p>
+              <div className="mb-4 bg-bg-secondary p-3 rounded-lg border border-line-light">
+                <p className="text-sm font-bold text-text-primary">{rejectingLeave.employeeName}</p>
+                <p className="text-xs text-text-secondary capitalize">{rejectingLeave.leaveType} Leave ({rejectingLeave.startDate} - {rejectingLeave.endDate})</p>
               </div>
               
-              <label className="block text-sm font-bold text-gray-700 mb-2">Reason for Rejection (Optional)</label>
+              <label className="block text-sm font-bold text-text-secondary mb-2">Reason for Rejection (Optional)</label>
               <textarea
-                className="w-full p-3 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 min-h-[100px] resize-none"
+                className="w-full p-3 bg-bg-card border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 min-h-[100px] resize-none"
                 placeholder="Briefly explain why this request is rejected..."
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
                 autoFocus
               />
             </div>
-            <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+            <div className="p-4 border-t border-line-light bg-bg-secondary flex justify-end gap-3">
               <button 
                 onClick={() => setRejectingLeave(null)}
-                className="px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-bold text-text-secondary hover:bg-gray-200 rounded-lg transition-colors"
               >
                 Cancel
               </button>

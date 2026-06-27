@@ -15,8 +15,8 @@ export const calculateSprintHealth = (sprint, stats) => {
   if (sprint.status === 'created' || sprint.status === 'planner') {
     return {
       state: 'NEUTRAL',
-      color: 'bg-gray-100 text-gray-500',
-      iconColor: 'text-gray-400',
+      color: 'bg-bg-secondary text-text-secondary',
+      iconColor: 'text-text-muted',
       title: '—',
       message: "Sprint hasn't started yet",
     };
@@ -73,8 +73,8 @@ export const calculateSprintHealth = (sprint, stats) => {
     }
     return {
       state: 'HEALTHY',
-      color: 'bg-green-100 text-green-700',
-      iconColor: 'text-green-500',
+      color: 'bg-badge-approved-bg text-badge-approved-text',
+      iconColor: 'text-badge-approved-text',
       title: 'Healthy',
       message: 'Completed — Finished on time.',
     };
@@ -97,8 +97,8 @@ export const calculateSprintHealth = (sprint, stats) => {
     }
     return {
       state: 'DELAYED',
-      color: 'bg-red-100 text-red-700',
-      iconColor: 'text-red-500',
+      color: 'bg-badge-rejected-bg text-badge-rejected-text',
+      iconColor: 'text-badge-rejected-text',
       title: 'Delayed',
       message: `Significantly delayed — ${completionPct}% complete with ${remainingDays} days left. Consider re-scoping.`,
     };
@@ -108,8 +108,8 @@ export const calculateSprintHealth = (sprint, stats) => {
   if (gap > THRESHOLDS.GAP_WARN || velocityRatio > THRESHOLDS.VELOCITY_WARN || actualVsIdealDiff > THRESHOLDS.BURNDOWN_WARN) {
     return {
       state: 'AT_RISK',
-      color: 'bg-yellow-100 text-yellow-700',
-      iconColor: 'text-yellow-500',
+      color: 'bg-badge-pending-bg text-badge-pending-text',
+      iconColor: 'text-badge-pending-text',
       title: 'At Risk',
       message: `Slightly behind — ${completionPct}% complete, team needs to pick up pace to finish on time.`,
     };

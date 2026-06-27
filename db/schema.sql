@@ -34,7 +34,6 @@ CREATE TABLE IF NOT EXISTS sprint_members (
   user_id         INTEGER NOT NULL REFERENCES employees(id),
   role            TEXT DEFAULT '',
   estimated_hours REAL NOT NULL DEFAULT 0,
-  spent_hours     REAL NOT NULL DEFAULT 0,
   joined_at       TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -48,7 +47,6 @@ CREATE TABLE IF NOT EXISTS tasks (
   priority       TEXT NOT NULL DEFAULT 'medium' CHECK(priority IN ('critical','high','medium','low')),
   status         TEXT NOT NULL DEFAULT 'todo' CHECK(status IN ('todo','inprogress','blocked','done')),
   estimated_hours REAL NOT NULL DEFAULT 0,
-  spent_hours    REAL NOT NULL DEFAULT 0,
   created_by     INTEGER REFERENCES employees(id),
   created_at     TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -63,7 +61,6 @@ CREATE TABLE IF NOT EXISTS subtasks (
   priority        TEXT NOT NULL DEFAULT 'medium' CHECK(priority IN ('critical','high','medium','low')),
   status          TEXT NOT NULL DEFAULT 'todo' CHECK(status IN ('todo','inprogress','blocked','done')),
   estimated_hours REAL NOT NULL DEFAULT 0,
-  spent_hours     REAL NOT NULL DEFAULT 0,
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -114,7 +111,7 @@ CREATE TABLE IF NOT EXISTS attendance (
   check_in     TEXT DEFAULT NULL,
   check_out    TEXT DEFAULT NULL,
   total_hours  REAL DEFAULT 0,
-  status       TEXT NOT NULL DEFAULT 'Present' CHECK(status IN ('Present','Absent','Half-Day','On Leave','Holiday','Late')),
+  status       TEXT NOT NULL DEFAULT 'Present' CHECK(status IN ('Present','Absent','Half-Day','On Leave','Holiday','Late','Pending','No action')),
   created_at   TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE(user_id, date)
 );
@@ -150,14 +147,4 @@ CREATE TABLE IF NOT EXISTS sprint_attachments (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
-CREATE TABLE IF NOT EXISTS timer_sessions (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  subtask_id TEXT NOT NULL REFERENCES subtasks(subtask_id),
-  employee_id INTEGER NOT NULL REFERENCES employees(id),
-  start_time TEXT NOT NULL DEFAULT (datetime('now')),
-  end_time TEXT DEFAULT NULL,
-  duration REAL DEFAULT NULL
-);
 
-CREATE INDEX IF NOT EXISTS idx_timer_sessions_employee ON timer_sessions(employee_id);
-CREATE INDEX IF NOT EXISTS idx_timer_sessions_subtask ON timer_sessions(subtask_id);

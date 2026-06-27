@@ -154,7 +154,9 @@ export default function TeamAttendance() {
       case 'Present': return 'bg-green-100 text-green-800';
       case 'Absent': return 'bg-red-100 text-red-800';
       case 'Half-Day': return 'bg-amber-100 text-amber-800';
-      default: return 'bg-gray-100 text-gray-800'; // On Leave
+      case 'Pending': return 'bg-blue-100 text-blue-800';
+      case 'No action': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-bg-secondary text-text-primary'; // On Leave
     }
   };
 
@@ -176,11 +178,11 @@ export default function TeamAttendance() {
   };
 
   const renderAttendanceRow = (record) => (
-    <tr key={record.id} className="hover:bg-gray-50/50 transition-colors border-b border-gray-100 last:border-0 text-[13px]">
-      <td className="px-6 py-3 font-medium text-gray-700">{record.date}</td>
-      <td className="px-6 py-3 text-gray-600">{record.check_in || '-'}</td>
-      <td className="px-6 py-3 text-gray-600">{record.check_out || '-'}</td>
-      <td className="px-6 py-3 font-mono text-xs font-bold text-[#020024]">{record.total_hours > 0 ? `${record.total_hours}h` : '-'}</td>
+    <tr key={record.id} className="hover:bg-table-row-alt/50 transition-colors border-b border-line-light last:border-0 text-[13px]">
+      <td className="px-6 py-3 font-medium text-text-secondary">{record.date}</td>
+      <td className="px-6 py-3 text-text-secondary">{record.check_in || '-'}</td>
+      <td className="px-6 py-3 text-text-secondary">{record.check_out || '-'}</td>
+      <td className="px-6 py-3 font-mono text-xs font-bold text-text-primary">{record.total_hours > 0 ? `${record.total_hours}h` : '-'}</td>
       <td className="px-6 py-3">
         <span className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold rounded ${getStatusBadge(record.status)}`}>
           {record.status}
@@ -194,8 +196,8 @@ export default function TeamAttendance() {
       {/* HEADER & CONTROLS */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#020024] tracking-tight">Team Attendance</h1>
-          <p className="text-sm text-gray-500 mt-1">View and manage attendance records across the team</p>
+          <h1 className="text-2xl font-bold text-text-primary tracking-tight">Team Attendance</h1>
+          <p className="text-sm text-text-secondary mt-1">View and manage attendance records across the team</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
@@ -203,11 +205,11 @@ export default function TeamAttendance() {
           <div className="relative" ref={dropdownRef}>
             <button 
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50 shadow-sm transition-colors min-w-[200px] justify-between"
+              className="flex items-center gap-2 px-3 py-2 bg-bg-card border border-line rounded-md text-sm font-medium hover:bg-table-row-alt shadow-sm transition-colors min-w-[200px] justify-between"
             >
               <div className="flex items-center gap-2">
                 {selectedEmployeeId === 'all' ? (
-                  <><Users size={16} className="text-[#005AFF]" /> <span>All Employees</span></>
+                  <><Users size={16} className="text-accent-blue" /> <span>All Employees</span></>
                 ) : selectedEmployeeData ? (
                   <>
                     <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center text-[9px] font-bold">
@@ -217,31 +219,31 @@ export default function TeamAttendance() {
                   </>
                 ) : 'Select Employee'}
               </div>
-              <ChevronDown size={16} className="text-gray-400" />
+              <ChevronDown size={16} className="text-text-muted" />
             </button>
             
             {dropdownOpen && (
-              <div className="absolute right-0 mt-1 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-50 py-1">
+              <div className="absolute right-0 mt-1 w-64 bg-bg-card border border-line rounded-md shadow-xl z-50 py-1">
                 <div className="max-h-80 overflow-y-auto">
                   <button
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 ${selectedEmployeeId === 'all' ? 'bg-blue-50/50' : ''}`}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-table-row-alt flex items-center gap-3 border-b border-line-light ${selectedEmployeeId === 'all' ? 'bg-blue-50/50' : ''}`}
                     onClick={() => { setSelectedEmployeeId('all'); setDropdownOpen(false); }}
                   >
-                    <Users size={16} className="text-[#005AFF]" />
-                    <span className="font-semibold text-gray-800">All Employees</span>
+                    <Users size={16} className="text-accent-blue" />
+                    <span className="font-semibold text-text-primary">All Employees</span>
                   </button>
                   {employees.map(emp => (
                     <button
                       key={emp.id}
                       onClick={() => { setSelectedEmployeeId(emp.id.toString()); setDropdownOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-3 transition-colors border-b border-gray-100 last:border-0 ${selectedEmployeeId === emp.id.toString() ? 'bg-blue-50/50' : ''}`}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-table-row-alt flex items-center gap-3 transition-colors border-b border-line-light last:border-0 ${selectedEmployeeId === emp.id.toString() ? 'bg-blue-50/50' : ''}`}
                     >
                       <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-800 flex items-center justify-center text-[10px] font-bold border border-blue-100">
                         {emp.initials}
                       </div>
                       <div>
-                        <div className="font-medium text-[#020024]">{emp.name}</div>
-                        <div className="text-[10px] text-gray-500 uppercase tracking-wider">{emp.role}</div>
+                        <div className="font-medium text-text-primary">{emp.name}</div>
+                        <div className="text-[10px] text-text-secondary uppercase tracking-wider">{emp.role}</div>
                       </div>
                     </button>
                   ))}
@@ -251,10 +253,10 @@ export default function TeamAttendance() {
           </div>
 
           {/* Date Range Selector */}
-          <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-md px-3 py-2 shadow-sm">
-            <Calendar size={16} className="text-gray-400" />
+          <div className="flex items-center gap-2 bg-bg-card border border-line rounded-md px-3 py-2 shadow-sm">
+            <Calendar size={16} className="text-text-muted" />
             <select 
-              className="text-sm bg-transparent outline-none font-medium text-[#020024] cursor-pointer"
+              className="text-sm bg-transparent outline-none font-medium text-text-primary cursor-pointer"
               value={dateRangeFilter}
               onChange={(e) => setDateRangeFilter(e.target.value)}
             >
@@ -266,22 +268,22 @@ export default function TeamAttendance() {
 
           {/* Search Input */}
           <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <input 
               type="text" 
               placeholder="Search name or date..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-8 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:border-[#005AFF] w-56 shadow-sm"
+              className="pl-8 pr-8 py-2 text-sm bg-bg-card text-text-primary border border-line rounded-md focus:outline-none focus:border-accent-blue w-56 shadow-sm"
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-gray-600">
                 <X size={14} />
               </button>
             )}
           </div>
 
-          <button onClick={exportCSV} className="flex items-center gap-2 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors">
+          <button onClick={exportCSV} className="flex items-center gap-2 px-3 py-2 bg-bg-secondary border border-line rounded-md text-sm font-medium hover:bg-gray-200 transition-colors">
             <Download size={16} /> Export
           </button>
         </div>
@@ -289,27 +291,27 @@ export default function TeamAttendance() {
 
       {loading ? (
         <div className="p-12 flex justify-center items-center">
-          <Loader2 className="animate-spin text-[#005AFF]" size={32} />
+          <Loader2 className="animate-spin text-accent-blue" size={32} />
         </div>
       ) : selectedEmployeeId === 'all' && groupedData ? (
         /* ================= GROUPED VIEW ================= */
         <div className="space-y-4">
           {groupedData.length === 0 ? (
-            <div className="bg-white rounded-lg p-12 text-center text-gray-500 border border-gray-200">
+            <div className="bg-bg-card rounded-lg p-12 text-center text-text-secondary border border-line">
               No attendance records found for this period.
             </div>
           ) : (
             groupedData.map(group => {
               const isExpanded = expandedUsers.has(group.user_id);
               return (
-                <div key={group.user_id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-all">
+                <div key={group.user_id} className="bg-bg-card rounded-lg shadow-sm border border-line overflow-hidden transition-all">
                   {/* Header Row */}
                   <div 
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 cursor-pointer hover:bg-table-row-alt transition-colors"
                     onClick={() => toggleUserExpanded(group.user_id)}
                   >
                     <div className="flex items-center gap-4">
-                      <button className="p-1 text-gray-400 hover:text-[#005AFF] hover:bg-blue-50 rounded">
+                      <button className="p-1 text-text-muted hover:text-[#005AFF] hover:bg-blue-50 rounded">
                         {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                       </button>
                       <div className="flex items-center gap-3">
@@ -317,8 +319,8 @@ export default function TeamAttendance() {
                           {group.initials}
                         </div>
                         <div>
-                          <div className="font-bold text-[#020024] text-base">{group.name}</div>
-                          <div className="text-xs text-gray-500 uppercase tracking-wider font-medium mt-0.5">{group.role}</div>
+                          <div className="font-bold text-text-primary text-base">{group.name}</div>
+                          <div className="text-xs text-text-secondary uppercase tracking-wider font-medium mt-0.5">{group.role}</div>
                         </div>
                       </div>
                     </div>
@@ -331,9 +333,9 @@ export default function TeamAttendance() {
 
                   {/* Expanded Table */}
                   {isExpanded && (
-                    <div className="border-t border-gray-100 bg-gray-50/50 p-4">
-                      <table className="w-full text-left bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-                        <thead className="bg-gray-50 text-[10px] text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                    <div className="border-t border-line-light bg-bg-secondary/50 p-4">
+                      <table className="w-full text-left bg-bg-card rounded-lg overflow-hidden border border-line shadow-sm">
+                        <thead className="bg-bg-secondary text-[10px] text-text-secondary uppercase tracking-wider border-b border-line">
                           <tr>
                             <th className="px-6 py-2.5 font-bold">Date</th>
                             <th className="px-6 py-2.5 font-bold">Check-In</th>
@@ -358,29 +360,29 @@ export default function TeamAttendance() {
         <Fragment>
           {individualStats && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Present</div>
-                <div className="text-2xl font-black text-green-600">{individualStats.present} <span className="text-sm font-medium text-gray-400">days</span></div>
+              <div className="bg-bg-card p-4 rounded-xl shadow-sm border border-line">
+                <div className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-1">Total Present</div>
+                <div className="text-2xl font-black text-semantic-success-text">{individualStats.present} <span className="text-sm font-medium text-text-muted">days</span></div>
               </div>
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Absent</div>
-                <div className="text-2xl font-black text-red-600">{individualStats.absent} <span className="text-sm font-medium text-gray-400">days</span></div>
+              <div className="bg-bg-card p-4 rounded-xl shadow-sm border border-line">
+                <div className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-1">Total Absent</div>
+                <div className="text-2xl font-black text-red-600">{individualStats.absent} <span className="text-sm font-medium text-text-muted">days</span></div>
               </div>
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total Logged</div>
-                <div className="text-2xl font-black text-[#005AFF]">{individualStats.totalHours} <span className="text-sm font-medium text-gray-400">hours</span></div>
+              <div className="bg-bg-card p-4 rounded-xl shadow-sm border border-line">
+                <div className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-1">Total Logged</div>
+                <div className="text-2xl font-black text-accent-blue">{individualStats.totalHours} <span className="text-sm font-medium text-text-muted">hours</span></div>
               </div>
-              <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                <div className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Daily Average</div>
-                <div className="text-2xl font-black text-[#020024]">{individualStats.avgHours} <span className="text-sm font-medium text-gray-400">hours/day</span></div>
+              <div className="bg-bg-card p-4 rounded-xl shadow-sm border border-line">
+                <div className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-1">Daily Average</div>
+                <div className="text-2xl font-black text-text-primary">{individualStats.avgHours} <span className="text-sm font-medium text-text-muted">hours/day</span></div>
               </div>
             </div>
           )}
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-bg-card rounded-xl shadow-sm border border-line overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left">
-                <thead className="bg-gray-50 text-[11px] text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                <thead className="bg-bg-secondary text-[11px] text-text-secondary uppercase tracking-wider border-b border-line">
                   <tr>
                     <th className="px-6 py-4 font-bold">Date</th>
                     <th className="px-6 py-4 font-bold">Check-In</th>
@@ -393,7 +395,7 @@ export default function TeamAttendance() {
                   {filteredAttendance.map(renderAttendanceRow)}
                   {filteredAttendance.length === 0 && (
                     <tr>
-                      <td colSpan="5" className="px-6 py-16 text-center text-gray-500 bg-gray-50/50">
+                      <td colSpan="5" className="px-6 py-16 text-center text-text-secondary bg-bg-secondary/50">
                         No attendance records found for the selected period.
                       </td>
                     </tr>

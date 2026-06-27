@@ -27,11 +27,11 @@ export const NotificationProvider = ({ children }) => {
     } catch (err) {
       console.error('Failed to fetch notifications', err);
     }
-  }, [token, user]);
+  }, [token]);
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000); // Poll every 10s
+    const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
@@ -53,6 +53,7 @@ export const NotificationProvider = ({ children }) => {
   };
 
   const markSelectedAsRead = async (selectedIds) => {
+    if (!selectedIds || selectedIds.length === 0) return;
     try {
       // Optimistic update
       setNotifications(prev => {
@@ -60,9 +61,9 @@ export const NotificationProvider = ({ children }) => {
         setUnreadCount(updated.filter(n => !n.is_read).length);
         return updated;
       });
-      await Promise.all(selectedIds.map(id => 
-        axios.put(`/api/notifications/${id}/read`, {}, { headers: { Authorization: `Bearer ${token}` } })
-      ));
+      await axios.put('/api/notifications/read-batch', { ids: selectedIds }, { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
     } catch (err) {
       console.error('Error marking selected as read:', err);
       fetchNotifications(); // Revert on failure

@@ -28,7 +28,7 @@ export default function Reminders() {
   const getIcon = (type) => {
     switch (type) {
       case 'blocked': return <AlertTriangle className="text-red-600" size={18} />;
-      case 'sprint': return <Info className="text-blue-600" size={18} />;
+      case 'sprint': return <Info className="text-accent-blue" size={18} />;
       default: return <Bell className="text-text-tertiary" size={18} />;
     }
   };
@@ -47,7 +47,7 @@ export default function Reminders() {
           {notifications.map(notif => (
             <div 
               key={notif.id} 
-              className={`p-4 border-[0.5px] rounded-md flex gap-4 ${notif.is_read ? 'bg-bg-primary border-border-light' : 'bg-blue-50/30 border-blue-200'}`}
+              className={`p-4 border-[0.5px] rounded-md flex gap-4 ${notif.is_read ? 'bg-bg-primary border-line-light' : 'bg-blue-50/30 border-blue-200'}`}
             >
               <div className="mt-1">{getIcon(notif.type)}</div>
               <div className="flex-1">
@@ -63,7 +63,7 @@ export default function Reminders() {
                 {!notif.is_read && (
                   <button 
                     onClick={() => markAsRead(notif.id)}
-                    className="text-[12px] text-blue-600 font-medium hover:underline flex items-center gap-1"
+                    className="text-[12px] text-accent-blue font-medium hover:underline flex items-center gap-1"
                   >
                     <CheckCircle size={14} /> Mark as read
                   </button>
