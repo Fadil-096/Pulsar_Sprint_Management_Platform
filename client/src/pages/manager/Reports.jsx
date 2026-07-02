@@ -164,7 +164,7 @@ export default function Reports() {
                       : 'bg-bg-card border border-line text-text-secondary hover:bg-dropdown-hover-bg hover:text-text-primary'
                   }`}
                 >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                  {status === 'created' ? 'Backlogs' : status.charAt(0).toUpperCase() + status.slice(1)}
                 </button>
               ))}
             </div>

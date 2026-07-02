@@ -77,10 +77,11 @@
 
   /* DARK MODE */
   [data-theme="dark"] {
-    --color-bg-primary: #0F172A;
-    --color-bg-secondary: #1E293B;
-    --color-bg-card: #1E293B;
-    --color-bg-sidebar: #020617;
+    color-scheme: dark;
+    --color-bg-primary: #1B2333;
+    --color-bg-secondary: #242D3F;
+    --color-bg-card: #242D3F;
+    --color-bg-sidebar: #131A28;
     --color-text-primary: #F1F5F9;
     --color-text-secondary: #CBD5E1;
     --color-text-muted: #94A3B8;

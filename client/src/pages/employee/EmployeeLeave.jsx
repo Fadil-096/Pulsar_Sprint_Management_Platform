@@ -199,7 +199,7 @@ export default function EmployeeLeave() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-12 bg-bg-primary min-h-screen">
+    <div className="max-w-7xl mx-auto space-y-6 pb-12">
       <div>
         <h1 className="text-2xl font-bold text-text-primary">Leave Management</h1>
         <p className="text-text-secondary text-sm mt-1">Apply for leave and track your request history.</p>
@@ -234,7 +234,7 @@ export default function EmployeeLeave() {
               <label className="block text-[11px] font-bold text-text-secondary mb-2 uppercase tracking-wide">Select Manager</label>
               <div className="relative max-w-sm">
                 <select
-                  className={`w-full p-3 bg-bg-card border ${errors.managerId ? 'border-red-300' : 'border-line'} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF] appearance-none shadow-sm transition-all`}
+                  className={`w-full p-3 bg-bg-card border ${errors.managerId ? 'border-red-300' : 'border-line'} rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF] appearance-none shadow-sm transition-all`}
                   value={formData.managerId}
                   onChange={(e) => setFormData({...formData, managerId: e.target.value})}
                 >
@@ -286,7 +286,7 @@ export default function EmployeeLeave() {
                 <label className="block text-[11px] font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Start Date</label>
                 <input
                   type="date"
-                  className={`w-full p-3 bg-bg-card border ${errors.startDate ? 'border-red-300' : 'border-line'} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF] shadow-sm transition-all`}
+                  className={`w-full p-3 bg-bg-card border ${errors.startDate ? 'border-red-300' : 'border-line'} rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF] shadow-sm transition-all`}
                   value={formData.startDate}
                   onChange={(e) => setFormData({...formData, startDate: e.target.value})}
                 />
@@ -297,7 +297,7 @@ export default function EmployeeLeave() {
                 <label className="block text-[11px] font-bold text-text-secondary mb-1.5 uppercase tracking-wide">End Date</label>
                 <input
                   type="date"
-                  className={`w-full p-3 bg-bg-card border ${errors.endDate ? 'border-red-300' : 'border-line'} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF] shadow-sm transition-all`}
+                  className={`w-full p-3 bg-bg-card border ${errors.endDate ? 'border-red-300' : 'border-line'} rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF] shadow-sm transition-all`}
                   value={formData.endDate}
                   onChange={(e) => setFormData({...formData, endDate: e.target.value})}
                   min={formData.startDate}
@@ -318,7 +318,8 @@ export default function EmployeeLeave() {
             <div>
               <label className="block text-[11px] font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Brief Reason for Leave</label>
               <textarea
-                className={`w-full p-3 bg-bg-card border ${errors.reason ? 'border-red-300' : 'border-line'} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF] shadow-sm transition-all min-h-[100px] resize-y placeholder:italic placeholder:text-text-muted`}
+                rows="3"
+                className={`w-full p-3 bg-bg-card border ${errors.reason ? 'border-red-300' : 'border-line'} rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF] shadow-sm transition-all resize-y min-h-[100px] placeholder:italic placeholder:text-text-muted`}
                 placeholder="E.g., Medical appointment, family event..."
                 value={formData.reason}
                 onChange={(e) => setFormData({...formData, reason: e.target.value})}

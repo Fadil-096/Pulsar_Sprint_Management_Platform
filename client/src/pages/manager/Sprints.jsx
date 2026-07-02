@@ -26,6 +26,7 @@ export default function Sprints() {
   const location = useLocation();
   const [sprints, setSprints] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [managers, setManagers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(location.state?.fromTab || 'created');
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,6 +41,7 @@ export default function Sprints() {
   const [memberSearch, setMemberSearch] = useState('');
   const [expandedMembers, setExpandedMembers] = useState(new Set());
   const [expandedSprintId, setExpandedSprintId] = useState(null);
+  const [backlogItems, setBacklogItems] = useState([]);
   
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportData, setReportData] = useState(null);
@@ -66,6 +68,7 @@ export default function Sprints() {
     priority: 'medium',
     sprintGoal: '',
     description: '',
+    owner_id: '',
     members: [],
     notes: [],
     attachments: []
@@ -74,7 +77,17 @@ export default function Sprints() {
   useEffect(() => {
     fetchSprints();
     fetchEmployees();
+    fetchBacklog();
   }, [token]);
+
+  const fetchBacklog = async () => {
+    try {
+      const res = await axios.get('/api/backlog', { headers: { Authorization: `Bearer ${token}` } });
+      setBacklogItems(res.data);
+    } catch (err) {
+      console.error('Failed to fetch backlog', err);
+    }
+  };
 
   // Check if we navigated back from a detail page wanting to edit
   useEffect(() => {
@@ -108,6 +121,11 @@ export default function Sprints() {
     axios.get('/api/users', { headers: { Authorization: `Bearer ${token}` } })
       .then(res => setEmployees(res.data))
       .catch(err => console.error(err));
+    if (user?.role === 'administrator') {
+      axios.get('/api/users/managers', { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => setManagers(res.data))
+        .catch(err => console.error(err));
+    }
   };
 
   const openModal = (sprint = null) => {
@@ -146,6 +164,7 @@ export default function Sprints() {
             priority: data.priority || 'medium',
             sprintGoal: data.sprintGoal || '',
             description: data.description || '',
+            owner_id: data.ownerId || '',
             members: mappedMembers,
             notes: data.notes || [],
             attachments: data.attachments || []
@@ -167,6 +186,7 @@ export default function Sprints() {
         priority: 'medium',
         sprintGoal: '',
         description: '',
+        owner_id: '',
         members: [],
         notes: [],
         attachments: []
@@ -192,6 +212,9 @@ export default function Sprints() {
     }
     if (new Date(formData.endDate) < new Date(formData.startDate)) {
       return setFormError("End Date cannot be before Start Date.");
+    }
+    if (user?.role === 'administrator' && !formData.owner_id) {
+      return setFormError("Please select a Sprint Manager.");
     }
 
     setSubmitting(true);
@@ -286,10 +309,21 @@ export default function Sprints() {
     setFormData({ ...formData, members: updated });
   };
 
-  const addMemberTask = (memberIndex) => {
-    const updated = [...formData.members];
-    updated[memberIndex].tasks.push({ title: '', description: '', estimatedHours: '', priority: 'medium' });
-    setFormData({ ...formData, members: updated });
+  const addMemberTaskFromBacklog = (memberIdx, backlogId) => {
+    const item = backlogItems.find(b => b.backlog_id === backlogId);
+    if (!item) return;
+
+    const newMembers = [...formData.members];
+    if (!newMembers[memberIdx].tasks) newMembers[memberIdx].tasks = [];
+    newMembers[memberIdx].tasks.push({
+      backlog_item_id: item.backlog_id,
+      title: item.title,
+      description: item.description || '',
+      estimatedHours: item.estimated_effort || '',
+      priority: item.priority || 'medium',
+      status: 'todo'
+    });
+    setFormData({ ...formData, members: newMembers });
   };
 
   const removeMemberTask = (memberIndex, taskIndex) => {
@@ -604,6 +638,31 @@ export default function Sprints() {
                   </div>
                 </div>
 
+                {/* Administrator Assign Manager */}
+                {user?.role === 'administrator' && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-[4px] h-5 bg-gradient-to-b from-purple-500 to-purple-600 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.5)]"></div>
+                      <h3 className="text-[13px] font-extrabold text-text-primary uppercase tracking-wider">Assign Manager</h3>
+                      <span className="text-[12px] text-text-muted ml-auto">* Required</span>
+                    </div>
+                    <div className="grid grid-cols-1">
+                      <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">Sprint Manager <span className="text-purple-500">*</span></label>
+                      <select 
+                        className="w-full h-10 px-3 border border-line bg-bg-primary rounded-md text-[14px] text-text-primary focus:border-purple-500 focus:ring-4 focus:ring-purple-500/15 shadow-inner outline-none transition-all disabled:bg-bg-secondary disabled:text-text-muted appearance-none" 
+                        disabled={editSprintStatus === 'active'}
+                        value={formData.owner_id} 
+                        onChange={e => setFormData({...formData, owner_id: e.target.value})}
+                      >
+                        <option value="">Select a Manager</option>
+                        {managers.map(m => (
+                          <option key={m.id} value={m.id}>{m.name} ({m.team})</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
                 {/* Team Members */}
                 <div>
                   <div className="flex items-center gap-2 mb-4">
@@ -739,9 +798,16 @@ export default function Sprints() {
                                 <div className="flex justify-between items-center mb-1.5">
                                   <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Tasks</h4>
                                   {editSprintStatus !== 'active' && (
-                                    <button type="button" onClick={() => addMemberTask(idx)} className="text-[10px] font-bold text-accent-blue hover:text-blue-700 transition-colors flex items-center gap-0.5">
-                                      <Plus size={10}/> Add Task
-                                    </button>
+                                    <select 
+                                      value=""
+                                      onChange={(e) => addMemberTaskFromBacklog(idx, e.target.value)}
+                                      className="h-6 px-1.5 border border-accent-blue/50 text-accent-blue bg-blue-50/50 dark:bg-blue-900/20 rounded text-[10px] font-bold outline-none cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors max-w-[150px]"
+                                    >
+                                      <option value="" disabled>+ Add from Backlog</option>
+                                      {backlogItems.filter(bi => bi.status !== 'planned').map(bi => (
+                                        <option key={bi.backlog_id} value={bi.backlog_id}>{bi.backlog_id}: {bi.title}</option>
+                                      ))}
+                                    </select>
                                   )}
                                 </div>
                                 
@@ -1010,12 +1076,6 @@ export default function Sprints() {
                   <div className="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-1">Goal</div>
                   <div className="text-[13px] font-bold text-text-primary line-clamp-2" title={reportData.sprint.sprint_goal}>{reportData.sprint.sprint_goal || 'None'}</div>
                 </div>
-                <div className="p-4 bg-green-50 dark:bg-green-500/10 rounded-xl border border-green-200 dark:border-green-500/20">
-                  <div className="text-[10px] text-green-700 dark:text-green-400 font-bold uppercase tracking-wider mb-1">Total Estimated Effort</div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-xl font-extrabold text-green-700 dark:text-green-400">{reportData.members.reduce((sum, m) => sum + (m.estimatedHours || 0), 0)}h</span>
-                  </div>
-                </div>
                 <div className="p-4 bg-amber-50 dark:bg-amber-500/10 rounded-xl border border-amber-200 dark:border-amber-500/20">
                   <div className="text-[10px] text-amber-700 dark:text-amber-400 font-bold uppercase tracking-wider mb-1">Unresolved Queries</div>
                   <div className="text-xl font-extrabold text-amber-700 dark:text-amber-400">{reportData.unresolvedQueries.length}</div>
@@ -1032,7 +1092,6 @@ export default function Sprints() {
                         <th className="px-5 py-3 font-bold">Role</th>
                         <th className="px-5 py-3 font-bold">Tasks Assigned</th>
                         <th className="px-5 py-3 font-bold w-1/4">Subtasks Completed</th>
-                        <th className="px-5 py-3 font-bold">Estimated Hours</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-line">
@@ -1049,9 +1108,6 @@ export default function Sprints() {
                             <div className="w-full bg-bg-secondary shadow-inner h-1.5 rounded-full overflow-hidden">
                               <div className="bg-accent-blue h-full transition-all duration-500 rounded-full" style={{ width: `${m.subtaskCount ? (m.subtaskDoneCount / m.subtaskCount) * 100 : 0}%` }}></div>
                             </div>
-                          </td>
-                          <td className="px-5 py-3.5 text-text-secondary font-medium">
-                            {m.estimatedHours || 0}h
                           </td>
                         </tr>
                       ))}

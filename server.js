@@ -26,6 +26,13 @@ try {
   // Ignore error if column already exists
 }
 
+// Add completed_at column to subtasks if it doesn't exist
+try {
+  db.prepare('ALTER TABLE subtasks ADD COLUMN completed_at TEXT DEFAULT NULL').run();
+} catch (err) {
+  // Ignore error if column already exists
+}
+
 // Ensure user_settings table exists
 db.prepare(`
   CREATE TABLE IF NOT EXISTS user_settings (
@@ -79,7 +86,6 @@ try {
 }
 
 // Additional performance indexes
-try { db.prepare('CREATE INDEX IF NOT EXISTS idx_attendance_date ON attendance(date)').run(); } catch (e) {}
 try { db.prepare('CREATE INDEX IF NOT EXISTS idx_leaves_status ON leaves(status)').run(); } catch (e) {}
 try { db.prepare('CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)').run(); } catch (e) {}
 
@@ -87,7 +93,6 @@ try { db.prepare('CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)')
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 app.use(cors({ origin: CORS_ORIGIN }));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -125,8 +130,15 @@ function authMiddleware(req, res, next) {
 }
 
 function managerOnly(req, res, next) {
-  if (req.user.role !== 'manager') {
+  if (req.user.role !== 'manager' && req.user.role !== 'administrator') {
     return res.status(403).json({ error: 'Manager access required' });
+  }
+  next();
+}
+
+function adminOnly(req, res, next) {
+  if (req.user.role !== 'administrator') {
+    return res.status(403).json({ error: 'Administrator access required' });
   }
   next();
 }
@@ -427,7 +439,7 @@ app.get('/api/team/stats', authMiddleware, managerOnly, (req, res) => {
 
     // 2. Gather task metrics
     const tasksQuery = `
-      SELECT assigned_to, status, estimated_hours
+      SELECT assigned_to, status
       FROM tasks 
       WHERE 1=1 ${dateCondition}
     `;
@@ -450,7 +462,7 @@ app.get('/api/team/stats', authMiddleware, managerOnly, (req, res) => {
       const empTasks = tasks.filter(t => t.assigned_to === emp.id);
       const totalTasks = empTasks.length;
       const tasksDone = empTasks.filter(t => t.status === 'done').length;
-      const totalEstHours = empTasks.reduce((sum, t) => sum + t.estimated_hours, 0);
+      
       const totalSpentHours = 0;
 
       // Attendance
@@ -531,7 +543,7 @@ app.get('/api/team/employee/:id/details', authMiddleware, managerOnly, (req, res
     let sprintTasks = [];
     if (activeSprintIds.length > 0) {
       sprintTasks = db.prepare(`
-        SELECT task_id, task_title, status, priority, estimated_hours
+        SELECT task_id, task_title, status, priority
         FROM tasks 
         WHERE assigned_to = ? AND sprint_id IN (${activeSprintIds.map(() => '?').join(',')})
         ORDER BY created_at DESC
@@ -590,6 +602,67 @@ app.get('/api/users/:id', authMiddleware, (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════
+// ADMIN TEAM ENDPOINTS
+// ══════════════════════════════════════════════════════════════════════════
+
+// GET /api/admin/team/sprints
+app.get('/api/admin/team/sprints', authMiddleware, (req, res) => {
+  if (req.user.role !== 'administrator') {
+    return res.status(403).json({ error: 'Administrator access required' });
+  }
+
+  try {
+    const sprints = db.prepare(`
+      SELECT s.sprint_id, s.sprint_name, s.status, s.start_date, s.end_date, s.owner_id,
+        e.name as managerName, e.avatar_initials as managerInitials, e.role as managerRole,
+        (SELECT COUNT(*) FROM tasks WHERE sprint_id = s.sprint_id) as taskCount
+      FROM sprints s
+      LEFT JOIN employees e ON s.owner_id = e.id
+      ORDER BY s.created_at DESC
+    `).all();
+
+    // Fetch members for all sprints
+    const sprintIds = sprints.map(s => s.sprint_id);
+    let allMembers = [];
+    if (sprintIds.length > 0) {
+      allMembers = db.prepare(`
+        SELECT sm.sprint_id, e.id, e.name, e.avatar_initials, sm.role
+        FROM sprint_members sm
+        JOIN employees e ON sm.user_id = e.id
+        WHERE sm.sprint_id IN (${sprintIds.map(() => '?').join(',')})
+      `).all(...sprintIds);
+    }
+
+    // Group members by sprint_id
+    const membersBySprint = allMembers.reduce((acc, curr) => {
+      if (!acc[curr.sprint_id]) acc[curr.sprint_id] = [];
+      acc[curr.sprint_id].push(curr);
+      return acc;
+    }, {});
+
+    const result = sprints.map(s => ({
+      sprintId: s.sprint_id,
+      sprintName: s.sprint_name,
+      status: s.status,
+      startDate: s.start_date,
+      endDate: s.end_date,
+      manager: s.owner_id ? {
+        id: s.owner_id,
+        name: s.managerName,
+        initials: s.managerInitials,
+        role: s.managerRole
+      } : null,
+      taskCount: s.taskCount,
+      members: membersBySprint[s.sprint_id] || []
+    }));
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════
 // SPRINT ENDPOINTS
 // ══════════════════════════════════════════════════════════════════════════
 
@@ -597,7 +670,7 @@ app.get('/api/users/:id', authMiddleware, (req, res) => {
 app.get('/api/sprints', authMiddleware, (req, res) => {
   try {
     const sprints = db.prepare(`
-      SELECT s.*, e.name as creatorName,
+      SELECT s.*, e.name as creatorName, e2.name as ownerName,
         r.dod_met, r.qa_passed, r.stakeholder_signoff, r.reviewer_notes, r.return_reason, r.moved_to_review_at, r.notes_updated_at,
         (SELECT COUNT(*) FROM tasks WHERE sprint_id = s.sprint_id) as taskCount,
         (SELECT COUNT(*) FROM tasks WHERE sprint_id = s.sprint_id AND status = 'done') as doneCount,
@@ -607,6 +680,7 @@ app.get('/api/sprints', authMiddleware, (req, res) => {
         (SELECT COUNT(*) FROM sprint_members WHERE sprint_id = s.sprint_id) as memberCount
       FROM sprints s
       LEFT JOIN employees e ON s.created_by = e.id
+      LEFT JOIN employees e2 ON s.owner_id = e2.id
       LEFT JOIN sprint_reviews r ON s.sprint_id = r.sprint_id
       ORDER BY s.start_date DESC
     `).all();
@@ -623,6 +697,8 @@ app.get('/api/sprints', authMiddleware, (req, res) => {
       endDate: s.end_date,
       createdBy: s.created_by,
       creatorName: s.creatorName,
+      ownerId: s.owner_id,
+      ownerName: s.ownerName,
       taskCount: s.taskCount,
       doneCount: s.doneCount,
       todoCount: s.todoCount,
@@ -650,8 +726,9 @@ app.get('/api/sprints', authMiddleware, (req, res) => {
 app.get('/api/sprints/:sprintId', authMiddleware, (req, res) => {
   try {
     const sprint = db.prepare(`
-      SELECT s.*, r.dod_met, r.qa_passed, r.stakeholder_signoff, r.reviewer_notes, r.return_reason, r.moved_to_review_at, r.notes_updated_at
+      SELECT s.*, e2.name as ownerName, r.dod_met, r.qa_passed, r.stakeholder_signoff, r.reviewer_notes, r.return_reason, r.moved_to_review_at, r.notes_updated_at
       FROM sprints s 
+      LEFT JOIN employees e2 ON s.owner_id = e2.id
       LEFT JOIN sprint_reviews r ON s.sprint_id = r.sprint_id 
       WHERE s.sprint_id = ?
     `).get(req.params.sprintId);
@@ -690,6 +767,8 @@ app.get('/api/sprints/:sprintId', authMiddleware, (req, res) => {
       startDate: sprint.start_date,
       endDate: sprint.end_date,
       createdBy: sprint.created_by,
+      ownerId: sprint.owner_id,
+      ownerName: sprint.ownerName,
       members: members.map(m => ({
         id: m.id,
         userId: m.user_id,
@@ -698,9 +777,7 @@ app.get('/api/sprints/:sprintId', authMiddleware, (req, res) => {
         team: m.team,
         subTeam: m.subTeam,
         initials: m.initials,
-        role: m.role,
-        estimatedHours: m.estimated_hours
-      })),
+        role: m.role})),
       tasks: tasks.map(t => ({
         id: t.id,
         taskId: t.task_id,
@@ -708,7 +785,6 @@ app.get('/api/sprints/:sprintId', authMiddleware, (req, res) => {
         description: t.description,
         priority: t.priority,
         status: t.status,
-        estimatedHours: t.estimated_hours,
         
         assignedTo: t.assigned_to,
         assigneeName: t.assigneeName,
@@ -719,9 +795,7 @@ app.get('/api/sprints/:sprintId', authMiddleware, (req, res) => {
           subtaskId: st.subtask_id,
           title: st.subtask_title,
           description: st.description,
-          status: st.status,
-          estimatedHours: st.estimated_hours
-        }))
+          status: st.status}))
       })),
       notes: notes.map(n => ({
         id: n.id,
@@ -781,11 +855,11 @@ app.get('/api/sprints/:sprintId/stats', authMiddleware, (req, res) => {
     const blockedTasks = tasks.filter(t => t.status === 'blocked').length;
     const todoTasks = tasks.filter(t => t.status === 'todo').length;
 
-    const totalEst = tasks.reduce((s, t) => s + t.estimated_hours, 0);
+    
     const totalSpent = 0;
 
     const velocity = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
-    const variance = totalEst > 0 ? Math.round(((totalSpent - totalEst) / totalEst) * 100) : 0;
+    const variance = 0;
 
     const highPriority = tasks.filter(t => t.priority === 'high').length;
     const mediumPriority = tasks.filter(t => t.priority === 'medium').length;
@@ -814,7 +888,7 @@ app.get('/api/sprints/:sprintId/stats', authMiddleware, (req, res) => {
 
     // Team workload data (hours per member per day)
     const members = db.prepare(`
-      SELECT sm.user_id, e.name, sm.estimated_hours
+      SELECT sm.user_id, e.name
       FROM sprint_members sm
       JOIN employees e ON sm.user_id = e.id
       WHERE sm.sprint_id = ?
@@ -831,7 +905,6 @@ app.get('/api/sprints/:sprintId/stats', authMiddleware, (req, res) => {
       return {
         name: m.name,
         userId: m.user_id,
-        estimatedHours: m.estimated_hours,
         
         dailyHours: [getVal(1), getVal(2), getVal(3), getVal(4), getVal(5)]
       };
@@ -855,7 +928,6 @@ app.get('/api/sprints/:sprintId/stats', authMiddleware, (req, res) => {
       }
       return {
         name: m.name,
-        totalEstimated: m.estimated_hours,
         data
       };
     });
@@ -868,7 +940,7 @@ app.get('/api/sprints/:sprintId/stats', authMiddleware, (req, res) => {
       inProgressTasks,
       blockedTasks,
       todoTasks,
-      totalEstimatedHours: totalEst,
+      totalEstimatedHours: 0,
       totalSpentHours: totalSpent,
       effortVariance: variance,
       burndown,
@@ -945,8 +1017,6 @@ app.get('/api/sprints/:sprintId/report', authMiddleware, (req, res) => {
           name: m.name,
           role: m.role,
           tasks: tasksWithSubtasks,
-          estimatedHours: memberTasks.reduce((sum, t) => sum + t.estimated_hours, 0),
-
           subtaskCount: memberSubtasks.length,
           subtaskDoneCount: memberSubtasks.filter(s => s.status === 'done').length
         };
@@ -961,9 +1031,17 @@ app.get('/api/sprints/:sprintId/report', authMiddleware, (req, res) => {
 // POST /api/sprints
 app.post('/api/sprints', authMiddleware, managerOnly, (req, res) => {
   try {
-    const { sprintName, sprintGoal, description, priority, startDate, endDate, members, notes, attachments } = req.body;
+    const { sprintName, sprintGoal, description, priority, startDate, endDate, members, notes, attachments, owner_id } = req.body;
     if (!sprintName || !startDate || !endDate) {
       return res.status(400).json({ error: 'Sprint name, start date, and end date are required.' });
+    }
+
+    let finalOwnerId = req.user.id;
+    if (req.user.role === 'administrator') {
+      if (!owner_id) {
+        return res.status(400).json({ error: 'Administrator must assign a Manager to the sprint (owner_id).' });
+      }
+      finalOwnerId = owner_id;
     }
 
     if (isNaN(new Date(startDate).getTime()) || isNaN(new Date(endDate).getTime())) {
@@ -974,9 +1052,9 @@ app.post('/api/sprints', authMiddleware, managerOnly, (req, res) => {
 
     const transaction = db.transaction(() => {
       db.prepare(`
-        INSERT INTO sprints (sprint_id, sprint_name, sprint_goal, description, priority, status, start_date, end_date, created_by)
-        VALUES (?, ?, ?, ?, ?, 'created', ?, ?, ?)
-      `).run(sprintId, sprintName, sprintGoal || '', description || '', priority || 'medium', startDate, endDate, req.user.id);
+        INSERT INTO sprints (sprint_id, sprint_name, sprint_goal, description, priority, status, start_date, end_date, created_by, owner_id)
+        VALUES (?, ?, ?, ?, ?, 'created', ?, ?, ?, ?)
+      `).run(sprintId, sprintName, sprintGoal || '', description || '', priority || 'medium', startDate, endDate, req.user.id, finalOwnerId);
 
       // Add members with their tasks
       if (members && Array.isArray(members)) {
@@ -988,24 +1066,22 @@ app.post('/api/sprints', authMiddleware, managerOnly, (req, res) => {
           if (m.tasks && Array.isArray(m.tasks)) {
             tasksToCreate.push(...m.tasks);
           } else if (m.taskTitle) {
-            tasksToCreate.push({ title: m.taskTitle, description: m.taskDescription || '', estimatedHours: m.estimatedHours || 0, priority: m.taskPriority || 'medium' });
+            tasksToCreate.push({ title: m.taskTitle, description: m.taskDescription || '', priority: m.taskPriority || 'medium' });
           }
 
-          const totalEstimatedHours = tasksToCreate.reduce((sum, t) => sum + (Number(t.estimatedHours) || 0), 0);
-
           db.prepare(`
-            INSERT INTO sprint_members (sprint_id, user_id, role, estimated_hours)
-            VALUES (?, ?, ?, ?)
-          `).run(sprintId, m.userId, m.role || '', totalEstimatedHours);
+            INSERT INTO sprint_members (sprint_id, user_id, role)
+            VALUES (?, ?, ?)
+          `).run(sprintId, m.userId, m.role || '');
 
           // Create tasks for this member
           for (const task of tasksToCreate) {
             if (!task.title) continue;
             const taskId = generateTaskId();
             db.prepare(`
-              INSERT INTO tasks (task_id, sprint_id, assigned_to, task_title, description, priority, status, estimated_hours, created_by, feature_id)
-              VALUES (?, ?, ?, ?, ?, ?, 'todo', ?, ?, ?)
-            `).run(taskId, sprintId, m.userId, task.title, task.description || '', task.priority || 'medium', task.estimatedHours || 0, req.user.id, m.featureId || '');
+              INSERT INTO tasks (task_id, sprint_id, assigned_to, task_title, description, priority, status, created_by, feature_id)
+              VALUES (?, ?, ?, ?, ?, ?, 'todo', ?, ?)
+            `).run(taskId, sprintId, m.userId, task.title, task.description || '', task.priority || 'medium', req.user.id, m.featureId || '');
           }
 
           // Notify member
@@ -1102,23 +1178,21 @@ app.put('/api/sprints/:sprintId', authMiddleware, managerOnly, (req, res) => {
           if (m.tasks && Array.isArray(m.tasks)) {
             tasksToCreate.push(...m.tasks);
           } else if (m.taskTitle) {
-            tasksToCreate.push({ title: m.taskTitle, description: m.taskDescription || '', estimatedHours: m.estimatedHours || 0, priority: m.taskPriority || 'medium' });
+            tasksToCreate.push({ title: m.taskTitle, description: m.taskDescription || '', priority: m.taskPriority || 'medium' });
           }
 
-          const totalEstimatedHours = tasksToCreate.reduce((sum, t) => sum + (Number(t.estimatedHours) || 0), 0);
-
           db.prepare(`
-            INSERT INTO sprint_members (sprint_id, user_id, role, estimated_hours)
-            VALUES (?, ?, ?, ?)
-          `).run(req.params.sprintId, m.userId, m.role || '', totalEstimatedHours);
+            INSERT INTO sprint_members (sprint_id, user_id, role)
+            VALUES (?, ?, ?)
+          `).run(req.params.sprintId, m.userId, m.role || '');
 
           for (const task of tasksToCreate) {
             if (!task.title) continue;
             const taskId = generateTaskId();
             db.prepare(`
-              INSERT INTO tasks (task_id, sprint_id, assigned_to, task_title, description, priority, status, estimated_hours, created_by, feature_id)
-              VALUES (?, ?, ?, ?, ?, ?, 'todo', ?, ?, ?)
-            `).run(taskId, req.params.sprintId, m.userId, task.title, task.description || '', task.priority || 'medium', task.estimatedHours || 0, req.user.id, m.featureId || '');
+              INSERT INTO tasks (task_id, sprint_id, assigned_to, task_title, description, priority, status, created_by, feature_id)
+              VALUES (?, ?, ?, ?, ?, ?, 'todo', ?, ?)
+            `).run(taskId, req.params.sprintId, m.userId, task.title, task.description || '', task.priority || 'medium', req.user.id, m.featureId || '');
           }
         }
       }
@@ -1429,7 +1503,7 @@ app.delete('/api/sprints/:sprintId/attachments/:attachmentId', authMiddleware, m
 app.get('/api/employee/:userId/sprints', authMiddleware, (req, res) => {
   try {
     const sprints = db.prepare(`
-      SELECT s.sprint_id as sprintId, s.sprint_name as sprintName, s.status
+      SELECT s.sprint_id as sprintId, s.sprint_name as sprintName, s.status, s.end_date as sprintEnd
       FROM sprint_members sm
       JOIN sprints s ON sm.sprint_id = s.sprint_id
       WHERE sm.user_id = ?
@@ -1462,7 +1536,7 @@ app.get('/api/employee/:userId/sprint-stats/:sprintId', authMiddleware, (req, re
     // Task Stats
     const totalTasks = tasks.length;
     const tasksDone = tasks.filter(t => t.status === 'done').length;
-    const totalEstHours = tasks.reduce((sum, t) => sum + t.estimated_hours, 0);
+    
     const totalSpentHours = 0;
     const taskStatusBreakdown = {
       todo: tasks.filter(t => t.status === 'todo').length,
@@ -1476,7 +1550,7 @@ app.get('/api/employee/:userId/sprint-stats/:sprintId', authMiddleware, (req, re
     const subtasksDone = subtasks.filter(s => s.status === 'done').length;
 
     // Efficiency Score
-    const efficiencyScore = totalSpentHours > 0 ? Math.round((totalEstHours / totalSpentHours) * 100) : (totalEstHours > 0 ? 100 : 0);
+    const efficiencyScore = 0;
 
     // Subtask Completion by Task
     const subtaskCompletion = tasks.map(t => {
@@ -1494,8 +1568,7 @@ app.get('/api/employee/:userId/sprint-stats/:sprintId', authMiddleware, (req, re
     // Effort Tracker
     const effortTracker = tasks.map(t => ({
       taskTitle: t.task_title,
-      estimated: t.estimated_hours,
-      actual: t.spent_hours
+      actual: 0
     }));
 
     // Daily Activity & Burndown
@@ -1537,8 +1610,15 @@ app.get('/api/employee/:userId/sprint-stats/:sprintId', authMiddleware, (req, re
       }
       
       const idealRemaining = totalSubtasks - (totalSubtasks / (totalDays - 1)) * i;
-      const progress = Math.min(i / (totalDays - 1), 1);
-      const actualRemaining = Math.max(totalSubtasks - Math.floor(subtasksDone * progress * 1.2), totalSubtasks - subtasksDone);
+      
+      const subtasksCompletedByDate = subtasks.filter(s => {
+        if (s.status !== 'done' || !s.completed_at) return false;
+        const completedDateStr = s.completed_at.slice(0, 10);
+        return completedDateStr <= dateStr;
+      }).length;
+      
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const actualRemaining = dateStr > todayStr ? null : totalSubtasks - subtasksCompletedByDate;
 
       dailyActivity.push({
         day: dayLabel,
@@ -1646,7 +1726,6 @@ app.get('/api/tasks', authMiddleware, (req, res) => {
       description: t.description,
       priority: t.priority,
       status: t.status,
-      estimatedHours: t.estimated_hours,
       
       createdBy: t.created_by,
       subtaskCount: t.subtaskCount,
@@ -1683,7 +1762,6 @@ app.get('/api/tasks/employee/:userId', authMiddleware, (req, res) => {
       description: t.description,
       priority: t.priority,
       status: t.status,
-      estimatedHours: t.estimated_hours,
       
       subtaskCount: t.subtaskCount,
       subtaskDoneCount: t.subtaskDoneCount,
@@ -1726,7 +1804,6 @@ app.get('/api/tasks/:taskId', authMiddleware, (req, res) => {
       description: task.description,
       priority: task.priority,
       status: task.status,
-      estimatedHours: task.estimated_hours,
       
       subtasks: subtasks.map(s => ({
         id: s.id,
@@ -1734,9 +1811,7 @@ app.get('/api/tasks/:taskId', authMiddleware, (req, res) => {
         title: s.subtask_title,
         description: s.description,
         priority: s.priority,
-        status: s.status,
-        estimatedHours: s.estimated_hours
-      })),
+        status: s.status})),
       queries: queries.map(q => ({
         id: q.id,
         queryId: q.query_id,
@@ -1755,6 +1830,179 @@ app.get('/api/tasks/:taskId', authMiddleware, (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+// ==========================================
+// PROJECTS API
+// ==========================================
+
+// GET /api/projects
+app.get('/api/projects', authMiddleware, (req, res) => {
+  try {
+    const query = `
+      SELECT p.*, 
+             COUNT(t.id) as total_tasks,
+             SUM(CASE WHEN t.is_completed = 1 THEN 1 ELSE 0 END) as completed_tasks
+      FROM projects p
+      LEFT JOIN project_tasks t ON p.project_id = t.project_id
+      GROUP BY p.project_id
+      ORDER BY p.created_at DESC
+    `;
+    const projects = db.prepare(query).all();
+    res.json(projects);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/projects/:projectId
+app.get('/api/projects/:projectId', authMiddleware, (req, res) => {
+  try {
+    const project = db.prepare('SELECT * FROM projects WHERE project_id = ?').get(req.params.projectId);
+    if (!project) return res.status(404).json({ error: 'Project not found' });
+    
+    const tasks = db.prepare('SELECT * FROM project_tasks WHERE project_id = ? ORDER BY is_completed ASC, created_at DESC').all(req.params.projectId);
+    res.json({ ...project, tasks });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/projects
+app.post('/api/projects', authMiddleware, (req, res) => {
+  if (req.user.role !== 'manager' && req.user.role !== 'administrator') {
+     return res.status(403).json({ error: 'Forbidden' });
+  }
+  try {
+    const { title, start_date, end_date, description } = req.body;
+    
+    if (!title || !start_date || !end_date) {
+      return res.status(400).json({ error: 'Title, start date, and end date are required.' });
+    }
+
+    const projectId = 'PRJ-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+    
+    db.prepare(`
+      INSERT INTO projects (project_id, title, start_date, end_date, description) 
+      VALUES (?, ?, ?, ?, ?)
+    `).run(projectId, title, start_date, end_date, description || '');
+    
+    const newProject = db.prepare('SELECT * FROM projects WHERE project_id = ?').get(projectId);
+    res.status(201).json(newProject);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/projects/:projectId
+app.put('/api/projects/:projectId', authMiddleware, (req, res) => {
+  if (req.user.role !== 'manager' && req.user.role !== 'administrator') {
+     return res.status(403).json({ error: 'Forbidden' });
+  }
+  try {
+    const { title, start_date, end_date, description } = req.body;
+    
+    if (!title || !start_date || !end_date) {
+      return res.status(400).json({ error: 'Title, start date, and end date are required.' });
+    }
+
+    const existingProject = db.prepare('SELECT * FROM projects WHERE project_id = ?').get(req.params.projectId);
+    if (!existingProject) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    db.prepare(`
+      UPDATE projects 
+      SET title = ?, start_date = ?, end_date = ?, description = ?
+      WHERE project_id = ?
+    `).run(title, start_date, end_date, description || '', req.params.projectId);
+    
+    const updatedProject = db.prepare('SELECT * FROM projects WHERE project_id = ?').get(req.params.projectId);
+    res.status(200).json(updatedProject);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/projects/:projectId
+app.delete('/api/projects/:projectId', authMiddleware, (req, res) => {
+  if (req.user.role !== 'manager' && req.user.role !== 'administrator') {
+     return res.status(403).json({ error: 'Forbidden' });
+  }
+  try {
+    db.prepare('DELETE FROM project_tasks WHERE project_id = ?').run(req.params.projectId);
+    const result = db.prepare('DELETE FROM projects WHERE project_id = ?').run(req.params.projectId);
+    
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    res.json({ message: 'Project deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/projects/:projectId/tasks
+app.post('/api/projects/:projectId/tasks', authMiddleware, (req, res) => {
+  if (req.user.role !== 'manager' && req.user.role !== 'administrator') {
+     return res.status(403).json({ error: 'Forbidden' });
+  }
+  try {
+    const { title, priority } = req.body;
+    if (!title) return res.status(400).json({ error: 'Title is required' });
+
+    const taskId = 'PT-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+    db.prepare(`
+      INSERT INTO project_tasks (task_id, project_id, title, priority)
+      VALUES (?, ?, ?, ?)
+    `).run(taskId, req.params.projectId, title, priority || 'medium');
+    
+    const newTask = db.prepare('SELECT * FROM project_tasks WHERE task_id = ?').get(taskId);
+    res.status(201).json(newTask);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/projects/tasks/:taskId/status
+app.patch('/api/projects/tasks/:taskId/status', authMiddleware, (req, res) => {
+  if (req.user.role !== 'manager' && req.user.role !== 'administrator') {
+     return res.status(403).json({ error: 'Forbidden' });
+  }
+  try {
+    const { is_completed } = req.body;
+    db.prepare('UPDATE project_tasks SET is_completed = ?, updated_at = datetime("now") WHERE task_id = ?').run(is_completed ? 1 : 0, req.params.taskId);
+    res.json({ message: 'Task status updated' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/projects/tasks/:taskId/priority
+app.patch('/api/projects/tasks/:taskId/priority', authMiddleware, (req, res) => {
+  if (req.user.role !== 'manager' && req.user.role !== 'administrator') {
+     return res.status(403).json({ error: 'Forbidden' });
+  }
+  try {
+    const { priority } = req.body;
+    db.prepare('UPDATE project_tasks SET priority = ? WHERE task_id = ?').run(priority, req.params.taskId);
+    res.json({ message: 'Task priority updated' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/projects/tasks/:taskId
+app.delete('/api/projects/tasks/:taskId', authMiddleware, (req, res) => {
+  if (req.user.role !== 'manager' && req.user.role !== 'administrator') {
+     return res.status(403).json({ error: 'Forbidden' });
+  }
+  try {
+    db.prepare('DELETE FROM project_tasks WHERE task_id = ?').run(req.params.taskId);
+    res.json({ message: 'Task deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // POST /api/tasks
 app.post('/api/tasks', authMiddleware, managerOnly, (req, res) => {
@@ -1766,7 +2014,7 @@ app.post('/api/tasks', authMiddleware, managerOnly, (req, res) => {
 
     const taskId = generateTaskId();
     db.prepare(`
-      INSERT INTO tasks (task_id, sprint_id, assigned_to, task_title, description, priority, status, estimated_hours, created_by)
+      INSERT INTO tasks (task_id, sprint_id, assigned_to, task_title, description, priority, status, created_by)
       VALUES (?, ?, ?, ?, ?, ?, 'todo', ?, ?)
     `).run(taskId, sprintId, assignedTo, title, description || '', priority || 'medium', estimatedHours || 0, req.user.id);
 
@@ -1799,7 +2047,7 @@ app.put('/api/tasks/:taskId', authMiddleware, (req, res) => {
     if (title !== undefined) { updates.push('task_title = ?'); values.push(title); }
     if (description !== undefined) { updates.push('description = ?'); values.push(description); }
     if (priority !== undefined) { updates.push('priority = ?'); values.push(priority); }
-    if (estimatedHours !== undefined) { updates.push('estimated_hours = ?'); values.push(estimatedHours); }
+    
     
 
     if (updates.length === 0) return res.status(400).json({ error: 'No valid updates.' });
@@ -1897,7 +2145,6 @@ app.get('/api/subtasks/task/:taskId', authMiddleware, (req, res) => {
       description: s.description,
       priority: s.priority,
       status: s.status,
-      estimatedHours: s.estimated_hours,
       
       createdBy: s.created_by,
       creatorName: s.creatorName
@@ -1931,7 +2178,7 @@ app.post('/api/subtasks', authMiddleware, (req, res) => {
 
     const subtaskId = generateSubtaskId();
     db.prepare(`
-      INSERT INTO subtasks (subtask_id, task_id, created_by, subtask_title, description, priority, estimated_hours)
+      INSERT INTO subtasks (subtask_id, task_id, created_by, subtask_title, description, priority)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(subtaskId, taskId, req.user.id, title, description || '', priority || 'medium', estimatedHours || 0);
 
@@ -1971,7 +2218,11 @@ app.patch('/api/subtasks/:subtaskId/status', authMiddleware, (req, res) => {
 
     if (!subtask) return res.status(404).json({ error: 'Subtask not found' });
 
-    db.prepare('UPDATE subtasks SET status = ? WHERE subtask_id = ?').run(status, req.params.subtaskId);
+    if (status === 'done') {
+      db.prepare('UPDATE subtasks SET status = ?, completed_at = datetime("now") WHERE subtask_id = ?').run(status, req.params.subtaskId);
+    } else {
+      db.prepare('UPDATE subtasks SET status = ?, completed_at = NULL WHERE subtask_id = ?').run(status, req.params.subtaskId);
+    }
 
     // Notify manager on blocked
     if (status === 'blocked' && subtask.managerId) {
@@ -2025,7 +2276,7 @@ app.put('/api/subtasks/:subtaskId', authMiddleware, (req, res) => {
     if (title !== undefined) { updates.push('subtask_title = ?'); values.push(title); }
     if (description !== undefined) { updates.push('description = ?'); values.push(description); }
     if (priority !== undefined) { updates.push('priority = ?'); values.push(priority); }
-    if (estimatedHours !== undefined) { updates.push('estimated_hours = ?'); values.push(estimatedHours); }
+    
     
 
     if (updates.length === 0) return res.status(400).json({ error: 'No valid updates.' });
@@ -2163,7 +2414,7 @@ app.put('/api/queries/:queryId/reply', authMiddleware, managerOnly, (req, res) =
 // ══════════════════════════════════════════════════════════════════════════
 
 // GET /api/leaves
-app.get('/api/leaves', authMiddleware, (req, res) => {
+app.get('/api/leaves', authMiddleware, adminOnly, (req, res) => {
   try {
     const { status, employeeId } = req.query;
     let query = `
@@ -2296,7 +2547,7 @@ app.post('/api/leaves', authMiddleware, (req, res) => {
 });
 
 // PATCH /api/leaves/:id/accept
-app.patch('/api/leaves/:id/accept', authMiddleware, managerOnly, (req, res) => {
+app.patch('/api/leaves/:id/accept', authMiddleware, adminOnly, (req, res) => {
   try {
     const leave = db.prepare('SELECT * FROM leaves WHERE id = ?').get(req.params.id);
     if (!leave) return res.status(404).json({ error: 'Leave request not found' });
@@ -2319,7 +2570,7 @@ app.patch('/api/leaves/:id/accept', authMiddleware, managerOnly, (req, res) => {
 });
 
 // PATCH /api/leaves/:id/reject
-app.patch('/api/leaves/:id/reject', authMiddleware, managerOnly, (req, res) => {
+app.patch('/api/leaves/:id/reject', authMiddleware, adminOnly, (req, res) => {
   try {
     const { manager_remark } = req.body;
     const leave = db.prepare('SELECT * FROM leaves WHERE id = ?').get(req.params.id);
@@ -2416,13 +2667,10 @@ app.get('/api/reports/sprint/:sprintId', authMiddleware, (req, res) => {
         taskId: t.task_id,
         title: t.task_title,
         status: t.status,
-        estimatedHours: t.estimated_hours,
         
         subtasks: subtasks.map(s => ({
           title: s.subtask_title,
-          status: s.status,
-          estimatedHours: s.estimated_hours
-        }))
+          status: s.status}))
       });
     }
 
@@ -2434,7 +2682,6 @@ app.get('/api/reports/sprint/:sprintId', authMiddleware, (req, res) => {
       tasksAssigned: emp.tasks.length,
       tasksCompleted: emp.done,
       tasksBlocked: emp.blocked,
-      estimatedHours: emp.totalEst,
       
       completionRate: emp.tasks.length > 0 ? Math.round((emp.done / emp.tasks.length) * 100) : 0,
       estimationAccuracy: emp.totalEst > 0 ? Math.round((1 - Math.abs(emp.totalEst - emp.totalSpent) / emp.totalEst) * 100) : 0,
@@ -2443,7 +2690,7 @@ app.get('/api/reports/sprint/:sprintId', authMiddleware, (req, res) => {
 
     const totalTasks = tasks.length;
     const doneTasks = tasks.filter(t => t.status === 'done').length;
-    const totalEst = tasks.reduce((s, t) => s + t.estimated_hours, 0);
+    
     const totalSpent = 0;
 
     res.json({
@@ -2500,7 +2747,7 @@ app.get('/api/reports/estimation-accuracy', authMiddleware, (req, res) => {
     const { sprintId } = req.query;
     let taskQuery = `
       SELECT t.assigned_to, e.name,
-        SUM(t.estimated_hours) as totalEst,
+        SUM(t.) as totalEst,
         0 as totalSpent
       FROM tasks t
       JOIN employees e ON t.assigned_to = e.id
@@ -2517,7 +2764,6 @@ app.get('/api/reports/estimation-accuracy', authMiddleware, (req, res) => {
     res.json(employees.map(e => ({
       employeeId: e.assigned_to,
       name: e.name,
-      totalEstimated: e.totalEst,
       totalSpent: e.totalSpent,
       accuracy: e.totalEst > 0 ? Math.round((1 - Math.abs(e.totalEst - e.totalSpent) / e.totalEst) * 100) : 0
     })));
@@ -2543,7 +2789,7 @@ app.post('/api/sprint-members', authMiddleware, managerOnly, (req, res) => {
     if (existing) return res.status(400).json({ error: 'User is already a member of this sprint.' });
 
     db.prepare(`
-      INSERT INTO sprint_members (sprint_id, user_id, role, estimated_hours)
+      INSERT INTO sprint_members (sprint_id, user_id, role)
       VALUES (?, ?, ?, ?)
     `).run(sprintId, userId, role || '', estimatedHours || 0);
 
@@ -2551,7 +2797,7 @@ app.post('/api/sprint-members', authMiddleware, managerOnly, (req, res) => {
     if (taskTitle) {
       const taskId = generateTaskId();
       db.prepare(`
-        INSERT INTO tasks (task_id, sprint_id, assigned_to, task_title, description, priority, status, estimated_hours, created_by)
+        INSERT INTO tasks (task_id, sprint_id, assigned_to, task_title, description, priority, status, created_by)
         VALUES (?, ?, ?, ?, ?, ?, 'todo', ?, ?)
       `).run(taskId, sprintId, userId, taskTitle, taskDescription || '', taskPriority || 'medium', estimatedHours || 0, req.user.id);
     }
@@ -2721,53 +2967,7 @@ app.put('/api/settings/notifications', authMiddleware, (req, res) => {
 // ATTENDANCE ENDPOINTS
 // ══════════════════════════════════════════════════════════════════════════
 
-// GET /api/attendance/me
-app.get('/api/attendance/me', authMiddleware, (req, res) => {
-  try {
-    const attendance = db.prepare('SELECT * FROM attendance WHERE user_id = ? ORDER BY date DESC').all(req.user.id);
-    res.json(attendance);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
-// GET /api/attendance/team
-app.get('/api/attendance/team', authMiddleware, managerOnly, (req, res) => {
-  try {
-    const { userId, startDate, endDate } = req.query;
-    let query = `
-      SELECT a.*, e.name as user_name, e.avatar_initials as user_initials, e.role as user_role 
-      FROM attendance a
-      JOIN employees e ON a.user_id = e.id
-    `;
-    const params = [];
-    const conditions = [];
-
-    if (userId && userId !== 'all') {
-      conditions.push('a.user_id = ?');
-      params.push(userId);
-    }
-    if (startDate) {
-      conditions.push('a.date >= ?');
-      params.push(startDate);
-    }
-    if (endDate) {
-      conditions.push('a.date <= ?');
-      params.push(endDate);
-    }
-
-    if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ');
-    }
-
-    query += ' ORDER BY a.date DESC, e.name ASC';
-
-    const teamAttendance = db.prepare(query).all(...params);
-    res.json(teamAttendance);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -2858,120 +3058,7 @@ app.get('/api/reports/employee/:userId', authMiddleware, async (req, res) => {
   }
 });
 
-// ══════════════════════════════════════════════════════════════════════════
-// ATTENDANCE API
-// ══════════════════════════════════════════════════════════════════════════
 
-app.get('/api/attendance/today', authMiddleware, (req, res) => {
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    const record = db.prepare('SELECT * FROM attendance WHERE user_id = ? AND date = ?').get(req.user.id, today);
-    res.json(record || null);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to fetch attendance' });
-  }
-});
-
-app.post('/api/attendance/action', authMiddleware, (req, res) => {
-  try {
-    const { action } = req.body;
-    const today = new Date().toISOString().split('T')[0];
-    const now = new Date();
-    // Use local time for logging e.g., "09:14 AM" -> actually let's use HH:MM for easy parsing or directly store 24h
-    const nowTime = now.toLocaleTimeString('en-US', { hour12: false }); 
-    
-    let record = db.prepare('SELECT * FROM attendance WHERE user_id = ? AND date = ?').get(req.user.id, today);
-    
-    if (action === 'check-in') {
-      if (record && record.check_in) {
-        return res.status(400).json({ error: 'Already checked in today' });
-      }
-      if (!record) {
-        db.prepare(`
-          INSERT INTO attendance (user_id, date, check_in, status)
-          VALUES (?, ?, ?, 'Pending')
-        `).run(req.user.id, today, nowTime);
-      } else {
-        db.prepare(`UPDATE attendance SET check_in = ?, status = 'Pending' WHERE id = ?`).run(nowTime, record.id);
-      }
-    } else if (action === 'check-out') {
-      if (!record || !record.check_in) {
-        return res.status(400).json({ error: 'Must check in first' });
-      }
-      if (record.check_out) {
-        return res.status(400).json({ error: 'Already checked out today' });
-      }
-      
-      const checkInDate = new Date(`${today}T${record.check_in}Z`);
-      const checkOutDate = new Date(`${today}T${nowTime}Z`);
-      let diffHours = (checkOutDate - checkInDate) / (1000 * 60 * 60);
-      if (diffHours < 0) diffHours = 0;
-      
-      const newStatus = diffHours >= 4 ? 'Present' : 'Half-Day';
-      
-      db.prepare(`
-        UPDATE attendance 
-        SET check_out = ?, total_hours = ?, status = ?
-        WHERE id = ?
-      `).run(nowTime, diffHours.toFixed(2), newStatus, record.id);
-    } else if (action === 'skip') {
-      if (!record) {
-        db.prepare(`
-          INSERT INTO attendance (user_id, date, status)
-          VALUES (?, ?, 'No action')
-        `).run(req.user.id, today);
-      }
-    } else {
-      return res.status(400).json({ error: 'Invalid action' });
-    }
-    
-    record = db.prepare('SELECT * FROM attendance WHERE user_id = ? AND date = ?').get(req.user.id, today);
-    res.json(record);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to record attendance' });
-  }
-});
-
-app.get('/api/attendance/team', authMiddleware, (req, res) => {
-  try {
-    const { userId, startDate, endDate } = req.query;
-    
-    let query = `
-      SELECT a.*, e.name as user_name, e.role as user_role, e.avatar_initials as user_initials
-      FROM attendance a
-      JOIN employees e ON a.user_id = e.id
-      WHERE 1=1
-    `;
-    const params = [];
-    
-    if (req.user.role === 'employee') {
-      query += ` AND a.user_id = ?`;
-      params.push(req.user.id);
-    } else if (userId && userId !== 'all') {
-      query += ` AND a.user_id = ?`;
-      params.push(userId);
-    }
-    
-    if (startDate) {
-      query += ` AND a.date >= ?`;
-      params.push(startDate);
-    }
-    if (endDate) {
-      query += ` AND a.date <= ?`;
-      params.push(endDate);
-    }
-    
-    query += ` ORDER BY a.date DESC, e.name ASC`;
-    
-    const records = db.prepare(query).all(...params);
-    res.json(records);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to fetch team attendance' });
-  }
-});
 
 // ══════════════════════════════════════════════════════════════════════════
 // GLOBAL ERROR HANDLER
@@ -2984,16 +3071,74 @@ app.use((err, req, res, _next) => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════
-// SPA FALLBACK
-// ══════════════════════════════════════════════════════════════════════════
+// BACKGROUND WORKER (Timers & Deadlines)
+// ══════════════════════════════════════════════════════════════════════════// ── ADMIN API ─────────────────────────────────────────────────────────────
 
-app.use((req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.get('/api/admin/dashboard', authMiddleware, adminOnly, (req, res) => {
+  try {
+    const totalEmployees = db.prepare("SELECT COUNT(*) as count FROM employees WHERE role = 'employee'").get().count;
+    const totalManagers = db.prepare("SELECT COUNT(*) as count FROM employees WHERE role = 'manager'").get().count;
+    const totalSprints = db.prepare("SELECT COUNT(*) as count FROM sprints").get().count;
+    const activeSprints = db.prepare("SELECT COUNT(*) as count FROM sprints WHERE status = 'active'").get().count;
+    const completedSprints = db.prepare("SELECT COUNT(*) as count FROM sprints WHERE status = 'completed'").get().count;
+    const totalTasks = db.prepare("SELECT COUNT(*) as count FROM tasks").get().count;
+    
+    // Departments distribution
+    const departmentDist = db.prepare("SELECT department as name, COUNT(*) as value FROM employees GROUP BY department").all();
+    
+    // Sprint status distribution
+    const sprintStatusDist = db.prepare("SELECT status as name, COUNT(*) as value FROM sprints GROUP BY status").all();
+
+    res.json({
+      totalEmployees,
+      totalManagers,
+      totalSprints,
+      activeSprints,
+      completedSprints,
+      totalTasks,
+      departmentDist,
+      sprintStatusDist
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// ══════════════════════════════════════════════════════════════════════════
-// BACKGROUND WORKER (Timers & Deadlines)
-// ══════════════════════════════════════════════════════════════════════════
+app.get('/api/admin/users', authMiddleware, adminOnly, (req, res) => {
+  try {
+    const users = db.prepare("SELECT id, name, email, team, sub_team, role, department, created_at FROM employees WHERE role != 'administrator'").all();
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/users', authMiddleware, adminOnly, (req, res) => {
+  const { name, email, password, role, team, sub_team, department } = req.body;
+  if (!name || !email || !password || !role) {
+    return res.status(400).json({ error: 'Name, email, password, and role are required.' });
+  }
+  
+  try {
+    const existing = db.prepare('SELECT 1 FROM employees WHERE email = ?').get(email);
+    if (existing) {
+      return res.status(400).json({ error: 'Email already exists.' });
+    }
+
+    const stmt = db.prepare(`
+      INSERT INTO employees (name, email, password, role, team, sub_team, department)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    const info = stmt.run(name, email, password, role, team || null, sub_team || null, department || null);
+    
+    res.status(201).json({ id: info.lastInsertRowid, message: 'User created successfully.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Background worker
 setInterval(() => {
   try {
     const now = Date.now();

@@ -7,7 +7,8 @@
     "init-db": "node db/init.js",
     "clear-db": "node db/clear.js",
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "seed:enterprise": "node db/enterprise_seeder.js"
   },
   "keywords": [
     "sprint",

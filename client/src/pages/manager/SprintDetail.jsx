@@ -251,6 +251,11 @@ export default function SprintDetail() {
     if (sprint.status === 'active') {
       return (
         <div className="flex items-center gap-2">
+          {user?.role === 'administrator' && (
+            <button onClick={() => { if(window.confirm('Are you sure you want to force close this sprint?')) handleStatusChange('completed'); }} className="bg-red-600 text-white px-4 py-1.5 rounded text-[12px] font-bold hover:bg-red-700 shadow-sm ml-2">
+              Force Close
+            </button>
+          )}
           {deleteButton}
           {confirmReview ? (
             <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-500/10 p-1 rounded border border-yellow-200 dark:border-yellow-500/20 ml-2">

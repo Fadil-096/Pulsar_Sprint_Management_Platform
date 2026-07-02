@@ -22,6 +22,58 @@ const ThemeToggle = () => {
         {isDark ? <Moon size={12} className="text-gray-800" /> : <Sun size={12} className="text-[#0066CC]" />}
       </span>
     </button>
+  );};
+
+const LiveClock = () => {
+  const [time, setTime] = useState(new Date());
+  const [use12Hour, setUse12Hour] = useState(() => {
+    return localStorage.getItem('nokia-sprint-time-format') === '12h';
+  });
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTime(new Date());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const toggleFormat = () => {
+    const newFormat = !use12Hour;
+    setUse12Hour(newFormat);
+    localStorage.setItem('nokia-sprint-time-format', newFormat ? '12h' : '24h');
+  };
+
+  const fullDay = time.toLocaleDateString('en-GB', { weekday: 'short' });
+  const fullDate = time.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  let hours = time.getHours();
+  const ampm = use12Hour ? (hours >= 12 ? ' PM' : ' AM') : '';
+  if (use12Hour) {
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+  }
+  const displayHours = String(hours).padStart(2, '0');
+  const minutes = String(time.getMinutes()).padStart(2, '0');
+  const seconds = String(time.getSeconds()).padStart(2, '0');
+
+  return (
+    <div 
+      className="flex flex-col items-end justify-center cursor-pointer hover:opacity-80 transition-opacity hidden md:flex mr-2 pr-4 border-r border-nav-text/20"
+      onClick={toggleFormat}
+      title="Click to toggle 12h/24h format"
+    >
+      <div className="text-[10px] text-nav-text opacity-70 font-medium tracking-wide uppercase">
+        {fullDay}, {fullDate}
+      </div>
+      <div className="text-[14px] font-bold text-nav-text flex items-center" style={{ fontVariantNumeric: 'tabular-nums' }}>
+        <span>{displayHours}</span>
+        <span className="opacity-40 mx-[1px] mb-[1px] animate-pulse">:</span>
+        <span>{minutes}</span>
+        <span className="opacity-40 mx-[1px] mb-[1px] animate-pulse">:</span>
+        <span>{seconds}</span>
+        {ampm && <span className="text-[10px] ml-1 opacity-80 font-bold">{ampm}</span>}
+      </div>
+    </div>
   );
 };
 
@@ -29,18 +81,6 @@ const ThemeToggle = () => {
 
 export default function Topbar() {
   const { user, logout } = useAuth();
-  const [profileOpen, setProfileOpen] = useState(false);
-  const profileRef = useRef(null);
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (profileRef.current && !profileRef.current.contains(event.target)) {
-        setProfileOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   return (
     <nav className="flex items-center justify-between px-6 h-[64px] bg-nav-bg sticky top-0 z-50 text-nav-text">
@@ -55,45 +95,25 @@ export default function Topbar() {
       </div>
       
       <div className="flex items-center gap-4 lg:gap-5">
-        <span className="border-[1px] border-nav-text opacity-80 text-nav-text text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-widest hidden sm:inline-block">
-          {user?.role === 'manager' ? 'Manager' : 'Employee'}
-        </span>
-        
+
+        <LiveClock />
+
         <ThemeToggle />
         
         <NotificationBell />
 
-        <div className="relative" ref={profileRef}>
-          <div 
-            className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => setProfileOpen(!profileOpen)}
-          >
-            <div className="w-8 h-8 rounded-full bg-accent-blue text-white flex items-center justify-center text-[12px] font-bold">
-              {user?.initials}
-            </div>
-            <span className="text-[14px] font-medium tracking-wide select-none">{user?.name}</span>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-accent-blue text-white flex items-center justify-center text-[12px] font-bold shadow-sm">
+            {user?.initials}
           </div>
-          
-          {profileOpen && (
-            <div className="absolute right-0 mt-3 w-48 bg-bg-card rounded-md shadow-lg py-1 border border-line z-50 text-text-primary animate-in fade-in slide-in-from-top-2 duration-200">
-              <Link 
-                to={`/${user?.role === 'manager' ? 'manager' : 'employee'}/attendance`} 
-                className="block px-4 py-2.5 text-[13px] font-medium hover:bg-bg-secondary transition-colors"
-                onClick={() => setProfileOpen(false)}
-              >
-                Attendance Log
-              </Link>
-              <Link 
-                to={`/${user?.role === 'manager' ? 'manager' : 'employee'}/settings`} 
-                className="block px-4 py-2.5 text-[13px] font-medium hover:bg-bg-secondary transition-colors"
-                onClick={() => setProfileOpen(false)}
-              >
-                Settings
-              </Link>
-            </div>
-          )}
+          <span className="text-[14px] font-medium tracking-wide select-none">{user?.name}</span>
         </div>
         
+        <div className="hidden sm:block ml-2 mr-2 w-px h-6 bg-nav-text opacity-20"></div>
+
+        <span className="border-[1px] border-nav-text opacity-80 text-nav-text text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-widest hidden sm:inline-block">
+          {user?.role === 'administrator' ? 'Admin' : user?.role === 'manager' ? 'Manager' : 'Employee'}
+        </span>
         <button 
           onClick={logout} 
           className="ml-2 bg-bg-card text-text-primary border border-line px-4 py-1.5 rounded-sm text-[13px] font-bold hover:bg-sidebar-active-bg transition-colors shadow-sm"

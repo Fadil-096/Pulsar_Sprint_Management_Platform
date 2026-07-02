@@ -13,6 +13,7 @@ export default function EmployeeDashboard() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true); // force hmr
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [sprintFilterStatus, setSprintFilterStatus] = useState('all');
   const dropdownRef = useRef(null);
 
   const [showSubtaskModal, setShowSubtaskModal] = useState(false);
@@ -249,11 +250,36 @@ export default function EmployeeDashboard() {
       <div className="page-header flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <h1 className="text-xl font-medium mb-1">My Dashboard</h1>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-2" ref={dropdownRef}>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-2 mb-4" ref={dropdownRef}>
+            
+            {/* Status Filters */}
+            <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar mr-2">
+              {['all', 'active', 'created', 'planner', 'review', 'completed'].map(status => (
+                <button
+                  key={status}
+                  onClick={() => {
+                    setSprintFilterStatus(status);
+                    const matched = sprints.filter(s => status === 'all' || s.status === status);
+                    if (matched.length > 0 && !matched.some(s => s.sprintId === selectedSprintId)) {
+                      setSelectedSprintId(matched[0].sprintId);
+                    }
+                    setDropdownOpen(true);
+                  }}
+                  className={`px-3 py-1.5 text-[11px] font-bold rounded-full whitespace-nowrap transition-colors ${
+                    sprintFilterStatus === status 
+                      ? 'bg-accent-blue text-white shadow-sm' 
+                      : 'bg-bg-card border border-line text-text-secondary hover:bg-table-row-alt hover:text-text-primary'
+                  }`}
+                >
+                  {status === 'created' ? 'Backlogs' : status.charAt(0).toUpperCase() + status.slice(1)}
+                </button>
+              ))}
+            </div>
+
             <div className="relative">
               <button 
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-bg-card border border-line rounded-md text-sm font-medium hover:bg-dropdown-hover-bg hover:border-dropdown-hover-border focus:border-accent-blue focus:ring-1 focus:ring-accent-blue transition-colors shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-bg-card border border-line rounded-lg text-sm font-medium hover:bg-table-row-alt transition-colors shadow-sm"
               >
                 {selectedSprintDetails ? (
                   <>
@@ -269,7 +295,7 @@ export default function EmployeeDashboard() {
               {dropdownOpen && (
                 <div className="absolute top-full left-0 mt-1 w-80 bg-bg-card border border-line rounded-md shadow-xl z-50 py-1">
                   <div className="max-h-60 overflow-y-auto custom-scrollbar">
-                    {sprints.map(sprint => (
+                    {sprints.filter(s => sprintFilterStatus === 'all' || s.status === sprintFilterStatus).map(sprint => (
                       <button
                         key={sprint.sprintId}
                         onClick={() => {
@@ -311,11 +337,7 @@ export default function EmployeeDashboard() {
           <div className="text-[11px] text-text-muted mt-1">My Subtasks</div>
         </div>
 
-        <div className="bg-bg-card border border-line rounded-lg p-3.5 shadow-sm">
-          <div className="text-[11px] text-text-secondary font-bold uppercase tracking-wider mb-1">Estimated Hours</div>
-          <div className="text-2xl font-bold text-text-primary">{stats.totalEstHours}h</div>
-          <div className="text-[11px] text-text-muted mt-1">Total Estimation</div>
-        </div>
+
 
         <div className="bg-bg-card border border-line rounded-lg p-3.5 shadow-sm flex flex-col justify-center items-center text-center">
             {stats.sprint.status === 'active' ? (
@@ -351,7 +373,7 @@ export default function EmployeeDashboard() {
                             <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.key]} />
                         ))}
                         </Pie>
-                        <Tooltip formatter={(value, name) => [`${value} Tasks`, name]} />
+                        <Tooltip formatter={(value, name) => [`${value} Tasks`, name]} contentStyle={{ backgroundColor: 'var(--color-bg-card)', borderColor: 'var(--color-line)', color: 'var(--color-text-primary)' }} itemStyle={{ color: 'var(--color-text-secondary)' }} />
                     </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute top-[45%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none mt-[-5px]">
@@ -379,11 +401,11 @@ export default function EmployeeDashboard() {
                 <div className="flex items-center justify-center h-full text-sm text-text-muted">No tasks to display.</div>
             ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats.subtaskCompletion} layout="vertical" margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <BarChart data={stats.subtaskCompletion} layout="vertical" margin={{ top: 0, right: 0, left: -20, bottom: 0 }} maxBarSize={40}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e5e7eb" />
                     <XAxis type="number" hide  tick={{ fill: 'var(--color-text-secondary)', fontSize: 12 }}/>
-                    <YAxis dataKey="taskTitle" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#4b5563' }} width={120} tickFormatter={(val) => val.length > 15 ? val.substring(0, 15) + '...' : val} />
-                    <Tooltip cursor={{fill: '#f3f4f6'}} formatter={(value, name) => [value, name]} />
+                    <YAxis dataKey="taskTitle" type="category" hide />
+                    <Tooltip cursor={{fill: 'var(--color-bg-secondary)'}} formatter={(value, name) => [value, name]} contentStyle={{ backgroundColor: 'var(--color-bg-card)', borderColor: 'var(--color-line)', color: 'var(--color-text-primary)' }} itemStyle={{ color: 'var(--color-text-secondary)' }} />
                     <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
                     <Bar dataKey="done" name="Done" stackId="a" fill={STATUS_COLORS.done} radius={[0, 0, 0, 0]} />
                     <Bar dataKey="inprogress" name="In Progress" stackId="a" fill={STATUS_COLORS.inprogress} radius={[0, 0, 0, 0]} />
@@ -435,7 +457,7 @@ export default function EmployeeDashboard() {
               <div className="flex flex-wrap gap-1 max-w-[300px]">
                   {last30Days.map((date, i) => {
                       const st = attMap[date];
-                      let bg = 'bg-bg-secondary';
+                      let bg = 'bg-line';
                       if(st === 'Present') bg = 'bg-green-500';
                       else if(st === 'Absent') bg = 'bg-red-500';
                       else if(st === 'Half-Day') bg = 'bg-amber-400';
@@ -458,19 +480,39 @@ export default function EmployeeDashboard() {
               {stats.deadlines.length === 0 ? (
                   <div className="text-sm text-text-muted text-center py-4">All caught up! No pending items.</div>
               ) : (
-                  stats.deadlines.map((d, i) => (
-                      <div key={i} className="flex justify-between items-center border border-line-light p-2 rounded bg-gray-50/50">
-                          <div className="flex items-center gap-2 overflow-hidden">
-                              <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
-                                  d.priority === 'critical' ? 'bg-red-100 text-red-700' :
-                                  d.priority === 'high' ? 'bg-orange-100 text-orange-700' :
-                                  d.priority === 'medium' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                  stats.deadlines.map((d, i) => {
+                      const endDate = new Date(stats.sprint.end_date);
+                      const today = new Date();
+                      const daysLeft = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+                      const dateStr = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                      
+                      return (
+                      <div key={i} className="flex justify-between items-center border border-line-light p-3 rounded-lg bg-bg-secondary/30 hover:bg-bg-secondary/50 transition-colors">
+                          <div className="flex items-center gap-3 overflow-hidden">
+                              <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-md shrink-0 ${
+                                  d.priority === 'critical' ? 'bg-red-500/10 text-red-500 border border-red-500/20' :
+                                  d.priority === 'high' ? 'bg-orange-500/10 text-orange-500 border border-orange-500/20' :
+                                  d.priority === 'medium' ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' : 'bg-green-500/10 text-green-500 border border-green-500/20'
                               }`}>{d.type}</span>
-                              <span className="text-sm text-text-primary font-medium truncate">{d.title}</span>
+                              <div className="flex flex-col overflow-hidden">
+                                  <span className="text-sm text-text-primary font-medium truncate" title={d.title}>{d.title}</span>
+                                  <span className="text-[11px] text-text-secondary flex items-center gap-1 mt-0.5">
+                                      <Calendar size={12} className="text-text-muted" /> Due {dateStr}
+                                  </span>
+                              </div>
                           </div>
-                          <span className="text-[10px] text-text-secondary uppercase font-bold ml-2 shrink-0">{d.status}</span>
+                          <div className="flex flex-col items-end shrink-0 ml-3">
+                              <span className="text-[10px] text-text-secondary uppercase font-bold mb-1">{d.status}</span>
+                              <span className={`text-[11px] font-semibold flex items-center gap-1 ${
+                                  daysLeft < 0 ? 'text-red-500' :
+                                  daysLeft <= 2 ? 'text-orange-500' : 'text-text-secondary'
+                              }`}>
+                                  <Clock size={12} />
+                                  {daysLeft < 0 ? 'Overdue' : daysLeft === 0 ? 'Due Today' : `${daysLeft}d left`}
+                              </span>
+                          </div>
                       </div>
-                  ))
+                  )})
               )}
           </div>
         </div>

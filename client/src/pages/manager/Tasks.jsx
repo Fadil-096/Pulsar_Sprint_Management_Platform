@@ -339,7 +339,7 @@ export default function Tasks() {
                               : 'bg-bg-card border border-line text-text-secondary hover:border-accent-blue/50'
                           }`}
                         >
-                          {status}
+                          {status === 'created' ? 'backlogs' : status}
                         </button>
                       ))}
                     </div>

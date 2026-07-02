@@ -30,37 +30,24 @@ export default function Login() {
   const navigate = useNavigate();
   
   // Login form states
-  const [email, setEmail] = useState('hari.krishnan@nokia.com');
-  const [password, setPassword] = useState('nokia@123');
+  const [email, setEmail] = useState('lars.henrik@nokia.com');
+  const [password, setPassword] = useState('Nokia@123');
   const [role, setRole] = useState('manager');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Attendance flow states
-  const [authStage, setAuthStage] = useState('login'); // 'login' | 'attendance'
-  const [attendanceRecord, setAttendanceRecord] = useState(null);
-  const [processing, setProcessing] = useState(false);
-  const [successMessage, setSuccessMessage] = useState(null);
-  const [now, setNow] = useState(new Date());
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  
-  // Authenticated user data for greeting
-  const [authUser, setAuthUser] = useState(null);
-
-  useEffect(() => {
-    if (authStage === 'attendance') {
-      const interval = setInterval(() => setNow(new Date()), 1000);
-      return () => clearInterval(interval);
-    }
-  }, [authStage]);
-
   const handleRoleChange = (selectedRole) => {
     setRole(selectedRole);
-    if (selectedRole === 'manager') {
-      setEmail('hari.krishnan@nokia.com');
+    if (selectedRole === 'administrator') {
+      setEmail('admin@nokia.com');
+      setPassword('NokiaAdmin!2026');
+    } else if (selectedRole === 'manager') {
+      setEmail('lars.henrik@nokia.com');
+      setPassword('Nokia@123');
     } else {
-      setEmail('aditya.patel@nokia.com');
+      setEmail('sami.kapanen@nokia.com');
+      setPassword('Nokia@123');
     }
   };
 
@@ -70,17 +57,7 @@ export default function Login() {
     setLoading(true);
     try {
       const user = await login(email, password, role);
-      setAuthUser(user);
-      
-      // Transition to Attendance state for both roles
-      const token = localStorage.getItem('token');
-      try {
-        const res = await axios.get('/api/attendance/today', { headers: { Authorization: `Bearer ${token}` } });
-        setAttendanceRecord(res.data || null);
-      } catch (err) {
-        console.error("Failed to fetch attendance", err);
-      }
-      setAuthStage('attendance');
+      navigate('/');
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed');
     } finally {
@@ -88,53 +65,6 @@ export default function Login() {
     }
   };
 
-  const handleAttendanceAction = async (action) => {
-    setProcessing(true);
-    setError('');
-    const token = localStorage.getItem('token');
-    try {
-      const res = await axios.post('/api/attendance/action', { action }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setAttendanceRecord(res.data);
-      
-      if (action === 'skip') {
-        navigate('/');
-        return;
-      }
-
-      const actionText = action === 'check-in' ? 'Checked in' : 'Checked out';
-      const timeText = action === 'check-in' ? res.data.check_in : res.data.check_out;
-      const formattedTime = new Date(`1970-01-01T${timeText}Z`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      
-      setSuccessMessage(`${actionText} at ${formattedTime}`);
-      
-      setTimeout(async () => {
-        if (action === 'check-out') {
-          await logout();
-          setAuthStage('login');
-          setSuccessMessage(null);
-          setAttendanceRecord(null);
-        } else {
-          navigate('/');
-        }
-      }, 1500);
-
-    } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.error || 'Action failed');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const formatTime = (timeString) => {
-    if (!timeString) return '';
-    return new Date(`1970-01-01T${timeString}Z`).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-
-  const hasCheckedIn = !!(attendanceRecord && attendanceRecord.check_in);
-  const hasCheckedOut = !!(attendanceRecord && attendanceRecord.check_out);
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-bg-card text-text-primary">
@@ -163,7 +93,6 @@ export default function Login() {
         </div>
 
         <div className="w-full max-w-[420px] transition-all duration-300">
-          {authStage === 'login' ? (
             <div className="animate-in fade-in slide-in-from-right-4 duration-500">
               <div className="mb-10">
                 <h2 className="text-[32px] font-bold text-text-primary tracking-tight mb-2">Sign In</h2>
@@ -218,6 +147,13 @@ export default function Login() {
                   <div className="flex w-full bg-bg-secondary rounded overflow-hidden h-[42px] border-[1px] border-line">
                     <button
                       type="button"
+                      className={`flex-1 text-[13px] font-bold tracking-wide transition-colors ${role === 'administrator' ? 'bg-accent-blue text-white' : 'text-text-secondary hover:text-text-primary'}`}
+                      onClick={() => handleRoleChange('administrator')}
+                    >
+                      ADMIN
+                    </button>
+                    <button
+                      type="button"
                       className={`flex-1 text-[13px] font-bold tracking-wide transition-colors ${role === 'manager' ? 'bg-accent-blue text-white' : 'text-text-secondary hover:text-text-primary'}`}
                       onClick={() => handleRoleChange('manager')}
                     >
@@ -248,126 +184,8 @@ export default function Login() {
                 </button>
               </form>
             </div>
-          ) : (
-            <div className="animate-in fade-in slide-in-from-right-4 duration-500 flex flex-col w-full">
-              {successMessage ? (
-                <div className="flex flex-col items-center justify-center py-12 animate-in fade-in zoom-in duration-300">
-                  <CheckCircle size={56} className="text-semantic-success-text mb-4" />
-                  <h2 className="text-xl font-bold text-text-primary">{successMessage}</h2>
-                  <p className="text-sm text-text-secondary mt-2">Routing to dashboard...</p>
-                </div>
-              ) : (
-                <>
-                  <div className="mb-8">
-                    <h2 className="text-[32px] font-bold text-text-primary tracking-tight mb-2">
-                      Hi, {authUser?.name?.split(' ')[0]}
-                    </h2>
-                    <div className="flex items-center text-[15px] text-text-secondary mb-1">
-                      <Clock size={16} className="mr-2" />
-                      <span>{now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} at {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-                    </div>
-                    
-                    <p className="text-[14px] text-text-muted italic mt-4 border-l-2 border-line pl-3">
-                      {!hasCheckedIn 
-                        ? "You have not checked in yet today."
-                        : !hasCheckedOut
-                          ? `Checked in at ${formatTime(attendanceRecord.check_in)} — not yet checked out.`
-                          : `Attendance recorded for today. Check in: ${formatTime(attendanceRecord.check_in)} · Check out: ${formatTime(attendanceRecord.check_out)}.`
-                      }
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 w-full mb-8">
-                    {/* Check In Button */}
-                    <button
-                      onClick={() => handleAttendanceAction('check-in')}
-                      disabled={hasCheckedIn || processing}
-                      className={`flex flex-col items-center justify-center py-5 px-3 rounded transition-all border-[1px] ${
-                        hasCheckedIn 
-                          ? 'bg-bg-secondary border-line opacity-60 cursor-not-allowed' 
-                          : 'bg-semantic-success-bg/10 border-semantic-success-text/30 hover:bg-semantic-success-bg/20 text-semantic-success-text cursor-pointer hover:shadow-sm'
-                      }`}
-                    >
-                      <LogIn size={24} className={`mb-2 ${hasCheckedIn ? 'text-text-muted' : 'text-semantic-success-text'}`} />
-                      <span className={`text-[15px] font-bold ${hasCheckedIn ? 'text-text-secondary' : 'text-semantic-success-text'}`}>Check In</span>
-                      {hasCheckedIn && (
-                        <span className="text-[11px] text-text-muted mt-1.5 font-medium">
-                          Checked in at {formatTime(attendanceRecord.check_in)}
-                        </span>
-                      )}
-                    </button>
-
-                    {/* Check Out Button */}
-                    <button
-                      onClick={() => setShowConfirmModal(true)}
-                      disabled={!hasCheckedIn || hasCheckedOut || processing}
-                      className={`flex flex-col items-center justify-center py-5 px-3 rounded transition-all border-[1px] ${
-                        (!hasCheckedIn || hasCheckedOut)
-                          ? 'bg-bg-secondary border-line opacity-60 cursor-not-allowed' 
-                          : 'bg-red-50 border-red-200 hover:bg-red-100 text-red-600 cursor-pointer hover:shadow-sm dark:bg-red-900/20 dark:border-red-700/30 dark:text-red-500 dark:hover:bg-red-900/40'
-                      }`}
-                    >
-                      <LogOut size={24} className={`mb-2 ${(!hasCheckedIn || hasCheckedOut) ? 'text-text-muted' : 'text-red-600 dark:text-red-500'}`} />
-                      <span className={`text-[15px] font-bold ${(!hasCheckedIn || hasCheckedOut) ? 'text-text-secondary' : 'text-red-600 dark:text-red-500'}`}>Check Out</span>
-                      
-                      {!hasCheckedIn ? (
-                        <span className="text-[11px] text-text-muted mt-1.5 font-medium">Check in first</span>
-                      ) : hasCheckedOut ? (
-                        <span className="text-[11px] text-text-muted mt-1.5 font-medium">Checked out at {formatTime(attendanceRecord.check_out)}</span>
-                      ) : null}
-                    </button>
-                  </div>
-
-                  {error && (
-                    <div className="bg-badge-rejected-bg text-badge-rejected-text border-[1px] border-badge-rejected-bg px-3.5 py-2.5 rounded text-[13px] mb-6 text-center">
-                      {error}
-                    </div>
-                  )}
-
-                  <div className="text-center mt-2">
-                    <button
-                      onClick={() => handleAttendanceAction('skip')}
-                      disabled={processing}
-                      className="text-[13px] font-medium text-text-muted hover:text-text-primary transition-colors focus:outline-none"
-                    >
-                      Skip, go to dashboard &rarr;
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
         </div>
       </div>
-
-      {/* Confirmation Modal Overlay */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-bg-card border-[1px] border-line rounded-lg shadow-xl p-6 w-[90%] max-w-[400px] animate-in zoom-in-95 duration-200">
-            <h3 className="text-lg font-bold text-text-primary mb-2">Check Out Confirmation</h3>
-            <p className="text-[15px] text-text-secondary mb-6">Are you sure you want to check out for the day? This action cannot be undone.</p>
-            <div className="flex justify-end gap-3">
-              <button 
-                onClick={() => setShowConfirmModal(false)}
-                className="px-4 py-2 text-[14px] font-medium text-text-secondary hover:text-text-primary transition-colors"
-                disabled={processing}
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={() => {
-                  setShowConfirmModal(false);
-                  handleAttendanceAction('check-out');
-                }}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-[14px] font-bold rounded transition-colors shadow-sm disabled:opacity-50"
-                disabled={processing}
-              >
-                Yes, Check Out
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

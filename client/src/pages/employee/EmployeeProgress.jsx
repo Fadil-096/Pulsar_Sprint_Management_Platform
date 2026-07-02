@@ -178,57 +178,12 @@ export default function EmployeeProgress() {
           </div>
         </div>
 
-        {/* Effort Summary */}
-        <div className="card">
-          <div className="card-title">Effort Summary</div>
-          <div className="space-y-4 mt-4">
-            <div className="flex justify-between items-center py-2 border-b-[0.5px] border-line-light">
-              <span className="text-[13px] text-text-secondary">Total Tasks Assigned</span>
-              <span className="font-medium text-[16px]">{totalTasks}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b-[0.5px] border-line-light">
-              <span className="text-[13px] text-text-secondary">Total Estimated Hours</span>
-              <span className="font-medium">{totalEst > 0 ? `${totalEst}h` : '0h'}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b-[0.5px] border-line-light">
-              <span className="text-[13px] text-text-secondary">Total Logged Hours</span>
-              <span className="font-medium text-accent-blue">{actHours > 0 ? `${actHours}h` : '0h'}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b-[0.5px] border-line-light">
-              <span className="text-[13px] text-text-secondary">Efficiency (Est vs Act)</span>
-              <span className={`font-medium ${totalEst > 0 ? effColor : 'text-text-muted'}`}>
-                {totalEst > 0 ? `${efficiency}%` : '—'}
-              </span>
-            </div>
-          </div>
-        </div>
+        {/* Effort Summary removed */}
       </div>
 
       {/* New Sections below */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        {/* Efficiency Trend Chart */}
-        <div className="card flex flex-col">
-          <div className="card-title">{trendTitle}</div>
-          <p className="text-[12px] text-text-secondary mb-4">{trendDesc}</p>
-          <div className="flex-1 min-h-[250px] text-xs">
-            {trendData.length <= 1 ? (
-              <div className="flex flex-col items-center justify-center h-full text-text-muted">
-                {trendData.length === 1 && <div className="text-xl font-bold text-accent-blue mb-2">{trendData[0].efficiency}%</div>}
-                <p>{selectedSprintId === 'ALL' ? 'More sprints will build your trend' : 'More tasks will build your chart'}</p>
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trendData} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border-light)" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false}  tick={{ fill: 'var(--color-text-secondary)', fontSize: 12 }}/>
-                  <YAxis axisLine={false} tickLine={false} domain={['auto', 'auto']}  tick={{ fill: 'var(--color-text-secondary)', fontSize: 12 }}/>
-                  <Tooltip cursor={{fill: 'var(--color-bg-secondary)'}}  contentStyle={{ backgroundColor: 'var(--color-bg-card)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }} itemStyle={{ color: 'var(--color-text-secondary)' }}/>
-                  <Line type="monotone" dataKey="efficiency" name="Efficiency Score (%)" stroke="var(--color-accent-blue)" strokeWidth={2} activeDot={{ r: 6 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </div>
+        {/* Efficiency Trend Chart removed */}
 
         {/* Subtask Completion Summary */}
         <div className="card">

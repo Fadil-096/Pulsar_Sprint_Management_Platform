@@ -5,6 +5,7 @@ import { NotificationProvider } from './context/NotificationContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Login from './pages/Login';
 import AppLayout from './layouts/AppLayout';
+import PageLoader from './components/PageLoader';
 
 // Code splitting for page components
 const ManagerDashboard = React.lazy(() => import('./pages/manager/ManagerDashboard'));
@@ -28,21 +29,21 @@ const EmployeeNotifications = React.lazy(() => import('./pages/employee/Employee
 const EmployeeSettings = React.lazy(() => import('./pages/employee/EmployeeSettings'));
 
 const AttendanceLog = React.lazy(() => import('./pages/shared/AttendanceLog'));
+const ProjectsList = React.lazy(() => import('./pages/shared/ProjectsList'));
+const ProjectDetail = React.lazy(() => import('./pages/shared/ProjectDetail'));
 
-const PageLoader = () => (
-  <div className="flex-1 h-full min-h-screen flex items-center justify-center bg-bg-secondary">
-    <div className="flex flex-col items-center gap-3">
-      <div className="w-8 h-8 border-4 border-accent-blue border-t-transparent rounded-full animate-spin"></div>
-      <div className="text-sm font-bold text-text-secondary uppercase tracking-wider">Loading...</div>
-    </div>
-  </div>
-);
+// Admin pages
+const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
+const UserManagement = React.lazy(() => import('./pages/admin/UserManagement'));
+const AdminSettings = React.lazy(() => import('./pages/admin/AdminSettings'));
+const AdminSprints = React.lazy(() => import('./pages/admin/SprintManagement'));
+const AdminTeam = React.lazy(() => import('./pages/admin/AdminTeam'));
 
-const ProtectedRoute = ({ children, allowedRole }) => {
+const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
   if (loading) return <PageLoader />;
   if (!user) return <Navigate to="/login" />;
-  if (allowedRole && user.role !== allowedRole) return <Navigate to="/" />;
+  if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to="/" />;
   return children;
 };
 
@@ -50,8 +51,9 @@ const RoleRedirect = () => {
   const { user, loading } = useAuth();
   if (loading) return <PageLoader />;
   if (!user) return <Navigate to="/login" />;
+  if (user.role === 'administrator') return <Navigate to="/admin/dashboard" />;
   if (user.role === 'manager') return <Navigate to="/manager/dashboard" />;
-  return <Navigate to="/employee/tasks" />;
+  return <Navigate to="/employee/dashboard" />;
 };
 
 function App() {
@@ -66,8 +68,10 @@ function App() {
                 
                 <Route path="/" element={<RoleRedirect />} />
 
-                <Route path="/manager" element={<ProtectedRoute allowedRole="manager"><AppLayout /></ProtectedRoute>}>
+                <Route path="/manager" element={<ProtectedRoute allowedRoles={['manager', 'administrator']}><AppLayout /></ProtectedRoute>}>
                   <Route path="dashboard" element={<ManagerDashboard />} />
+                  <Route path="projects" element={<ProjectsList />} />
+                  <Route path="projects/:projectId" element={<ProjectDetail />} />
                   <Route path="sprints" element={<Sprints />} />
                   <Route path="sprints/:sprintId" element={<SprintDetail />} />
                   <Route path="tasks" element={<Tasks />} />
@@ -78,10 +82,9 @@ function App() {
                   <Route path="settings" element={<Settings />} />
                   <Route path="attendance" element={<AttendanceLog />} />
                   <Route path="team-attendance" element={<TeamAttendance />} />
-                  <Route path="leaves" element={<ManagerLeaves />} />
                 </Route>
 
-                <Route path="/employee" element={<ProtectedRoute allowedRole="employee"><AppLayout /></ProtectedRoute>}>
+                <Route path="/employee" element={<ProtectedRoute allowedRoles={['employee']}><AppLayout /></ProtectedRoute>}>
                   <Route path="dashboard" element={<EmployeeDashboard />} />
                   <Route path="tasks" element={<EmployeeTasks />} />
                   <Route path="log" element={<EmployeeLogTask />} />
@@ -91,6 +94,17 @@ function App() {
                   <Route path="notifications" element={<EmployeeNotifications />} />
                   <Route path="settings" element={<EmployeeSettings />} />
                 </Route>
+
+                <Route path="/admin" element={<ProtectedRoute allowedRoles={['administrator']}><AppLayout /></ProtectedRoute>}>
+                  <Route path="dashboard" element={<AdminDashboard />} />
+                  <Route path="users" element={<UserManagement />} />
+                  <Route path="sprints" element={<AdminSprints />} />
+                  <Route path="team" element={<AdminTeam />} />
+                  <Route path="leaves" element={<ManagerLeaves />} />
+                  <Route path="departments" element={<AdminSettings />} />
+                  <Route path="settings" element={<AdminSettings />} />
+                </Route>
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>
           </BrowserRouter>

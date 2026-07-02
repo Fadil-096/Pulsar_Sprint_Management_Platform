@@ -33,7 +33,6 @@ CREATE TABLE IF NOT EXISTS sprint_members (
   sprint_id       TEXT NOT NULL REFERENCES sprints(sprint_id),
   user_id         INTEGER NOT NULL REFERENCES employees(id),
   role            TEXT DEFAULT '',
-  estimated_hours REAL NOT NULL DEFAULT 0,
   joined_at       TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -46,7 +45,6 @@ CREATE TABLE IF NOT EXISTS tasks (
   description    TEXT DEFAULT '',
   priority       TEXT NOT NULL DEFAULT 'medium' CHECK(priority IN ('critical','high','medium','low')),
   status         TEXT NOT NULL DEFAULT 'todo' CHECK(status IN ('todo','inprogress','blocked','done')),
-  estimated_hours REAL NOT NULL DEFAULT 0,
   created_by     INTEGER REFERENCES employees(id),
   created_at     TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -60,7 +58,6 @@ CREATE TABLE IF NOT EXISTS subtasks (
   description     TEXT DEFAULT '',
   priority        TEXT NOT NULL DEFAULT 'medium' CHECK(priority IN ('critical','high','medium','low')),
   status          TEXT NOT NULL DEFAULT 'todo' CHECK(status IN ('todo','inprogress','blocked','done')),
-  estimated_hours REAL NOT NULL DEFAULT 0,
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -104,17 +101,7 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at     TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
-CREATE TABLE IF NOT EXISTS attendance (
-  id           INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id      INTEGER NOT NULL REFERENCES employees(id),
-  date         TEXT NOT NULL,
-  check_in     TEXT DEFAULT NULL,
-  check_out    TEXT DEFAULT NULL,
-  total_hours  REAL DEFAULT 0,
-  status       TEXT NOT NULL DEFAULT 'Present' CHECK(status IN ('Present','Absent','Half-Day','On Leave','Holiday','Late','Pending','No action')),
-  created_at   TEXT NOT NULL DEFAULT (datetime('now')),
-  UNIQUE(user_id, date)
-);
+
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_tasks_sprint ON tasks(sprint_id);
@@ -147,4 +134,23 @@ CREATE TABLE IF NOT EXISTS sprint_attachments (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS timer_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  employee_id INTEGER NOT NULL REFERENCES employees(id),
+  subtask_id TEXT NOT NULL REFERENCES subtasks(subtask_id),
+  start_time TEXT NOT NULL DEFAULT (datetime('now')),
+  end_time TEXT DEFAULT NULL,
+  duration REAL DEFAULT 0
+);
 
+CREATE TABLE IF NOT EXISTS sprint_reviews (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sprint_id TEXT NOT NULL REFERENCES sprints(sprint_id),
+  dod_met INTEGER DEFAULT 0,
+  qa_passed INTEGER DEFAULT 0,
+  stakeholder_signoff INTEGER DEFAULT 0,
+  reviewer_notes TEXT DEFAULT '',
+  return_reason TEXT DEFAULT '',
+  moved_to_review_at TEXT DEFAULT (datetime('now')),
+  notes_updated_at TEXT DEFAULT (datetime('now'))
+);

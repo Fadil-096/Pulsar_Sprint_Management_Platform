@@ -15,6 +15,7 @@ export default function ManagerDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [sprintFilterStatus, setSprintFilterStatus] = useState('all');
   const dropdownRef = useRef(null);
 
   // Close dropdown when clicking outside
@@ -151,9 +152,34 @@ export default function ManagerDashboard() {
               </button>
               
               {dropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 w-80 bg-bg-card border border-line rounded-md shadow-xl z-50 py-1">
+                <div className="absolute top-full left-0 mt-1 w-80 bg-bg-card border border-line rounded-md shadow-xl z-50 py-2">
+                  <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar px-3 pb-3 mb-2 border-b border-line">
+                    {['all', 'active', 'created', 'planner', 'review', 'completed'].map(status => (
+                      <button
+                        key={status}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSprintFilterStatus(status);
+                          const matched = sprints.filter(s => status === 'all' || s.status === status);
+                          if (matched.length > 0 && !matched.some(s => s.sprintId === selectedSprintId)) {
+                            setSearchParams({ sprint_id: matched[0].sprintId });
+                          }
+                        }}
+                        className={`px-3 py-1.5 text-[11px] font-bold rounded-full whitespace-nowrap transition-colors ${
+                          sprintFilterStatus === status 
+                            ? 'bg-accent-blue text-white shadow-sm' 
+                            : 'bg-bg-secondary border border-line text-text-secondary hover:bg-table-row-alt hover:text-text-primary'
+                        }`}
+                      >
+                        {status === 'created' ? 'Backlogs' : status.charAt(0).toUpperCase() + status.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="px-4 pb-2 text-sm font-bold text-text-primary">
+                    All Sprints
+                  </div>
                   <div className="max-h-60 overflow-y-auto custom-scrollbar">
-                    {sprints.map(sprint => (
+                    {sprints.filter(s => sprintFilterStatus === 'all' || s.status === sprintFilterStatus).map(sprint => (
                       <button
                         key={sprint.sprintId}
                         onClick={() => {

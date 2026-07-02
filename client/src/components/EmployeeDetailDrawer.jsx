@@ -136,7 +136,9 @@ export default function EmployeeDetailDrawer({ employeeId, onClose }) {
                           <div className="truncate text-sm font-medium text-text-primary">{task.task_title}</div>
                         </div>
                         <div className="flex items-center gap-4 shrink-0 pl-4">
-                          <div className="text-xs font-medium text-text-secondary">{task.estimated_hours}h</div>
+                          <div className="text-[10px] text-text-muted mt-1 px-1.5 py-0.5 bg-bg-secondary rounded border border-line-light inline-block">
+                            {task.priority} Priority
+                          </div>
                           <div className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${task.status === 'done' ? 'bg-green-100 text-green-700' : task.status === 'inprogress' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
                             {task.status}
                           </div>
