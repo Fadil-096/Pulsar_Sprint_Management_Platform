@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, Plus, X, Calendar, CheckSquare, Flag } from 'lucide-react';
+import { ArrowLeft, Plus, X, Calendar, CheckSquare, Flag, Trash2 } from 'lucide-react';
+import ConfirmModal from '../../components/ConfirmModal';
 import PageLoader from '../../components/PageLoader';
 
 export default function ProjectDetail() {
@@ -100,7 +101,12 @@ export default function ProjectDetail() {
     }
   };
 
-  const deleteTask = async (taskId) => {
+  const [taskToDelete, setTaskToDelete] = useState(null);
+
+  const confirmDeleteTask = async () => {
+    if (!taskToDelete) return;
+    const taskId = taskToDelete.task_id;
+    setTaskToDelete(null);
     try {
       await axios.delete(`/api/projects/tasks/${taskId}`, { headers: { Authorization: `Bearer ${token}` } });
       setTasks(tasks.filter(t => t.task_id !== taskId));
@@ -124,7 +130,7 @@ export default function ProjectDetail() {
     <div className="p-6 max-w-5xl mx-auto">
       <button 
         onClick={() => navigate('/manager/projects')}
-        className="flex items-center text-sm font-medium text-text-secondary bg-bg-secondary border border-border-color rounded-lg px-3 py-2 hover:bg-accent-blue hover:text-white hover:border-accent-blue transition-all mb-4"
+        className="flex items-center text-sm font-medium text-text-secondary bg-transparent border border-white/10 rounded-lg px-3 py-2 hover:bg-white/5 hover:text-white transition-all mb-4"
       >
         <ArrowLeft size={16} className="mr-2" />
         Back to Projects
@@ -134,7 +140,7 @@ export default function ProjectDetail() {
         Projects <span className="mx-2">→</span> <span className="text-white">{project.title}</span>
       </div>
 
-      <div className="bg-bg-secondary p-5 rounded-lg border-l-4 border-l-accent-blue border border-border-color mb-8">
+      <div className="bg-bg-secondary p-5 rounded-lg border-l-4 border-l-accent-blue mb-8">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-xl font-bold text-text-primary capitalize tracking-tight leading-none">{project.title}</h1>
           <span className="px-3 py-1 rounded-full bg-accent-blue/10 text-accent-blue text-sm font-semibold whitespace-nowrap">
@@ -148,7 +154,7 @@ export default function ProjectDetail() {
         </div>
 
         {project.description && (
-          <div className="mt-4 pt-4 border-t border-border-color">
+          <div className="mt-4 pt-4">
             <h3 className="text-[10px] uppercase tracking-widest text-text-muted font-semibold mb-1.5">Description</h3>
             <p className="text-[13px] text-text-secondary leading-relaxed">
               {project.description}
@@ -160,16 +166,18 @@ export default function ProjectDetail() {
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold text-text-primary">Tasks</h2>
         {!showTaskForm && (
-          <button 
-            onClick={() => setShowTaskForm(true)}
-            className="flex items-center bg-accent-blue hover:bg-blue-600 text-white rounded-full px-4 py-2 text-sm font-medium transition-all"
-          >
-            <Plus size={16} className="mr-2" /> Add Task
-          </button>
+          <div className="flex items-center">
+            <button 
+              onClick={() => setShowTaskForm(true)}
+              className="flex items-center bg-accent-blue hover:bg-blue-600 text-white rounded-full px-4 py-2 text-sm font-medium transition-all"
+            >
+              <Plus size={16} className="mr-2" /> Add Task
+            </button>
+          </div>
         )}
       </div>
 
-      <div className="flex justify-between items-center text-[11px] font-semibold text-text-secondary uppercase tracking-wider border-b border-border-color pb-2 mb-3">
+      <div className="flex justify-between items-center text-[11px] font-semibold text-text-secondary uppercase tracking-wider border-b border-white/5 pb-2 mb-3">
         <div className="pl-3">TASK</div>
         <div className="pr-12">PRIORITY FLAG</div>
       </div>
@@ -262,11 +270,11 @@ export default function ProjectDetail() {
                 )}
               </div>
             <button 
-              onClick={() => deleteTask(task.task_id)}
-              className="opacity-0 group-hover:opacity-100 text-text-secondary hover:text-red-500 transition-all p-1"
-              title="Remove task"
+              onClick={() => setTaskToDelete(task)}
+              className="text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-all p-1.5 rounded"
+              title="Delete task"
             >
-              <X size={16} />
+              <Trash2 size={16} />
             </button>
             </div>
           </div>
@@ -275,9 +283,9 @@ export default function ProjectDetail() {
         {completedTasks.length > 0 && (
           <div className="mt-8">
             <div className="flex items-center mb-3">
-              <div className="h-px bg-border-color flex-1"></div>
+              <div className="h-px bg-white/5 flex-1"></div>
               <span className="px-3 text-xs font-semibold text-text-secondary uppercase tracking-wider">Completed</span>
-              <div className="h-px bg-border-color flex-1"></div>
+              <div className="h-px bg-white/5 flex-1"></div>
             </div>
             
             <div className="space-y-2 opacity-60">
@@ -314,11 +322,11 @@ export default function ProjectDetail() {
                       )}
                     </div>
                   <button 
-                    onClick={() => deleteTask(task.task_id)}
-                    className="opacity-0 group-hover:opacity-100 text-text-secondary hover:text-red-500 transition-all p-1"
-                    title="Remove task"
+                    onClick={() => setTaskToDelete(task)}
+                    className="text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-all p-1.5 rounded"
+                    title="Delete task"
                   >
-                    <X size={16} />
+                    <Trash2 size={16} />
                   </button>
                   </div>
                 </div>
@@ -328,11 +336,29 @@ export default function ProjectDetail() {
         )}
         
         {tasks.length === 0 && !showTaskForm && (
-          <div className="py-12 text-center text-text-secondary border border-dashed border-border-color rounded-lg">
+          <div className="py-12 text-center text-text-secondary rounded-lg">
             No tasks found. Click "Add Task" to create one.
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={!!taskToDelete}
+        onCancel={() => setTaskToDelete(null)}
+        onConfirm={confirmDeleteTask}
+        title="Delete Task?"
+        bodyText="This will permanently delete this task from the project. This action cannot be undone."
+        confirmText="Delete Task"
+        iconType="danger"
+        previewContent={
+          taskToDelete ? (
+            <>
+              <Flag size={14} className={priorities.find(p => p.value === taskToDelete.priority)?.textColor || 'text-gray-500'} />
+              <span className="text-sm font-medium text-text-primary truncate">{taskToDelete.title}</span>
+            </>
+          ) : null
+        }
+      />
     </div>
   );
 }

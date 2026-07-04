@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, Calendar, ChevronRight, Trash2, Pencil } from 'lucide-react';
+import ConfirmModal from '../../components/ConfirmModal';
 import PageLoader from '../../components/PageLoader';
 
 export default function ProjectsList() {
@@ -14,6 +15,7 @@ export default function ProjectsList() {
   const [endDate, setEndDate] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState(null);
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
@@ -73,9 +75,15 @@ export default function ProjectsList() {
     setShowModal(true);
   };
 
-  const handleDeleteProject = async (e, projectId) => {
+  const handleDeleteProject = (e, projectId) => {
     e.stopPropagation();
-    if (!window.confirm('Are you sure you want to delete this project? This will also delete all its tasks.')) return;
+    setProjectToDelete(projectId);
+  };
+
+  const confirmDeleteProject = async () => {
+    if (!projectToDelete) return;
+    const projectId = projectToDelete;
+    setProjectToDelete(null);
 
     try {
       setLoading(true);
@@ -139,7 +147,6 @@ export default function ProjectsList() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {projects.map(p => {
           const status = getStatus(p);
-          const progressPercent = p.total_tasks === 0 ? 0 : Math.round((p.completed_tasks / p.total_tasks) * 100);
 
           return (
             <div 
@@ -178,7 +185,7 @@ export default function ProjectsList() {
                 )}
               </p>
               
-              <div className="mt-auto pt-3 flex justify-between items-center border-t border-line/20">
+              <div className="mt-auto pt-4 flex justify-between items-center border-t-[1px] border-line">
                 <span className={`text-xs px-2 py-1 rounded border font-medium whitespace-nowrap ${status.color}`}>
                   {status.label}
                 </span>
@@ -199,8 +206,6 @@ export default function ProjectsList() {
                   </button>
                 </div>
               </div>
-              
-
             </div>
           );
         })}
@@ -288,6 +293,16 @@ export default function ProjectsList() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!projectToDelete}
+        onCancel={() => setProjectToDelete(null)}
+        onConfirm={confirmDeleteProject}
+        title="Delete Project?"
+        bodyText="This will permanently delete this project and all of its tasks. This action cannot be undone."
+        confirmText="Delete Project"
+        iconType="danger"
+      />
     </div>
   );
 }

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { Calendar, Users, CheckCircle, Clock, Edit2, Trash2, Plus, X, AlertCircle, FileText, Paperclip, ChevronDown, ChevronRight, Search, Flag } from 'lucide-react';
+import { Calendar, Users, CheckCircle, Clock, Edit2, Trash2, Plus, X, AlertCircle, FileText, Paperclip, ChevronDown, ChevronRight, Search, Flag, Video } from 'lucide-react';
+import ConfirmModal from '../../components/ConfirmModal';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const calculateWorkingDays = (start, end) => {
@@ -30,6 +31,7 @@ export default function Sprints() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(location.state?.fromTab || 'created');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sprintMeetingToEnd, setSprintMeetingToEnd] = useState(null);
 
   const [showModal, setShowModal] = useState(false);
   const [editSprintId, setEditSprintId] = useState(null);
@@ -213,9 +215,6 @@ export default function Sprints() {
     if (new Date(formData.endDate) < new Date(formData.startDate)) {
       return setFormError("End Date cannot be before Start Date.");
     }
-    if (user?.role === 'administrator' && !formData.owner_id) {
-      return setFormError("Please select a Sprint Manager.");
-    }
 
     setSubmitting(true);
     
@@ -254,6 +253,35 @@ export default function Sprints() {
       fetchSprints();
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to change status');
+    }
+  };
+
+  const handleStartMeeting = async (e, sprintId) => {
+    e.stopPropagation();
+    try {
+      await axios.post(`/api/sprints/${sprintId}/meeting`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      fetchSprints();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to start meeting');
+    }
+  };
+
+  const handleEndMeeting = (e, sprintId) => {
+    e.stopPropagation();
+    setSprintMeetingToEnd(sprintId);
+  };
+
+  const confirmEndMeeting = async () => {
+    if (!sprintMeetingToEnd) return;
+    const sprintId = sprintMeetingToEnd;
+    setSprintMeetingToEnd(null);
+    try {
+      await axios.delete(`/api/sprints/${sprintId}/meeting`, { headers: { Authorization: `Bearer ${token}` } });
+      fetchSprints();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to end meeting');
     }
   };
 
@@ -414,7 +442,7 @@ export default function Sprints() {
 
   return (
     <div className="pb-10 relative">
-      <div className="sticky top-[-32px] z-10 bg-bg-card pt-8 pb-2 -mt-8">
+      <div className="sticky top-[-32px] z-10 bg-bg-primary pt-8 pb-2 -mt-8">
         <div className="page-header flex justify-between items-start mb-6">
           <div>
             <h1 className="text-xl font-medium mb-1">Sprints</h1>
@@ -506,15 +534,33 @@ export default function Sprints() {
                       <CheckCircle size={14} className="text-text-muted" />
                       <span>{sprint.taskCount} tasks</span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Users size={14} className="text-text-muted" />
-                      <span>{sprint.memberCount} members</span>
-                    </div>
+                    {sprint.status !== 'created' && (
+                      <div className="flex items-center gap-1.5">
+                        <Users size={14} className="text-text-muted" />
+                        <span>{sprint.memberCount} members</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 
                 <div className="flex flex-col items-end gap-2">
                   <div className="flex items-center gap-2 mb-1">
+                    {sprint.meetingLink ? (
+                      <div className="flex items-center gap-1 bg-green-500/10 border border-green-500/20 rounded p-1 pr-2 shadow-sm">
+                        <button onClick={(e) => { e.stopPropagation(); window.open(sprint.meetingLink, '_blank'); }} className="flex items-center gap-1.5 text-green-600 dark:text-green-400 text-[11px] font-bold px-2 py-1 rounded hover:bg-green-500/10 transition-colors" title="Join Meeting">
+                          <Video size={14} /> Join
+                        </button>
+                        <button onClick={(e) => handleEndMeeting(e, sprint.sprintId)} className="text-red-500 text-[11px] font-bold px-2 py-1 rounded hover:bg-red-500/10 transition-colors" title="End Meeting">
+                          End
+                        </button>
+                      </div>
+                    ) : (
+                      ['planner', 'active', 'review'].includes(sprint.status) && (
+                        <button onClick={(e) => handleStartMeeting(e, sprint.sprintId)} className="flex items-center gap-1.5 bg-bg-secondary text-text-secondary border border-line px-2 py-1 rounded text-[11px] font-bold hover:bg-line hover:text-text-primary transition-colors mr-2 shadow-sm" title="Start Meeting">
+                          <Video size={14} /> Start Meet
+                        </button>
+                      )
+                    )}
                     {(sprint.status === 'created' || sprint.status === 'planner') && (
                       <button onClick={(e) => { e.stopPropagation(); openModal(sprint); }} className="p-1.5 text-text-muted hover:text-accent-blue hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded transition-colors" title="Edit Sprint">
                         <Edit2 size={16} />
@@ -524,14 +570,18 @@ export default function Sprints() {
                       <Trash2 size={16} />
                     </button>
                   </div>
-                  <span className="text-2xl font-extrabold text-text-primary tracking-tight">{completionPct}%</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Completed</span>
-                  </div>
+                  {!['created', 'planner'].includes(sprint.status) && (
+                    <>
+                      <span className="text-2xl font-extrabold text-text-primary tracking-tight">{completionPct}%</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Completed</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
-              {sprint.taskCount > 0 && (
+              {sprint.taskCount > 0 && !['created', 'planner'].includes(sprint.status) && (
                 <div className="px-6 pb-6">
                   <div className="w-full flex h-2 rounded-full overflow-hidden bg-bg-secondary shadow-inner gap-[1px]">
                     <div className="h-full bg-green-500 transition-all duration-700" style={{ width: `${(sprint.doneCount / sprint.taskCount) * 100}%` }}></div>
@@ -546,7 +596,7 @@ export default function Sprints() {
           );
         })}
         {filteredSprints.length === 0 && (
-          <div className="text-center py-10 text-text-secondary border border-dashed border-line rounded-lg bg-bg-secondary">
+          <div className="text-center py-10 text-text-secondary">
             {searchQuery.trim() 
               ? `No sprints found matching "${searchQuery}" in ${activeTab} mode.` 
               : (activeTab === 'review' ? 'No sprints are currently awaiting review. Sprints moved from Active will appear here for QA and stakeholder sign-off.' : `No sprints found in ${activeTab} mode.`)}
@@ -557,7 +607,7 @@ export default function Sprints() {
       {showModal && (
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.65)] backdrop-blur-[2px] flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <div 
-            className="bg-bg-card border border-line/50 rounded-xl flex flex-col overflow-hidden shadow-2xl shadow-black/50"
+            className="bg-bg-card rounded-xl flex flex-col overflow-hidden shadow-2xl shadow-black/50"
             style={{ width: 'max(860px, 75vw)', maxWidth: '960px', minHeight: '80vh' }}
           >
             {/* Header */}
@@ -597,13 +647,9 @@ export default function Sprints() {
                   </div>
                   
                     <div className="grid grid-cols-2 gap-4">
-                    <div>
+                    <div className="col-span-2">
                       <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">Sprint Name <span className="text-accent-blue">*</span></label>
                       <input type="text" placeholder="e.g. Q3 Mobile Overhaul" className="w-full h-10 px-3 border border-line bg-bg-primary rounded-md text-[14px] text-text-primary placeholder-text-muted/70 focus:border-accent-blue focus:ring-4 focus:ring-accent-blue/15 shadow-inner outline-none transition-all disabled:bg-bg-secondary disabled:text-text-muted" disabled={editSprintStatus === 'active'} value={formData.sprintName} onChange={e => setFormData({...formData, sprintName: e.target.value})} />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">Sprint Goal</label>
-                      <input type="text" placeholder="Primary objective" className="w-full h-10 px-3 border border-line bg-bg-primary rounded-md text-[14px] text-text-primary placeholder-text-muted/70 focus:border-accent-blue focus:ring-4 focus:ring-accent-blue/15 shadow-inner outline-none transition-all disabled:bg-bg-secondary disabled:text-text-muted" disabled={editSprintStatus === 'active'} value={formData.sprintGoal} onChange={e => setFormData({...formData, sprintGoal: e.target.value})} />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">Start Date <span className="text-accent-blue">*</span></label>
@@ -638,385 +684,7 @@ export default function Sprints() {
                   </div>
                 </div>
 
-                {/* Administrator Assign Manager */}
-                {user?.role === 'administrator' && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="w-[4px] h-5 bg-gradient-to-b from-purple-500 to-purple-600 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.5)]"></div>
-                      <h3 className="text-[13px] font-extrabold text-text-primary uppercase tracking-wider">Assign Manager</h3>
-                      <span className="text-[12px] text-text-muted ml-auto">* Required</span>
-                    </div>
-                    <div className="grid grid-cols-1">
-                      <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">Sprint Manager <span className="text-purple-500">*</span></label>
-                      <select 
-                        className="w-full h-10 px-3 border border-line bg-bg-primary rounded-md text-[14px] text-text-primary focus:border-purple-500 focus:ring-4 focus:ring-purple-500/15 shadow-inner outline-none transition-all disabled:bg-bg-secondary disabled:text-text-muted appearance-none" 
-                        disabled={editSprintStatus === 'active'}
-                        value={formData.owner_id} 
-                        onChange={e => setFormData({...formData, owner_id: e.target.value})}
-                      >
-                        <option value="">Select a Manager</option>
-                        {managers.map(m => (
-                          <option key={m.id} value={m.id}>{m.name} ({m.team})</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                )}
 
-                {/* Team Members */}
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-[4px] h-5 bg-gradient-to-b from-accent-blue to-blue-600 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
-                    <h3 className="text-[13px] font-extrabold text-text-primary uppercase tracking-wider">Team Member Assignment</h3>
-                    {formData.members.length > 0 && (
-                      <span className="text-[12px] text-text-muted ml-auto">{formData.members.length} member{formData.members.length !== 1 ? 's' : ''}</span>
-                    )}
-                  </div>
-
-                  {/* Stage 1: Live Search People Picker */}
-                  {editSprintStatus !== 'active' && (
-                    <div className="relative mb-3">
-                      <Search size={14} className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-text-muted pointer-events-none z-10" />
-                      <input
-                        type="text"
-                        placeholder="Search and add members..."
-                        className="w-full h-10 pl-9 pr-3 border border-line bg-bg-primary rounded-md text-[13px] text-text-primary placeholder-text-muted/70 focus:border-accent-blue focus:ring-4 focus:ring-accent-blue/15 shadow-inner outline-none transition-all"
-                        value={memberSearch}
-                        onChange={(e) => setMemberSearch(e.target.value)}
-                      />
-                      {/* Dropdown Results */}
-                      {memberSearch.trim().length > 0 && (() => {
-                        const term = memberSearch.toLowerCase();
-                        const available = employees.filter(emp =>
-                          !formData.members.find(m => m.userId === emp.id) &&
-                          (emp.name.toLowerCase().includes(term) || (emp.role || '').toLowerCase().includes(term))
-                        );
-                        if (available.length === 0) return (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-bg-card border border-line rounded shadow-lg z-30 py-2 px-3">
-                            <span className="text-[11px] text-text-muted italic">No matching employees found.</span>
-                          </div>
-                        );
-                        return (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-bg-card border border-line rounded shadow-lg z-30 max-h-[180px] overflow-y-auto custom-scrollbar">
-                            {available.map(emp => {
-                              const empInitial = emp.name ? emp.name.charAt(0).toUpperCase() : '?';
-                              return (
-                                <button
-                                  key={emp.id}
-                                  type="button"
-                                  className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-dropdown-hover-bg transition-colors text-left"
-                                  onClick={() => {
-                                    addMember(emp.id);
-                                    setMemberSearch('');
-                                  }}
-                                >
-                                  <div className="w-6 h-6 rounded-full bg-accent-blue text-white flex items-center justify-center text-[10px] font-bold shrink-0">
-                                    {empInitial}
-                                  </div>
-                                  <span className="text-[12px] font-medium text-text-primary flex-1 truncate">{emp.name}</span>
-                                  <span className="text-[10px] text-text-muted capitalize shrink-0">{emp.role || 'Employee'}</span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  )}
-
-                  {/* Stage 2: Member Cards (Collapsible) */}
-                  <div className="space-y-2">
-                    {formData.members.map((member, idx) => {
-                      const empDetails = employees.find(e => e.id === member.userId);
-                      const initial = empDetails?.name ? empDetails.name.charAt(0).toUpperCase() : '?';
-                      const isExpanded = expandedMembers.has(idx);
-                      const taskCount = (member.tasks || []).filter(t => t.title?.trim()).length;
-                      const totalHours = (member.tasks || []).reduce((sum, t) => sum + (Number(t.estimatedHours) || 0), 0);
-                      const summaryText = taskCount > 0 ? `${taskCount} task${taskCount !== 1 ? 's' : ''} · ${totalHours}h` : 'No tasks assigned';
-
-                      const toggleExpand = () => {
-                        setExpandedMembers(prev => {
-                          const next = new Set(prev);
-                          if (next.has(idx)) next.delete(idx);
-                          else next.add(idx);
-                          return next;
-                        });
-                      };
-
-                      return (
-                        <div key={idx} className={`border border-line rounded transition-colors ${isExpanded ? 'bg-bg-secondary/30' : 'bg-bg-card'}`}>
-                          {/* Collapsed Row Header */}
-                          <div
-                            className={`px-3 py-2 flex items-center justify-between cursor-pointer hover:bg-bg-secondary/40 transition-colors ${isExpanded ? 'rounded-t' : 'rounded'}`}
-                            onClick={toggleExpand}
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <div className="w-6 h-6 rounded-full bg-accent-blue text-white flex items-center justify-center font-bold text-[10px] shrink-0">
-                                {initial}
-                              </div>
-                              <span className="font-bold text-[13px] text-text-primary truncate">{empDetails?.name || 'Unknown'}</span>
-                              {member.role && (
-                                <span className="px-1.5 py-px bg-accent-blue/10 text-accent-blue rounded text-[9px] font-bold tracking-wider uppercase shrink-0">
-                                  {member.role}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0 ml-2">
-                              <span className={`text-[10px] font-medium ${taskCount > 0 ? 'text-text-secondary' : 'text-text-muted italic'}`}>{summaryText}</span>
-                              {editSprintStatus !== 'active' && (
-                                <button type="button" onClick={(e) => { e.stopPropagation(); removeMember(idx); }} className="text-text-muted hover:text-red-500 transition-colors p-0.5" title="Remove Member">
-                                  <X size={12}/>
-                                </button>
-                              )}
-                              {isExpanded ? <ChevronDown size={14} className="text-text-muted" /> : <ChevronRight size={14} className="text-text-muted" />}
-                            </div>
-                          </div>
-
-                          {/* Expanded Content */}
-                          {isExpanded && (
-                            <div className="px-3 pb-3 pt-1 border-t border-line-light space-y-2.5">
-                              {/* Feature ID & Role */}
-                              <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                  <label className="block text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-0.5">Feature ID</label>
-                                  <input type="text" placeholder="e.g. FEAT-101" className="w-full h-7 px-2 border border-input-line bg-input-bg rounded text-xs text-text-primary placeholder-text-muted focus:border-accent-blue outline-none transition-all disabled:bg-bg-secondary disabled:text-text-muted" disabled={editSprintStatus === 'active'} value={member.featureId} onChange={e => updateMember(idx, 'featureId', e.target.value)} />
-                                </div>
-                                <div>
-                                  <label className="block text-[10px] font-semibold text-text-muted uppercase tracking-wider mb-0.5">Role</label>
-                                  <select className="w-full h-7 px-2 border border-input-line bg-input-bg rounded text-xs text-text-primary focus:border-accent-blue outline-none transition-all disabled:bg-bg-secondary disabled:text-text-muted" disabled={editSprintStatus === 'active'} value={member.role} onChange={e => updateMember(idx, 'role', e.target.value)}>
-                                    <option value="">Select Role...</option>
-                                    <option value="Developer">Developer</option>
-                                    <option value="Tester">Tester</option>
-                                    <option value="Designer">Designer</option>
-                                    <option value="DevOps">DevOps</option>
-                                  </select>
-                                </div>
-                              </div>
-
-                              {/* Tasks Section */}
-                              <div>
-                                <div className="flex justify-between items-center mb-1.5">
-                                  <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Tasks</h4>
-                                  {editSprintStatus !== 'active' && (
-                                    <select 
-                                      value=""
-                                      onChange={(e) => addMemberTaskFromBacklog(idx, e.target.value)}
-                                      className="h-6 px-1.5 border border-accent-blue/50 text-accent-blue bg-blue-50/50 dark:bg-blue-900/20 rounded text-[10px] font-bold outline-none cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors max-w-[150px]"
-                                    >
-                                      <option value="" disabled>+ Add from Backlog</option>
-                                      {backlogItems.filter(bi => bi.status !== 'planned').map(bi => (
-                                        <option key={bi.backlog_id} value={bi.backlog_id}>{bi.backlog_id}: {bi.title}</option>
-                                      ))}
-                                    </select>
-                                  )}
-                                </div>
-                                
-                                <div className="space-y-1">
-                                  {(member.tasks || []).map((task, tIdx) => (
-                                    <div key={tIdx} className="flex items-center gap-2">
-                                      <input type="text" placeholder="Task name" className="flex-1 h-7 px-2 border border-input-line bg-input-bg rounded text-xs text-text-primary placeholder-text-muted focus:border-accent-blue outline-none transition-all disabled:bg-bg-secondary disabled:text-text-muted" disabled={editSprintStatus === 'active'} value={task.title} onChange={e => updateMemberTask(idx, tIdx, 'title', e.target.value)} />
-                                      <div className="flex items-center gap-1 shrink-0">
-                                        <input type="number" placeholder="0" className="w-14 h-7 px-2 border border-input-line bg-input-bg rounded text-xs text-text-primary placeholder-text-muted focus:border-accent-blue outline-none transition-all text-center disabled:bg-bg-secondary disabled:text-text-muted" disabled={editSprintStatus === 'active'} value={task.estimatedHours} onChange={e => updateMemberTask(idx, tIdx, 'estimatedHours', e.target.value)} />
-                                        <span className="text-[10px] text-text-muted">hrs</span>
-                                      </div>
-                                      
-                                      {/* Task Priority Dropdown */}
-                                      <div className="relative shrink-0">
-                                        <button 
-                                          type="button"
-                                          onClick={() => editSprintStatus !== 'active' && setOpenPriorityDropdown(openPriorityDropdown === `${idx}-${tIdx}` ? null : `${idx}-${tIdx}`)}
-                                          disabled={editSprintStatus === 'active'}
-                                          className={`h-7 px-2 border border-input-line bg-input-bg rounded flex items-center justify-center gap-1.5 transition-all disabled:bg-bg-secondary disabled:text-text-muted ${openPriorityDropdown === `${idx}-${tIdx}` ? 'border-accent-blue ring-2 ring-accent-blue/10' : 'hover:border-accent-blue focus:border-accent-blue'}`}
-                                          title={priorityOptions.find(p => p.value === task.priority)?.label}
-                                        >
-                                          <Flag size={12} className={`shrink-0 ${priorityOptions.find(p => p.value === (task.priority || 'medium'))?.flagColor || 'text-blue-500 fill-blue-500/20'}`} />
-                                          <ChevronDown size={12} className="text-text-muted" />
-                                        </button>
-                                        
-                                        {openPriorityDropdown === `${idx}-${tIdx}` && (
-                                          <div className="absolute top-full mt-1 right-0 w-32 bg-bg-card border border-input-line rounded-md shadow-lg z-50 py-1 overflow-hidden">
-                                            {priorityOptions.map(option => (
-                                              <button
-                                                key={option.value}
-                                                type="button"
-                                                className="w-full text-left px-3 py-1.5 text-xs hover:bg-dropdown-hover-bg flex items-center gap-2 transition-colors border-b border-line-light last:border-0"
-                                                onClick={() => {
-                                                  updateMemberTask(idx, tIdx, 'priority', option.value);
-                                                  setOpenPriorityDropdown(null);
-                                                }}
-                                              >
-                                                <Flag size={12} className={`mt-0.5 shrink-0 ${option.flagColor}`} />
-                                                <div className="font-semibold text-text-primary">{option.label}</div>
-                                              </button>
-                                            ))}
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      {editSprintStatus !== 'active' && (
-                                        <button type="button" onClick={() => removeMemberTask(idx, tIdx)} className="text-text-muted hover:text-red-500 transition-colors shrink-0">
-                                          <X size={12}/>
-                                        </button>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-
-                                {(!member.tasks || member.tasks.length === 0) && (
-                                  <div className="text-[10px] text-text-muted italic py-1">No tasks assigned yet. Click "+ Add Task" to start.</div>
-                                )}
-
-                                {/* Subtasks (read-only, for edit mode) */}
-                                {(member.tasks || []).some(t => t.subtasksList && t.subtasksList.length > 0) && (
-                                  <div className="mt-2">
-                                    {(member.tasks || []).map((task, tIdx) => (
-                                      task.subtasksList && task.subtasksList.length > 0 && (
-                                        <div key={tIdx} className="pl-3 border-l-2 border-line mt-1">
-                                          <h5 className="text-[9px] font-bold text-text-muted uppercase tracking-wider mb-1">Subtasks — {task.title || `Task ${tIdx + 1}`}</h5>
-                                          <div className="space-y-1">
-                                            {task.subtasksList.map((sub, sIdx) => (
-                                              <div key={sIdx} className="flex justify-between items-center bg-bg-card px-2 py-1 rounded border border-line-light">
-                                                <div className="flex flex-col">
-                                                  <span className="text-[11px] font-bold text-text-primary">{sub.title}</span>
-                                                  {sub.description && <span className="text-[9px] text-text-muted">{sub.description}</span>}
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                  <span className="text-[10px] text-text-muted font-medium">{sub.spentHours || 0}h / {sub.estimatedHours}h</span>
-                                                  <span className={`text-[9px] font-bold px-1.5 py-px rounded uppercase ${
-                                                    sub.status === 'done' ? 'bg-green-50 text-green-700' :
-                                                    sub.status === 'inprogress' ? 'bg-blue-50 text-accent-blue' :
-                                                    'bg-bg-secondary text-text-muted'
-                                                  }`}>
-                                                    {sub.status}
-                                                  </span>
-                                                </div>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      )
-                                    ))}
-                                  </div>
-                                )}
-
-                                {/* Total Hours Summary */}
-                                {(member.tasks || []).length > 0 && (
-                                  <div className="mt-2 pt-1.5 border-t border-line-light flex justify-end">
-                                    <span className="text-[11px] font-bold text-text-secondary">Total: {totalHours} hrs</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-
-                    {formData.members.length === 0 && (
-                      <div className="flex flex-col items-center justify-center py-6 text-text-muted border border-dashed border-line/60 bg-bg-primary/50 rounded-lg">
-                        <Users size={20} className="mb-2 opacity-50" />
-                        <span className="text-[13px] font-medium">No team members added yet</span>
-                        <span className="text-[11px] mt-1 opacity-70">Use the search above to find and assign members.</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Requirements & References */}
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-[4px] h-5 bg-gradient-to-b from-accent-blue to-blue-600 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
-                    <h3 className="text-[13px] font-extrabold text-text-primary uppercase tracking-wider">Requirements & References</h3>
-                  </div>
-
-                  {/* Compact Add Buttons */}
-                  {editSprintStatus !== 'active' && !isAddingReference && (
-                    <div className="flex gap-2 mb-3">
-                      <button type="button" onClick={() => { setIsAddingReference(true); setEditingReferenceIdx(null); setTempRefNote(''); setTempRefFile(null); setReferenceError(''); }} className="h-7 px-3 border border-line text-text-secondary font-semibold text-[11px] rounded hover:border-accent-blue hover:text-accent-blue transition-all flex items-center gap-1.5 bg-bg-card shadow-sm">
-                        <Plus size={12} /> Add Reference
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Add Reference Inline Composer */}
-                  {isAddingReference && (
-                    <div className="mb-3 p-3 bg-bg-secondary/30 border border-line rounded animate-in fade-in duration-200">
-                      <label className="block text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-1.5">Note</label>
-                      <textarea
-                        autoFocus
-                        placeholder="Write a note, description, or context about this reference..."
-                        className={`w-full min-h-[60px] p-2 text-xs text-text-primary bg-input-bg placeholder-text-muted border ${referenceError ? 'border-red-500' : 'border-input-line'} rounded focus:border-accent-blue outline-none resize-y mb-2 custom-scrollbar`}
-                        value={tempRefNote}
-                        onChange={e => { setTempRefNote(e.target.value); if (referenceError) setReferenceError(''); }}
-                      ></textarea>
-                      
-                      {/* Attachment Row */}
-                      {!tempRefFile ? (
-                        <div className="mb-3">
-                          <button type="button" onClick={() => fileInputRef.current?.click()} className="text-[11px] font-medium text-text-muted hover:text-accent-blue transition-colors flex items-center gap-1.5">
-                            <Paperclip size={12} /> Attach a file (optional)
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="mb-3 flex items-center gap-2 px-2 py-1.5 bg-bg-card border border-line rounded w-max max-w-full">
-                          <Paperclip size={12} className="text-text-muted shrink-0" />
-                          <span className="text-[11px] font-medium text-text-primary truncate">{tempRefFile.fileName}</span>
-                          <span className="text-[10px] text-text-muted shrink-0">{(tempRefFile.fileSize / 1024).toFixed(1)} KB</span>
-                          <button type="button" onClick={() => setTempRefFile(null)} className="text-text-muted hover:text-red-500 transition-colors shrink-0 ml-2" title="Remove attachment"><X size={12}/></button>
-                        </div>
-                      )}
-                      <input type="file" ref={fileInputRef} className="hidden" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx" onChange={handleRefFileUpload} />
-
-                      {referenceError && <div className="text-[10px] text-red-500 font-medium mb-2">{referenceError}</div>}
-
-                      <div className="flex items-center justify-end gap-3">
-                        <button type="button" onClick={() => { setIsAddingReference(false); setEditingReferenceIdx(null); setTempRefNote(''); setTempRefFile(null); setReferenceError(''); }} className="text-[11px] font-medium text-text-muted hover:text-text-primary transition-colors">Cancel</button>
-                        <button type="button" onClick={saveReference} className="h-7 px-4 bg-accent-blue text-white text-[11px] font-bold rounded hover:bg-blue-700 transition-colors">Save</button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Notes & Attachments List (structured cards) */}
-                  <div className="flex flex-col gap-2 mb-3">
-                    {formData.notes.map((note, idx) => (
-                       <div key={`ref-${idx}`} className="relative p-3 rounded border border-line bg-bg-secondary/10 group">
-                          {editSprintStatus !== 'active' && (
-                            <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-bg-card border border-line rounded p-0.5">
-                              <button type="button" onClick={() => openReferenceEditor(idx)} className="p-1 text-text-muted hover:text-accent-blue rounded transition-colors" title="Edit"><Edit2 size={12}/></button>
-                              <button type="button" onClick={() => removeReference(idx)} className="p-1 text-text-muted hover:text-red-500 rounded transition-colors" title="Delete"><X size={12}/></button>
-                            </div>
-                          )}
-                          <div className="text-[13px] text-text-primary whitespace-pre-wrap pr-12">
-                            {note.content}
-                          </div>
-                          {note.attachment && (
-                            <div className="mt-2 flex items-center gap-2">
-                              <Paperclip size={12} className="text-text-muted shrink-0" />
-                              <span className="text-[11px] font-medium text-text-muted truncate">{note.attachment.fileName}</span>
-                              <span className="text-[10px] text-text-muted shrink-0">{(note.attachment.fileSize / 1024).toFixed(1)} KB</span>
-                            </div>
-                          )}
-                       </div>
-                    ))}
-                    {/* Render legacy attachments if any exist just in case */}
-                    {formData.attachments.map((att, idx) => (
-                      <div key={`att-${idx}`} className="relative p-3 rounded border border-line bg-bg-secondary/10 flex items-center gap-2 group">
-                        <Paperclip size={12} className="text-text-muted shrink-0" />
-                        <span className="text-[13px] text-text-primary truncate flex-1">{att.fileName}</span>
-                        {att.fileSize && <span className="text-[11px] text-text-muted shrink-0">{(att.fileSize / 1024).toFixed(1)} KB</span>}
-                        {editSprintStatus !== 'active' && (
-                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-bg-card border border-line rounded p-0.5">
-                            <button type="button" onClick={() => removeAttachment(idx)} className="p-1 text-text-muted hover:text-red-500 rounded transition-colors" title="Delete"><X size={12}/></button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  {formData.notes.length === 0 && formData.attachments.length === 0 && editSprintStatus === 'active' && (
-                    <div className="text-[11px] text-text-muted italic">No requirements or references added.</div>
-                  )}
-                </div>
 
               </div>
             </div>
@@ -1135,6 +803,16 @@ export default function Sprints() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!sprintMeetingToEnd}
+        onCancel={() => setSprintMeetingToEnd(null)}
+        onConfirm={confirmEndMeeting}
+        title="End Meeting?"
+        bodyText="Are you sure you want to end the meeting for everyone? This action cannot be undone."
+        confirmText="End Meeting"
+        iconType="danger"
+      />
     </div>
   );
 }

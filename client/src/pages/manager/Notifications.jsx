@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { Bell, CheckCircle2, MessageSquare, Calendar, AlertCircle, Trash2, Search, Filter, CheckSquare, X } from 'lucide-react';
+import ConfirmModal from '../../components/ConfirmModal';
 import { useNavigate } from 'react-router-dom';
 
 export default function Notifications() {
@@ -20,6 +21,7 @@ export default function Notifications() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectedLeave, setSelectedLeave] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const fetchLeaves = async () => {
     if (!token) return;
@@ -40,10 +42,14 @@ export default function Notifications() {
     setSelectedIds([]);
   };
 
-  const handleBulkDelete = async () => {
-    if (!window.confirm("Delete selected notifications?")) return;
+  const handleBulkDelete = () => {
+    setShowConfirmModal(true);
+  };
+
+  const confirmBulkDelete = async () => {
     await deleteNotifications(selectedIds);
     setSelectedIds([]);
+    setShowConfirmModal(false);
   };
 
   const handleActionLeave = async (id, status) => {
@@ -308,6 +314,15 @@ export default function Notifications() {
         </div>
       )}
 
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onCancel={() => setShowConfirmModal(false)}
+        onConfirm={confirmBulkDelete}
+        title="Delete Notifications?"
+        bodyText="This will permanently delete the selected notifications. This action cannot be undone."
+        confirmText="Delete Notifications"
+        iconType="danger"
+      />
     </div>
   );
 }

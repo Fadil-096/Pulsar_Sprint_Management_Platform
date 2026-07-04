@@ -197,18 +197,16 @@ export default function Tasks() {
   // Sprint Summary Calculations (only for a selected sprint)
   const sprintSummary = useMemo(() => {
     if (selectedSprintId === 'all') return null;
-    let totalEst = 0;
     let totalSpent = 0;
     let subtasksCount = 0;
     const statusCounts = { todo: 0, inprogress: 0, blocked: 0, done: 0 };
     
     tasks.forEach(t => {
-      totalEst += (t.estimatedHours || 0);
       totalSpent += (t.spentHours || 0);
       subtasksCount += (t.subtaskCount || 0);
       if (statusCounts[t.status] !== undefined) statusCounts[t.status]++;
     });
-    return { totalEst, totalSpent, subtasksCount, statusCounts };
+    return { totalSpent, subtasksCount, statusCounts };
   }, [tasks, selectedSprintId]);
 
   const renderTaskRow = (task) => {
@@ -243,7 +241,6 @@ export default function Tasks() {
             {getPriorityIcon(task.priority)}
           </td>
           <td className="py-2.5 px-4">{getStatusBadge(task.status)}</td>
-          <td className="py-2.5 px-4 text-text-secondary font-mono text-xs">{task.estimatedHours || 0}h</td>
           <td className="py-2.5 px-4">
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-bold text-text-secondary">{task.subtaskDoneCount}/{task.subtaskCount}</span>
@@ -259,7 +256,7 @@ export default function Tasks() {
         
         {isExpanded && (
           <tr>
-            <td colSpan="8" className="p-0 border-b border-line">
+            <td colSpan="7" className="p-0 border-b border-line">
               <div className="bg-table-row-alt px-12 py-3 border-l-4 border-accent-blue">
                 {isLoadingSubs ? (
                   <div className="flex items-center gap-2 text-sm text-text-secondary py-2">
@@ -272,9 +269,8 @@ export default function Tasks() {
                     <table className="w-full text-left text-sm">
                       <thead>
                         <tr className="text-[10px] uppercase text-text-muted border-b border-line">
-                          <th className="pb-1 font-bold">Subtask Title</th>
-                          <th className="pb-1 font-bold">Status</th>
-                          <th className="pb-1 font-bold text-right pr-4">Est. Hours</th>
+                          <th className="pb-1 font-bold w-4/5">Subtask Title</th>
+                          <th className="pb-1 font-bold w-1/5">Status</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -282,7 +278,6 @@ export default function Tasks() {
                           <tr key={sub.id} className="border-b border-line-light last:border-0 hover:bg-table-row-alt transition-colors">
                             <td className="py-2 text-text-secondary font-medium">{sub.title}</td>
                             <td className="py-2">{getStatusBadge(sub.status)}</td>
-                            <td className="py-2 text-right pr-4 font-mono text-xs text-text-secondary">{sub.estimatedHours || 0}h</td>
                           </tr>
                         ))}
                       </tbody>
@@ -432,10 +427,6 @@ export default function Tasks() {
               </div>
             </div>
           </div>
-          <div className="text-right">
-             <div className="text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-1">Total Effort</div>
-             <div className="text-sm font-semibold text-text-primary">{sprintSummary.totalEst}h <span className="text-text-muted font-normal">est.</span></div>
-          </div>
         </div>
       )}
 
@@ -445,18 +436,17 @@ export default function Tasks() {
           <thead>
             <tr className="bg-bg-secondary border-b border-line text-[11px] text-text-secondary uppercase tracking-wider">
               <th className="py-3 px-3 w-10"></th>
-              <th className="py-3 px-4 font-bold">Task ID</th>
-              <th className="py-3 px-4 font-bold">Employee</th>
-              <th className="py-3 px-4 font-bold">Title</th>
-              <th className="py-3 px-4 font-bold">Priority</th>
-              <th className="py-3 px-4 font-bold">Status</th>
-              <th className="py-3 px-4 font-bold">Est</th>
-              <th className="py-3 px-4 font-bold">Subtasks</th>
+              <th className="py-3 px-4 font-bold w-[10%]">Task ID</th>
+              <th className="py-3 px-4 font-bold w-[12%]">Employee</th>
+              <th className="py-3 px-4 font-bold w-[40%]">Title</th>
+              <th className="py-3 px-4 font-bold w-[12%]">Priority</th>
+              <th className="py-3 px-4 font-bold w-[14%]">Status</th>
+              <th className="py-3 px-4 font-bold w-[12%]">Subtasks</th>
             </tr>
           </thead>
           <tbody>
             {filteredTasks.length === 0 ? (
-              <tr><td colSpan="8" className="py-12 text-center text-text-secondary italic">No tasks found matching your criteria.</td></tr>
+              <tr><td colSpan="7" className="py-12 text-center text-text-secondary italic">No tasks found matching your criteria.</td></tr>
             ) : selectedSprintId !== 'all' ? (
               filteredTasks.map(renderTaskRow)
             ) : (
@@ -475,7 +465,7 @@ export default function Tasks() {
                   <Fragment key={sprintId}>
                     {/* Sprint Section Header */}
                     <tr className="bg-gray-100/80 border-b border-line cursor-pointer hover:bg-gray-200/50 transition-colors" onClick={() => toggleSprintExpanded(sprintId)}>
-                      <td colSpan="8" className="py-3 px-4">
+                      <td colSpan="7" className="py-3 px-4">
                         <div className="flex items-center gap-3">
                            {isGroupExpanded ? <ChevronDown size={18} className="text-text-secondary" /> : <ChevronRight size={18} className="text-text-secondary" />}
                            <span className="font-bold text-text-primary">{sprintId}</span>

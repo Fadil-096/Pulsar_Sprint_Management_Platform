@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import { Search, Plus, Filter, MoreVertical, Edit2, Trash2, ArrowUpDown } from 'lucide-react';
+import ConfirmModal from '../../components/ConfirmModal';
 import PageLoader from '../../components/PageLoader';
 
 export default function Backlog() {
@@ -13,6 +14,7 @@ export default function Backlog() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   // Form State
   const [title, setTitle] = useState('');
@@ -65,8 +67,14 @@ export default function Backlog() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this backlog item?')) return;
+  const handleDelete = (id) => {
+    setItemToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    const id = itemToDelete;
+    setItemToDelete(null);
     try {
       await axios.delete(`/api/backlog/${id}`);
       fetchBacklog();
@@ -406,6 +414,16 @@ export default function Backlog() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!itemToDelete}
+        onCancel={() => setItemToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Delete Backlog Item?"
+        bodyText="This will permanently delete this backlog item. This action cannot be undone."
+        confirmText="Delete Item"
+        iconType="danger"
+      />
     </div>
   );
 }
