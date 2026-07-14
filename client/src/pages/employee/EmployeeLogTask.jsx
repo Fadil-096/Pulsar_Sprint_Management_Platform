@@ -117,7 +117,7 @@ export default function EmployeeLogTask() {
             </div>
 
             {message.text && (
-              <div className={`mb-4 px-3.5 py-2.5 rounded-md text-[13px] border-[0.5px] ${message.type === 'success' ? 'bg-green-50 text-green-800 border-[#C0DD97]' : 'bg-amber-50 text-amber-600 border-[#FAC775]'}`}>
+              <div className={`mb-4 px-3.5 py-2.5 rounded-2xl text-[13px] border-[0.5px] ${message.type === 'success' ? 'bg-green-50 text-green-800 border-[#C0DD97]' : 'bg-amber-50 text-amber-600 border-[#FAC775]'}`}>
                 {message.text}
               </div>
             )}

@@ -150,7 +150,7 @@ export default function Reports() {
           <p className="text-[12px] text-text-secondary mb-4">Download detailed performance summaries in Excel format.</p>
           
           {/* Sprint Selector */}
-          <div className="mb-6 bg-bg-secondary p-4 rounded-md border border-line-light">
+          <div className="mb-6 bg-bg-secondary p-4 rounded-2xl border border-line-light">
             <label className="block text-[11px] text-text-secondary font-bold uppercase tracking-wider mb-3">SELECT SPRINT</label>
             
             <div className="flex items-center gap-1.5 mb-4 overflow-x-auto pb-1 hide-scrollbar">
@@ -172,7 +172,7 @@ export default function Reports() {
             <select 
               value={selectedSprintId} 
               onChange={(e) => setSelectedSprintId(e.target.value)}
-              className="w-full p-2 border border-line rounded text-sm bg-bg-card text-text-primary focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
+              className="w-full p-2 border border-line rounded-xl text-sm bg-bg-card text-text-primary focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue"
             >
               <option value="" disabled>Select a sprint</option>
               {sprints.filter(s => sprintFilterStatus === 'all' || s.status === sprintFilterStatus).map(s => (
@@ -194,7 +194,7 @@ export default function Reports() {
 
           <div className="space-y-4">
             {/* Download Button 1 */}
-            <div className="p-4 border-[0.5px] border-line rounded-md hover:border-blue-400 transition-colors bg-bg-card flex justify-between items-center shadow-sm">
+            <div className="p-4 border-[0.5px] border-line rounded-2xl hover:border-blue-400 transition-colors bg-bg-card flex justify-between items-center shadow-sm">
               <div>
                 <h3 className="font-medium text-[14px]">End of Sprint Report</h3>
                 <p className="text-[12px] text-text-secondary">Summary of tasks, burndown, and bottlenecks (.xlsx)</p>

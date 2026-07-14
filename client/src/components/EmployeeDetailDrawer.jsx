@@ -94,7 +94,7 @@ export default function EmployeeDetailDrawer({ employeeId, onClose }) {
             <section>
               <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider mb-3">Overview</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div className="bg-bg-card p-4 rounded-xl shadow-sm border border-line">
+                <div className="bg-bg-card p-4 rounded-2xl shadow-sm border border-line">
                   <div className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">
                     <CheckCircle2 size={14} className="text-blue-500" /> Tasks
                   </div>
@@ -102,7 +102,7 @@ export default function EmployeeDetailDrawer({ employeeId, onClose }) {
                     {details.metrics.tasksDone} <span className="text-sm font-medium text-text-muted">/ {details.metrics.totalTasks}</span>
                   </div>
                 </div>
-                <div className="bg-bg-card p-4 rounded-xl shadow-sm border border-line">
+                <div className="bg-bg-card p-4 rounded-2xl shadow-sm border border-line">
                   <div className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">
                     <Calendar size={14} className="text-green-500" /> Attendance
                   </div>
@@ -110,7 +110,7 @@ export default function EmployeeDetailDrawer({ employeeId, onClose }) {
                     {details.attendanceStats.present} <span className="text-sm font-medium text-text-muted">days</span>
                   </div>
                 </div>
-                <div className="bg-bg-card p-4 rounded-xl shadow-sm border border-line md:col-span-1 col-span-2">
+                <div className="bg-bg-card p-4 rounded-2xl shadow-sm border border-line md:col-span-1 col-span-2">
                   <div className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">
                     <LayoutDashboard size={14} className="text-orange-500" /> Sprint
                   </div>
@@ -124,7 +124,7 @@ export default function EmployeeDetailDrawer({ employeeId, onClose }) {
             {/* Current Sprint Tasks */}
             <section>
               <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider mb-3">Current Sprint Tasks</h3>
-              <div className="bg-bg-card rounded-xl shadow-sm border border-line overflow-hidden">
+              <div className="bg-bg-card rounded-2xl shadow-sm border border-line overflow-hidden">
                 {details.sprintTasks.length === 0 ? (
                   <div className="p-6 text-center text-text-muted text-sm italic">No active tasks assigned.</div>
                 ) : (
@@ -136,10 +136,10 @@ export default function EmployeeDetailDrawer({ employeeId, onClose }) {
                           <div className="truncate text-sm font-medium text-text-primary">{task.task_title}</div>
                         </div>
                         <div className="flex items-center gap-4 shrink-0 pl-4">
-                          <div className="text-[10px] text-text-muted mt-1 px-1.5 py-0.5 bg-bg-secondary rounded border border-line-light inline-block">
+                          <div className="text-[10px] text-text-muted mt-1 px-1.5 py-0.5 bg-bg-secondary rounded-xl border border-line-light inline-block">
                             {task.priority} Priority
                           </div>
-                          <div className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${task.status === 'done' ? 'bg-green-100 text-green-700' : task.status === 'inprogress' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
+                          <div className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-xl ${task.status === 'done' ? 'bg-green-100 text-green-700' : task.status === 'inprogress' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
                             {task.status}
                           </div>
                         </div>
@@ -153,7 +153,7 @@ export default function EmployeeDetailDrawer({ employeeId, onClose }) {
             {/* Recent Activity */}
             <section>
               <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider mb-3">Recent Activity</h3>
-              <div className="bg-bg-card rounded-xl shadow-sm border border-line p-4">
+              <div className="bg-bg-card rounded-2xl shadow-sm border border-line p-4">
                 {details.recentActivity.length === 0 ? (
                   <div className="text-center text-text-muted text-sm italic py-4">No recent activity.</div>
                 ) : (

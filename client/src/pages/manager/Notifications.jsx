@@ -109,14 +109,14 @@ export default function Notifications() {
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setActiveTab('Leave Requests')}
-            className="px-4 py-2 bg-purple-50 text-purple-700 font-bold rounded-lg text-sm border border-purple-100 hover:bg-purple-100 transition-colors"
+            className="px-4 py-2 bg-purple-50 text-purple-700 font-bold rounded-2xl text-sm border border-purple-100 hover:bg-purple-100 transition-colors"
           >
             Pending Leaves ({leaves.filter(l => l.status === 'pending').length})
           </button>
         </div>
       </div>
 
-      <div className="bg-bg-card rounded-xl shadow-sm border border-line-light overflow-hidden">
+      <div className="bg-bg-card rounded-2xl shadow-sm border border-line-light overflow-hidden">
         {/* Toolbar */}
         <div className="p-4 border-b border-line-light bg-gray-50/50 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar w-full md:w-auto">
@@ -139,12 +139,12 @@ export default function Notifications() {
               <input 
                 type="text" 
                 placeholder="Search notifications..."
-                className="w-full pl-9 pr-4 py-2 bg-bg-card border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF]"
+                className="w-full pl-9 pr-4 py-2 bg-bg-card border border-line rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <button className="p-2 border border-line text-text-secondary rounded-lg hover:bg-gray-50 bg-bg-card">
+            <button className="p-2 border border-line text-text-secondary rounded-2xl hover:bg-gray-50 bg-bg-card">
               <Filter size={18} />
             </button>
           </div>
@@ -158,7 +158,7 @@ export default function Notifications() {
                 type="checkbox" 
                 checked={selectedIds.length === filteredNotifications.length && filteredNotifications.length > 0}
                 onChange={toggleSelectAll}
-                className="w-4 h-4 text-accent-blue rounded border-line focus:ring-[#005AFF]"
+                className="w-4 h-4 text-accent-blue rounded-xl border-line focus:ring-[#005AFF]"
               />
               <span className={`text-sm font-bold ${selectedIds.length > 0 ? 'text-blue-800' : 'text-text-secondary uppercase tracking-wider text-[11px]'}`}>
                 {selectedIds.length > 0 ? `${selectedIds.length} selected` : 'Select All'}
@@ -167,10 +167,10 @@ export default function Notifications() {
             
             {selectedIds.length > 0 && (
               <div className="flex gap-2">
-                <button onClick={handleBulkMarkRead} className="px-3 py-1.5 bg-bg-card text-blue-700 text-xs font-bold rounded border border-blue-200 shadow-sm hover:bg-blue-50">
+                <button onClick={handleBulkMarkRead} className="px-3 py-1.5 bg-bg-card text-blue-700 text-xs font-bold rounded-xl border border-blue-200 shadow-sm hover:bg-blue-50">
                   Mark as Read
                 </button>
-                <button onClick={handleBulkDelete} className="px-3 py-1.5 bg-bg-card text-red-600 text-xs font-bold rounded border border-red-200 shadow-sm hover:bg-red-50">
+                <button onClick={handleBulkDelete} className="px-3 py-1.5 bg-bg-card text-red-600 text-xs font-bold rounded-xl border border-red-200 shadow-sm hover:bg-red-50">
                   Delete
                 </button>
               </div>
@@ -205,7 +205,7 @@ export default function Notifications() {
                     type="checkbox" 
                     checked={selectedIds.includes(notification.id)}
                     onChange={() => toggleSelect(notification.id)}
-                    className="w-4 h-4 text-accent-blue rounded border-line focus:ring-[#005AFF]"
+                    className="w-4 h-4 text-accent-blue rounded-xl border-line focus:ring-[#005AFF]"
                   />
                 </div>
                 
@@ -220,7 +220,7 @@ export default function Notifications() {
                     <div className="flex items-center gap-2">
                       {!notification.is_read && <span className="w-2 h-2 rounded-full bg-accent-blue"></span>}
                       <span className="text-sm font-bold text-text-primary">{notification.title}</span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-bg-secondary text-text-secondary">
+                      <span className="px-2 py-0.5 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-bg-secondary text-text-secondary">
                         {notification.type}
                       </span>
                     </div>
@@ -239,7 +239,7 @@ export default function Notifications() {
       {/* Leave Request Modal */}
       {selectedLeave && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-          <div className="bg-bg-card rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+          <div className="bg-bg-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="p-6 border-b border-line-light flex justify-between items-center bg-bg-sidebar text-white">
               <h2 className="text-lg font-bold">Leave Request Details</h2>
               <button onClick={() => setSelectedLeave(null)} className="text-white/70 hover:text-white">
@@ -288,7 +288,7 @@ export default function Notifications() {
 
               <div>
                 <label className="text-[11px] font-bold text-text-secondary uppercase">Reason provided</label>
-                <div className="mt-1 p-3 bg-bg-secondary rounded-lg text-sm text-text-secondary border border-line-light min-h-[80px]">
+                <div className="mt-1 p-3 bg-bg-secondary rounded-2xl text-sm text-text-secondary border border-line-light min-h-[80px]">
                   {selectedLeave.reason}
                 </div>
               </div>
@@ -298,13 +298,13 @@ export default function Notifications() {
               <div className="p-4 border-t border-line-light bg-bg-secondary flex gap-3 justify-end">
                 <button 
                   onClick={() => handleActionLeave(selectedLeave.id, 'rejected')}
-                  className="px-5 py-2 text-sm font-bold text-red-600 bg-bg-card border border-red-200 hover:bg-red-50 rounded-lg transition-colors"
+                  className="px-5 py-2 text-sm font-bold text-red-600 bg-bg-card border border-red-200 hover:bg-red-50 rounded-2xl transition-colors"
                 >
                   Reject
                 </button>
                 <button 
                   onClick={() => handleActionLeave(selectedLeave.id, 'approved')}
-                  className="px-5 py-2 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm transition-colors"
+                  className="px-5 py-2 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-2xl shadow-sm transition-colors"
                 >
                   Approve Leave
                 </button>

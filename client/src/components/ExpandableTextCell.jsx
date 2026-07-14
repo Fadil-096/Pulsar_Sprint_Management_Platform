@@ -55,7 +55,7 @@ export default function ExpandableTextCell({
           }}
         >
           <div 
-            className="bg-bg-card rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200"
+            className="bg-bg-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4 border-b border-line-light flex justify-between items-center bg-bg-secondary">
@@ -65,7 +65,7 @@ export default function ExpandableTextCell({
               </h3>
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="text-text-muted hover:text-text-primary transition-colors p-1 rounded hover:bg-black/5"
+                className="text-text-muted hover:text-text-primary transition-colors p-1 rounded-xl hover:bg-black/5"
               >
                 <X size={18} />
               </button>
@@ -86,7 +86,7 @@ export default function ExpandableTextCell({
             <div className="px-5 py-4 bg-bg-secondary border-t border-line-light flex justify-end">
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 bg-bg-card border border-line rounded-md text-sm font-semibold text-text-primary hover:bg-table-row-alt transition-colors"
+                className="px-4 py-2 bg-bg-card border border-line rounded-2xl text-sm font-semibold text-text-primary hover:bg-table-row-alt transition-colors"
               >
                 Close
               </button>

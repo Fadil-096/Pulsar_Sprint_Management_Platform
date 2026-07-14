@@ -153,7 +153,7 @@ export default function Backlog() {
           <div className="flex items-center gap-3">
             <button 
               onClick={() => openModal()}
-              className="flex items-center gap-2 px-4 py-2 bg-accent-blue text-white rounded font-bold uppercase text-xs hover:bg-blue-600 transition-colors shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-accent-blue text-white rounded-xl font-bold uppercase text-xs hover:bg-blue-600 transition-colors shadow-sm"
             >
               <Plus size={16} /> Create Item
             </button>
@@ -169,7 +169,7 @@ export default function Backlog() {
               placeholder="Search backlog..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-bg-secondary border border-line rounded text-sm text-text-primary focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/50"
+              className="w-full pl-10 pr-4 py-2 bg-bg-secondary border border-line rounded-xl text-sm text-text-primary focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/50"
             />
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto overflow-x-auto pb-1 custom-scrollbar">
@@ -178,7 +178,7 @@ export default function Backlog() {
               <select 
                 value={filterStatus} 
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="bg-bg-secondary border border-line rounded px-3 py-1.5 text-xs font-bold text-text-primary uppercase"
+                className="bg-bg-secondary border border-line rounded-xl px-3 py-1.5 text-xs font-bold text-text-primary uppercase"
               >
                 <option value="all">All Statuses</option>
                 <option value="new">New</option>
@@ -192,7 +192,7 @@ export default function Backlog() {
             <select 
               value={filterPriority} 
               onChange={(e) => setFilterPriority(e.target.value)}
-              className="bg-bg-secondary border border-line rounded px-3 py-1.5 text-xs font-bold text-text-primary uppercase"
+              className="bg-bg-secondary border border-line rounded-xl px-3 py-1.5 text-xs font-bold text-text-primary uppercase"
             >
               <option value="all">All Priorities</option>
               <option value="critical">Critical</option>
@@ -206,7 +206,7 @@ export default function Backlog() {
 
       {/* Backlog List */}
       <div className="flex-1 overflow-y-auto p-6 bg-bg-primary">
-        <div className="bg-bg-card border border-line rounded-lg overflow-hidden shadow-sm">
+        <div className="bg-bg-card border border-line rounded-2xl overflow-hidden shadow-sm">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-bg-secondary border-b border-line">
@@ -241,13 +241,13 @@ export default function Backlog() {
                     </td>
                     <td className="py-3 px-4">
                       {item.category ? (
-                        <span className="text-xs font-medium bg-bg-secondary px-2 py-1 rounded text-text-primary border border-line">
+                        <span className="text-xs font-medium bg-bg-secondary px-2 py-1 rounded-xl text-text-primary border border-line">
                           {item.category}
                         </span>
                       ) : '-'}
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded border ${getPriorityColor(item.priority)}`}>
+                      <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-xl border ${getPriorityColor(item.priority)}`}>
                         {item.priority}
                       </span>
                     </td>
@@ -257,7 +257,7 @@ export default function Backlog() {
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded border ${getStatusColor(item.status)}`}>
+                      <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-xl border ${getStatusColor(item.status)}`}>
                         {item.status}
                       </span>
                     </td>
@@ -282,7 +282,7 @@ export default function Backlog() {
       {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-bg-card w-full max-w-3xl rounded-lg border border-line shadow-2xl flex flex-col my-8">
+          <div className="bg-bg-card w-full max-w-3xl rounded-2xl border border-line shadow-2xl flex flex-col my-8">
             <div className="px-6 py-4 border-b border-line flex justify-between items-center bg-bg-secondary/50 rounded-t-lg">
               <h2 className="text-lg font-black text-text-primary uppercase tracking-wide">
                 {editingItem ? 'Edit Backlog Item' : 'Create Backlog Item'}
@@ -300,7 +300,7 @@ export default function Backlog() {
                       required
                       value={title} 
                       onChange={(e) => setTitle(e.target.value)}
-                      className="w-full px-3 py-2 bg-bg-secondary border border-line rounded text-sm text-text-primary focus:outline-none focus:border-accent-blue"
+                      className="w-full px-3 py-2 bg-bg-secondary border border-line rounded-xl text-sm text-text-primary focus:outline-none focus:border-accent-blue"
                       placeholder="e.g., Implement two-factor authentication"
                     />
                   </div>
@@ -310,7 +310,7 @@ export default function Backlog() {
                       value={description} 
                       onChange={(e) => setDescription(e.target.value)}
                       rows={3}
-                      className="w-full px-3 py-2 bg-bg-secondary border border-line rounded text-sm text-text-primary focus:outline-none focus:border-accent-blue resize-none"
+                      className="w-full px-3 py-2 bg-bg-secondary border border-line rounded-xl text-sm text-text-primary focus:outline-none focus:border-accent-blue resize-none"
                       placeholder="Short description of the work item..."
                     />
                   </div>
@@ -323,7 +323,7 @@ export default function Backlog() {
                       type="text" 
                       value={featureId} 
                       onChange={(e) => setFeatureId(e.target.value)}
-                      className="w-full px-3 py-2 bg-bg-secondary border border-line rounded text-sm text-text-primary focus:outline-none focus:border-accent-blue"
+                      className="w-full px-3 py-2 bg-bg-secondary border border-line rounded-xl text-sm text-text-primary focus:outline-none focus:border-accent-blue"
                       placeholder="e.g., FEAT-123"
                     />
                   </div>
@@ -332,7 +332,7 @@ export default function Backlog() {
                     <select 
                       value={priority} 
                       onChange={(e) => setPriority(e.target.value)}
-                      className="w-full px-3 py-2 bg-bg-secondary border border-line rounded text-sm text-text-primary focus:outline-none focus:border-accent-blue"
+                      className="w-full px-3 py-2 bg-bg-secondary border border-line rounded-xl text-sm text-text-primary focus:outline-none focus:border-accent-blue"
                     >
                       <option value="critical">Critical</option>
                       <option value="high">High</option>
@@ -347,7 +347,7 @@ export default function Backlog() {
                       min="0"
                       value={storyPoints} 
                       onChange={(e) => setStoryPoints(e.target.value)}
-                      className="w-full px-3 py-2 bg-bg-secondary border border-line rounded text-sm text-text-primary focus:outline-none focus:border-accent-blue"
+                      className="w-full px-3 py-2 bg-bg-secondary border border-line rounded-xl text-sm text-text-primary focus:outline-none focus:border-accent-blue"
                       placeholder="e.g., 5"
                     />
                   </div>
@@ -360,7 +360,7 @@ export default function Backlog() {
                       type="text" 
                       value={category} 
                       onChange={(e) => setCategory(e.target.value)}
-                      className="w-full px-3 py-2 bg-bg-secondary border border-line rounded text-sm text-text-primary focus:outline-none focus:border-accent-blue"
+                      className="w-full px-3 py-2 bg-bg-secondary border border-line rounded-xl text-sm text-text-primary focus:outline-none focus:border-accent-blue"
                       placeholder="e.g., Frontend, Backend, Design"
                     />
                   </div>
@@ -371,7 +371,7 @@ export default function Backlog() {
                       min="0"
                       value={businessValue} 
                       onChange={(e) => setBusinessValue(e.target.value)}
-                      className="w-full px-3 py-2 bg-bg-secondary border border-line rounded text-sm text-text-primary focus:outline-none focus:border-accent-blue"
+                      className="w-full px-3 py-2 bg-bg-secondary border border-line rounded-xl text-sm text-text-primary focus:outline-none focus:border-accent-blue"
                       placeholder="e.g., 100"
                     />
                   </div>
@@ -381,7 +381,7 @@ export default function Backlog() {
                       <select 
                         value={status} 
                         onChange={(e) => setStatus(e.target.value)}
-                        className="w-full px-3 py-2 bg-bg-secondary border border-line rounded text-sm text-text-primary focus:outline-none focus:border-accent-blue"
+                        className="w-full px-3 py-2 bg-bg-secondary border border-line rounded-xl text-sm text-text-primary focus:outline-none focus:border-accent-blue"
                       >
                         <option value="new">New</option>
                         <option value="ready">Ready</option>
@@ -405,7 +405,7 @@ export default function Backlog() {
                 </button>
                 <button 
                   type="submit" 
-                  className="px-6 py-2 bg-accent-blue text-white rounded text-sm font-bold uppercase hover:bg-blue-600 transition-colors shadow-sm"
+                  className="px-6 py-2 bg-accent-blue text-white rounded-xl text-sm font-bold uppercase hover:bg-blue-600 transition-colors shadow-sm"
                 >
                   {editingItem ? 'Save Changes' : 'Create Item'}
                 </button>

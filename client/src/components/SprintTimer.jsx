@@ -111,7 +111,7 @@ export default function SprintTimer({ sprint, compact = false }) {
 
   if (status === 'invalid') {
     return (
-      <div className={`flex items-center gap-2 text-text-secondary font-medium ${compact ? 'text-xs' : 'text-sm bg-bg-secondary p-3 rounded-lg border border-line'}`}>
+      <div className={`flex items-center gap-2 text-text-secondary font-medium ${compact ? 'text-xs' : 'text-sm bg-bg-secondary p-3 rounded-2xl border border-line'}`}>
         <AlertTriangle size={compact ? 14 : 18} className="text-orange-400" />
         <span>Timer unavailable (Invalid dates)</span>
       </div>
@@ -120,7 +120,7 @@ export default function SprintTimer({ sprint, compact = false }) {
 
   if (status === 'pending') {
     return (
-      <div className={`flex items-center gap-2 text-text-secondary font-medium ${compact ? 'text-xs' : 'text-sm bg-bg-secondary p-3 rounded-lg border border-line'}`}>
+      <div className={`flex items-center gap-2 text-text-secondary font-medium ${compact ? 'text-xs' : 'text-sm bg-bg-secondary p-3 rounded-2xl border border-line'}`}>
         <Clock size={compact ? 14 : 18} />
         <span>Timer will start once Active</span>
       </div>
@@ -134,11 +134,11 @@ export default function SprintTimer({ sprint, compact = false }) {
   if (status === 'warning') {
     colorClasses = 'bg-badge-pending-bg text-badge-pending-text border border-badge-pending-text/30';
     icon = <AlertTriangle size={compact ? 14 : 18} />;
-    tag = <span className="bg-badge-pending-text text-bg-primary text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ml-2">Ending Soon</span>;
+    tag = <span className="bg-badge-pending-text text-bg-primary text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-xl ml-2">Ending Soon</span>;
   } else if (status === 'critical') {
     colorClasses = 'bg-badge-rejected-bg text-badge-rejected-text border border-badge-rejected-text/30 animate-pulse-slow';
     icon = <AlertCircle size={compact ? 14 : 18} className="animate-bounce" />;
-    tag = <span className="bg-badge-rejected-text text-white text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ml-2">Critical</span>;
+    tag = <span className="bg-badge-rejected-text text-white text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-xl ml-2">Critical</span>;
   } else if (status === 'expired') {
     colorClasses = 'bg-badge-rejected-bg text-badge-rejected-text border border-badge-rejected-text/50';
     icon = <AlertCircle size={compact ? 14 : 18} />;
@@ -150,7 +150,7 @@ export default function SprintTimer({ sprint, compact = false }) {
 
   if (compact) {
     return (
-      <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded border font-bold text-xs ${colorClasses}`}>
+      <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-bold text-xs ${colorClasses}`}>
         {icon}
         <span>{timeLeft}</span>
         {status !== 'expired' && sprint.status !== 'completed' && <span className="text-[10px] font-medium opacity-80 ml-1">({elapsed})</span>}
@@ -159,7 +159,7 @@ export default function SprintTimer({ sprint, compact = false }) {
   }
 
   return (
-    <div className={`flex items-center justify-between p-3 rounded-lg border shadow-sm ${colorClasses}`}>
+    <div className={`flex items-center justify-between p-3 rounded-2xl border shadow-sm ${colorClasses}`}>
       <div className="flex items-center gap-3">
         <div className="p-2 bg-bg-card bg-opacity-50 rounded-full">
           {icon}

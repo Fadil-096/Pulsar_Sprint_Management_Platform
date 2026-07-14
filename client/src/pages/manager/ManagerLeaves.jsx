@@ -21,6 +21,10 @@ export default function ManagerLeaves() {
   // Rejection Modal
   const [rejectingLeave, setRejectingLeave] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+  
+  // Accept Modal
+  const [acceptingLeave, setAcceptingLeave] = useState(null);
+  const [acceptReason, setAcceptReason] = useState('');
 
   useEffect(() => {
     fetchLeaves();
@@ -46,11 +50,17 @@ export default function ManagerLeaves() {
     }
   };
 
-  const handleAccept = async (id) => {
+  const handleAcceptConfirm = async () => {
+    if (!acceptingLeave) return;
+    
     try {
+      const id = acceptingLeave.id;
       // Optimistic Update
-      setLeaves(leaves.map(l => l.id === id ? { ...l, status: 'accepted' } : l));
-      await axios.patch(`/api/leaves/${id}/accept`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      setLeaves(leaves.map(l => l.id === id ? { ...l, status: 'accepted', manager_remark: acceptReason } : l));
+      setAcceptingLeave(null);
+
+      await axios.patch(`/api/leaves/${id}/accept`, { manager_remark: acceptReason }, { headers: { Authorization: `Bearer ${token}` } });
+      setAcceptReason('');
     } catch (err) {
       console.error(err);
       fetchLeaves(); // Revert on failure
@@ -117,7 +127,7 @@ export default function ManagerLeaves() {
         </div>
       </div>
 
-      <div className="bg-bg-card rounded-xl shadow-sm border border-line-light overflow-hidden">
+      <div className="bg-bg-card rounded-2xl shadow-sm border border-line-light overflow-hidden">
         {/* Toolbar */}
         <div className="p-4 border-b border-line-light bg-bg-secondary/50 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar w-full md:w-auto">
@@ -140,7 +150,7 @@ export default function ManagerLeaves() {
               <input 
                 type="text" 
                 placeholder="Search by name, type, or reason..."
-                className="w-full pl-9 pr-4 py-2 bg-bg-card border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF]"
+                className="w-full pl-9 pr-4 py-2 bg-bg-card border border-line rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -171,7 +181,7 @@ export default function ManagerLeaves() {
                   <th className="px-6 py-4 font-bold border-b border-line-light text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-line">
                 {filteredLeaves.map(leave => {
                   const isHighlighted = highlightedLeaveId === String(leave.id);
                   return (
@@ -208,8 +218,8 @@ export default function ManagerLeaves() {
                       </td>
                       <td className="px-6 py-4">
                         {getStatusBadge(leave.status)}
-                        {leave.status === 'rejected' && leave.managerRemark && (
-                          <div className="mt-1 flex items-start gap-1 text-xs text-red-600">
+                        {(leave.status === 'rejected' || leave.status === 'accepted') && leave.managerRemark && (
+                          <div className={`mt-1 flex items-start gap-1 text-xs ${leave.status === 'accepted' ? 'text-green-600' : 'text-red-600'}`}>
                             <MessageSquare size={10} className="mt-0.5 flex-shrink-0" />
                             <span className="whitespace-normal break-words">{leave.managerRemark}</span>
                           </div>
@@ -219,14 +229,14 @@ export default function ManagerLeaves() {
                         {leave.status === 'pending' ? (
                           <div className="flex items-center justify-end gap-2">
                             <button 
-                              onClick={() => handleAccept(leave.id)}
-                              className="px-3 py-1.5 bg-green-50 text-green-700 font-bold rounded text-xs hover:bg-green-100 transition-colors"
+                              onClick={() => { setAcceptingLeave(leave); setAcceptReason(''); }}
+                              className="px-3 py-1.5 bg-green-50 text-green-700 font-bold rounded-xl text-xs hover:bg-green-100 transition-colors"
                             >
                               Accept
                             </button>
                             <button 
                               onClick={() => { setRejectingLeave(leave); setRejectReason(''); }}
-                              className="px-3 py-1.5 bg-red-50 text-red-700 font-bold rounded text-xs hover:bg-red-100 transition-colors"
+                              className="px-3 py-1.5 bg-red-50 text-red-700 font-bold rounded-xl text-xs hover:bg-red-100 transition-colors"
                             >
                               Reject
                             </button>
@@ -244,10 +254,53 @@ export default function ManagerLeaves() {
         </div>
       </div>
 
+      {/* Accept Modal */}
+      {acceptingLeave && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
+          <div className="bg-bg-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-4 border-b border-line-light flex justify-between items-center bg-bg-sidebar text-white">
+              <h2 className="text-lg font-bold">Accept Leave Request</h2>
+              <button onClick={() => setAcceptingLeave(null)} className="text-white/70 hover:text-white">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="mb-4 bg-bg-secondary p-3 rounded-2xl border border-line-light">
+                <p className="text-sm font-bold text-text-primary">{acceptingLeave.employeeName}</p>
+                <p className="text-xs text-text-secondary capitalize">{acceptingLeave.leaveType} Leave ({acceptingLeave.startDate} - {acceptingLeave.endDate})</p>
+              </div>
+              
+              <label className="block text-sm font-bold text-text-secondary mb-2">Manager's Note (Optional)</label>
+              <textarea
+                className="w-full p-3 bg-bg-card border border-line rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 min-h-[100px] resize-none"
+                placeholder="Add a small note or message for the employee..."
+                value={acceptReason}
+                onChange={(e) => setAcceptReason(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="p-4 border-t border-line-light bg-bg-secondary flex justify-end gap-3">
+              <button 
+                onClick={() => setAcceptingLeave(null)}
+                className="px-4 py-2 text-sm font-bold text-text-secondary hover:bg-gray-200 rounded-2xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleAcceptConfirm}
+                className="px-4 py-2 text-sm font-bold bg-green-600 text-white rounded-2xl hover:bg-green-700 transition-colors shadow-sm"
+              >
+                Confirm Acceptance
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Reject Modal */}
       {rejectingLeave && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100] p-4">
-          <div className="bg-bg-card rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+          <div className="bg-bg-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="p-4 border-b border-line-light flex justify-between items-center bg-bg-sidebar text-white">
               <h2 className="text-lg font-bold">Reject Leave Request</h2>
               <button onClick={() => setRejectingLeave(null)} className="text-white/70 hover:text-white">
@@ -255,14 +308,14 @@ export default function ManagerLeaves() {
               </button>
             </div>
             <div className="p-6">
-              <div className="mb-4 bg-bg-secondary p-3 rounded-lg border border-line-light">
+              <div className="mb-4 bg-bg-secondary p-3 rounded-2xl border border-line-light">
                 <p className="text-sm font-bold text-text-primary">{rejectingLeave.employeeName}</p>
                 <p className="text-xs text-text-secondary capitalize">{rejectingLeave.leaveType} Leave ({rejectingLeave.startDate} - {rejectingLeave.endDate})</p>
               </div>
               
               <label className="block text-sm font-bold text-text-secondary mb-2">Reason for Rejection (Optional)</label>
               <textarea
-                className="w-full p-3 bg-bg-card border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 min-h-[100px] resize-none"
+                className="w-full p-3 bg-bg-card border border-line rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 min-h-[100px] resize-none"
                 placeholder="Briefly explain why this request is rejected..."
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
@@ -272,13 +325,13 @@ export default function ManagerLeaves() {
             <div className="p-4 border-t border-line-light bg-bg-secondary flex justify-end gap-3">
               <button 
                 onClick={() => setRejectingLeave(null)}
-                className="px-4 py-2 text-sm font-bold text-text-secondary hover:bg-gray-200 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-bold text-text-secondary hover:bg-gray-200 rounded-2xl transition-colors"
               >
                 Cancel
               </button>
               <button 
                 onClick={handleRejectConfirm}
-                className="px-4 py-2 text-sm font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-sm"
+                className="px-4 py-2 text-sm font-bold bg-red-600 text-white rounded-2xl hover:bg-red-700 transition-colors shadow-sm"
               >
                 Confirm Rejection
               </button>

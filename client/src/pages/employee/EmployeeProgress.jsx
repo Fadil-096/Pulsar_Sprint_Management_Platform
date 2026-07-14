@@ -130,7 +130,7 @@ export default function EmployeeProgress() {
           <select 
             value={selectedSprintId} 
             onChange={(e) => setSelectedSprintId(e.target.value)}
-            className="p-1 border border-line rounded text-sm bg-bg-card focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue w-auto max-w-full"
+            className="p-1 border border-line rounded-xl text-sm bg-bg-card focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue w-auto max-w-full"
           >
             <option value="ALL">All Sprints (Aggregate)</option>
             {sprints.map(s => (
@@ -245,7 +245,7 @@ export default function EmployeeProgress() {
 
 
                   <td className="p-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${sm.status === 'active' ? 'bg-blue-100 text-blue-700' : sm.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-bg-secondary text-text-secondary'}`}>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-xl text-[10px] font-bold uppercase tracking-wider ${sm.status === 'active' ? 'bg-blue-100 text-blue-700' : sm.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-bg-secondary text-text-secondary'}`}>
                       {sm.status}
                     </span>
                   </td>

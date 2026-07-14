@@ -61,7 +61,7 @@ export default function EmployeeProfileModal({ employee, onClose, onUpdate, onDe
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[#f8f9fc] rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-[#f8f9fc] rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
 
         {/* Header */}
         <div className="bg-bg-card border-b border-line p-6 flex items-start justify-between">
@@ -77,7 +77,7 @@ export default function EmployeeProfileModal({ employee, onClose, onUpdate, onDe
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="text-2xl font-bold text-text-primary bg-bg-secondary border border-line rounded px-2 py-1 w-64 focus:outline-none focus:border-blue-500"
+                    className="text-2xl font-bold text-text-primary bg-bg-secondary border border-line rounded-xl px-2 py-1 w-64 focus:outline-none focus:border-blue-500"
                     placeholder="Full Name"
                   />
                   <input
@@ -85,7 +85,7 @@ export default function EmployeeProfileModal({ employee, onClose, onUpdate, onDe
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="text-sm bg-bg-secondary border border-line rounded px-2 py-1 w-64 focus:outline-none focus:border-blue-500"
+                    className="text-sm bg-bg-secondary border border-line rounded-xl px-2 py-1 w-64 focus:outline-none focus:border-blue-500"
                     placeholder="Email"
                   />
                 </div>
@@ -127,14 +127,14 @@ export default function EmployeeProfileModal({ employee, onClose, onUpdate, onDe
         <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
 
           {error && (
-            <div className="p-3 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm font-medium flex items-center gap-2">
+            <div className="p-3 bg-red-50 text-red-700 border border-red-200 rounded-2xl text-sm font-medium flex items-center gap-2">
               <AlertCircle size={16} />
               {error}
             </div>
           )}
 
           {confirmDelete && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between gap-4">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-bold text-red-800">Remove {employee.name}?</p>
                 <p className="text-xs text-red-600 mt-0.5">This action cannot be undone.</p>
@@ -142,7 +142,7 @@ export default function EmployeeProfileModal({ employee, onClose, onUpdate, onDe
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => setConfirmDelete(false)}
-                  className="px-3 py-1.5 text-xs font-bold text-text-secondary bg-bg-card border border-line rounded-lg hover:bg-table-row-alt"
+                  className="px-3 py-1.5 text-xs font-bold text-text-secondary bg-bg-card border border-line rounded-2xl hover:bg-table-row-alt"
                   disabled={loading}
                 >
                   Cancel
@@ -150,7 +150,7 @@ export default function EmployeeProfileModal({ employee, onClose, onUpdate, onDe
                 <button
                   onClick={handleDelete}
                   disabled={loading}
-                  className="px-3 py-1.5 text-xs font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
+                  className="px-3 py-1.5 text-xs font-bold text-white bg-red-600 rounded-2xl hover:bg-red-700 disabled:opacity-50"
                 >
                   {loading ? 'Removing...' : 'Yes, Remove'}
                 </button>
@@ -159,7 +159,7 @@ export default function EmployeeProfileModal({ employee, onClose, onUpdate, onDe
           )}
 
           {isEditing ? (
-            <div className="bg-bg-card p-6 rounded-xl shadow-sm border border-line">
+            <div className="bg-bg-card p-6 rounded-2xl shadow-sm border border-line">
               <h3 className="text-sm font-bold text-text-primary mb-4 uppercase tracking-wider">Organizational Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -168,7 +168,7 @@ export default function EmployeeProfileModal({ employee, onClose, onUpdate, onDe
                     name="role"
                     value={formData.role}
                     onChange={handleChange}
-                    className="w-full p-2 bg-bg-secondary border border-line rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                    className="w-full p-2 bg-bg-secondary border border-line rounded-2xl text-sm focus:outline-none focus:border-blue-500"
                   >
                     <option value="employee">Employee</option>
                     <option value="manager">Manager</option>
@@ -181,7 +181,7 @@ export default function EmployeeProfileModal({ employee, onClose, onUpdate, onDe
                     name="department"
                     value={formData.department}
                     onChange={handleChange}
-                    className="w-full p-2 bg-bg-secondary border border-line rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                    className="w-full p-2 bg-bg-secondary border border-line rounded-2xl text-sm focus:outline-none focus:border-blue-500"
                     placeholder="Engineering"
                   />
                 </div>
@@ -192,7 +192,7 @@ export default function EmployeeProfileModal({ employee, onClose, onUpdate, onDe
                     name="team"
                     value={formData.team}
                     onChange={handleChange}
-                    className="w-full p-2 bg-bg-secondary border border-line rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                    className="w-full p-2 bg-bg-secondary border border-line rounded-2xl text-sm focus:outline-none focus:border-blue-500"
                     placeholder="e.g. Frontend"
                   />
                 </div>
@@ -203,7 +203,7 @@ export default function EmployeeProfileModal({ employee, onClose, onUpdate, onDe
                     name="subTeam"
                     value={formData.subTeam}
                     onChange={handleChange}
-                    className="w-full p-2 bg-bg-secondary border border-line rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                    className="w-full p-2 bg-bg-secondary border border-line rounded-2xl text-sm focus:outline-none focus:border-blue-500"
                     placeholder="e.g. Core UI"
                   />
                 </div>
@@ -214,7 +214,7 @@ export default function EmployeeProfileModal({ employee, onClose, onUpdate, onDe
                     name="newPassword"
                     value={formData.newPassword}
                     onChange={handleChange}
-                    className="w-full p-2 bg-bg-secondary border border-line rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                    className="w-full p-2 bg-bg-secondary border border-line rounded-2xl text-sm focus:outline-none focus:border-blue-500"
                     placeholder="Enter new password..."
                   />
                 </div>
@@ -222,7 +222,7 @@ export default function EmployeeProfileModal({ employee, onClose, onUpdate, onDe
               <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-line-light">
                 <button
                   onClick={() => setIsEditing(false)}
-                  className="px-4 py-2 text-sm font-bold text-text-secondary bg-bg-card border border-line rounded-lg hover:bg-table-row-alt"
+                  className="px-4 py-2 text-sm font-bold text-text-secondary bg-bg-card border border-line rounded-2xl hover:bg-table-row-alt"
                   disabled={loading}
                 >
                   Cancel
@@ -230,7 +230,7 @@ export default function EmployeeProfileModal({ employee, onClose, onUpdate, onDe
                 <button
                   onClick={handleSave}
                   disabled={loading}
-                  className="px-6 py-2 text-sm font-bold text-white bg-accent-blue rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  className="px-6 py-2 text-sm font-bold text-white bg-accent-blue rounded-2xl hover:bg-blue-700 disabled:opacity-50"
                 >
                   {loading ? 'Saving...' : 'Save Changes'}
                 </button>
@@ -240,14 +240,14 @@ export default function EmployeeProfileModal({ employee, onClose, onUpdate, onDe
             <>
               {/* Top Metrics Row */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-bg-card p-4 rounded-xl shadow-sm border border-line">
+                <div className="bg-bg-card p-4 rounded-2xl shadow-sm border border-line">
                   <div className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">
                     <CheckCircle2 size={14} className="text-blue-500" />
                     Tasks
                   </div>
                   <div className="text-2xl font-black text-text-primary">{employee.metrics.tasksDone} <span className="text-sm font-medium text-text-muted">/ {employee.metrics.totalTasks}</span></div>
                 </div>
-                <div className="bg-bg-card p-4 rounded-xl shadow-sm border border-line">
+                <div className="bg-bg-card p-4 rounded-2xl shadow-sm border border-line">
                   <div className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">
                     <Calendar size={14} className="text-blue-500" />
                     Present
@@ -258,12 +258,12 @@ export default function EmployeeProfileModal({ employee, onClose, onUpdate, onDe
 
               {/* Sprints & Quick Links */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-bg-card p-5 rounded-xl shadow-sm border border-line">
+                <div className="bg-bg-card p-5 rounded-2xl shadow-sm border border-line">
                   <h3 className="text-sm font-bold text-text-primary mb-3 uppercase tracking-wider">Active Sprints</h3>
                   {employee.activeSprints && employee.activeSprints.length > 0 ? (
                     <div className="space-y-2">
                       {employee.activeSprints.map(s => (
-                        <div key={s.id} className="flex items-center justify-between p-2 bg-bg-secondary rounded-md border border-line-light">
+                        <div key={s.id} className="flex items-center justify-between p-2 bg-bg-secondary rounded-2xl border border-line-light">
                           <span className="font-medium text-sm text-text-primary">{s.name} ({s.id})</span>
                           <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Active</span>
                         </div>
@@ -274,14 +274,14 @@ export default function EmployeeProfileModal({ employee, onClose, onUpdate, onDe
                   )}
                 </div>
 
-                <div className="bg-bg-card p-5 rounded-xl shadow-sm border border-line">
+                <div className="bg-bg-card p-5 rounded-2xl shadow-sm border border-line">
                   <h3 className="text-sm font-bold text-text-primary mb-3 uppercase tracking-wider">Quick Links</h3>
                   <div className="space-y-2">
-                    <a href={`/manager/tasks?employee=${employee.name}`} className="flex items-center justify-between p-3 bg-bg-secondary hover:bg-blue-50 hover:text-blue-700 rounded-md border border-line-light transition-colors group">
+                    <a href={`/manager/tasks?employee=${employee.name}`} className="flex items-center justify-between p-3 bg-bg-secondary hover:bg-blue-50 hover:text-blue-700 rounded-2xl border border-line-light transition-colors group">
                       <span className="font-medium text-sm">View Full Task History</span>
                       <ExternalLink size={16} className="text-text-muted group-hover:text-blue-600" />
                     </a>
-                    <a href="/manager/team-attendance" className="flex items-center justify-between p-3 bg-bg-secondary hover:bg-blue-50 hover:text-blue-700 rounded-md border border-line-light transition-colors group">
+                    <a href="/manager/team-attendance" className="flex items-center justify-between p-3 bg-bg-secondary hover:bg-blue-50 hover:text-blue-700 rounded-2xl border border-line-light transition-colors group">
                       <span className="font-medium text-sm">View Detailed Attendance</span>
                       <ExternalLink size={16} className="text-text-muted group-hover:text-blue-600" />
                     </a>

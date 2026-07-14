@@ -47,7 +47,7 @@ export default function EmployeeSettings() {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 bg-accent-blue rounded-lg flex items-center justify-center text-white">
+        <div className="w-10 h-10 bg-accent-blue rounded-2xl flex items-center justify-center text-white">
           <SettingsIcon size={24} />
         </div>
         <div>
@@ -56,7 +56,7 @@ export default function EmployeeSettings() {
         </div>
       </div>
 
-      <div className="bg-bg-card rounded-xl shadow-sm border border-line-light overflow-hidden mb-6">
+      <div className="bg-bg-card rounded-2xl shadow-sm border border-line-light overflow-hidden mb-6">
         <div className="px-6 py-4 border-b border-line-light bg-bg-secondary flex items-center gap-3">
           <Bell className="text-text-muted" size={20} />
           <h2 className="text-lg font-bold text-text-primary">Notification Preferences</h2>
@@ -69,36 +69,36 @@ export default function EmployeeSettings() {
             <div>
               <h3 className="text-sm font-bold text-text-secondary uppercase tracking-wider mb-4">Notification Types</h3>
               <div className="space-y-4">
-                <label className="flex items-center justify-between p-3 rounded-lg border border-line-light hover:bg-gray-50 cursor-pointer transition-colors">
+                <label className="flex items-center justify-between p-3 rounded-2xl border border-line-light hover:bg-bg-secondary cursor-pointer transition-colors">
                   <div>
                     <p className="font-bold text-sm text-text-primary">My Queries</p>
                     <p className="text-xs text-text-secondary mt-0.5">When someone replies to your queries</p>
                   </div>
-                  <input type="checkbox" checked={settings.notify_queries === 1} onChange={() => toggleSetting('notify_queries')} className="w-4 h-4 text-accent-blue rounded border-line focus:ring-[#005AFF]" />
+                  <input type="checkbox" checked={settings.notify_queries === 1} onChange={() => toggleSetting('notify_queries')} className="w-4 h-4 text-accent-blue rounded-xl border-line focus:ring-[#005AFF]" />
                 </label>
                 
-                <label className="flex items-center justify-between p-3 rounded-lg border border-line-light hover:bg-gray-50 cursor-pointer transition-colors">
+                <label className="flex items-center justify-between p-3 rounded-2xl border border-line-light hover:bg-bg-secondary cursor-pointer transition-colors">
                   <div>
                     <p className="font-bold text-sm text-text-primary">Leave Request Updates</p>
                     <p className="text-xs text-text-secondary mt-0.5">Approvals and rejections for your leaves</p>
                   </div>
-                  <input type="checkbox" checked={settings.notify_leaves === 1} onChange={() => toggleSetting('notify_leaves')} className="w-4 h-4 text-accent-blue rounded border-line focus:ring-[#005AFF]" />
+                  <input type="checkbox" checked={settings.notify_leaves === 1} onChange={() => toggleSetting('notify_leaves')} className="w-4 h-4 text-accent-blue rounded-xl border-line focus:ring-[#005AFF]" />
                 </label>
                 
-                <label className="flex items-center justify-between p-3 rounded-lg border border-line-light hover:bg-gray-50 cursor-pointer transition-colors">
+                <label className="flex items-center justify-between p-3 rounded-2xl border border-line-light hover:bg-bg-secondary cursor-pointer transition-colors">
                   <div>
                     <p className="font-bold text-sm text-text-primary">Sprint & Task Updates</p>
                     <p className="text-xs text-text-secondary mt-0.5">Task assignments, status changes, deadlines</p>
                   </div>
-                  <input type="checkbox" checked={settings.notify_sprints === 1} onChange={() => toggleSetting('notify_sprints')} className="w-4 h-4 text-accent-blue rounded border-line focus:ring-[#005AFF]" />
+                  <input type="checkbox" checked={settings.notify_sprints === 1} onChange={() => toggleSetting('notify_sprints')} className="w-4 h-4 text-accent-blue rounded-xl border-line focus:ring-[#005AFF]" />
                 </label>
                 
-                <label className="flex items-center justify-between p-3 rounded-lg border border-line-light hover:bg-gray-50 cursor-pointer transition-colors">
+                <label className="flex items-center justify-between p-3 rounded-2xl border border-line-light hover:bg-bg-secondary cursor-pointer transition-colors">
                   <div>
                     <p className="font-bold text-sm text-text-primary">System Alerts</p>
                     <p className="text-xs text-text-secondary mt-0.5">Platform announcements and updates</p>
                   </div>
-                  <input type="checkbox" checked={settings.notify_system === 1} onChange={() => toggleSetting('notify_system')} className="w-4 h-4 text-accent-blue rounded border-line focus:ring-[#005AFF]" />
+                  <input type="checkbox" checked={settings.notify_system === 1} onChange={() => toggleSetting('notify_system')} className="w-4 h-4 text-accent-blue rounded-xl border-line focus:ring-[#005AFF]" />
                 </label>
               </div>
             </div>
@@ -107,7 +107,7 @@ export default function EmployeeSettings() {
             <div>
               <h3 className="text-sm font-bold text-text-secondary uppercase tracking-wider mb-4">Delivery Methods</h3>
               <div className="space-y-4">
-                <label className="flex items-center gap-3 p-4 rounded-lg border border-line-light hover:bg-gray-50 cursor-pointer transition-colors">
+                <label className="flex items-center gap-3 p-4 rounded-2xl border border-line-light hover:bg-bg-secondary cursor-pointer transition-colors">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${settings.delivery_inapp === 1 ? 'bg-blue-100 text-accent-blue' : 'bg-bg-secondary text-text-muted'}`}>
                     <Smartphone size={20} />
                   </div>
@@ -115,10 +115,10 @@ export default function EmployeeSettings() {
                     <p className="font-bold text-sm text-text-primary">In-App Notifications</p>
                     <p className="text-xs text-text-secondary mt-0.5">Bell icon badge inside the platform</p>
                   </div>
-                  <input type="checkbox" checked={settings.delivery_inapp === 1} onChange={() => toggleSetting('delivery_inapp')} className="w-4 h-4 text-accent-blue rounded border-line focus:ring-[#005AFF]" />
+                  <input type="checkbox" checked={settings.delivery_inapp === 1} onChange={() => toggleSetting('delivery_inapp')} className="w-4 h-4 text-accent-blue rounded-xl border-line focus:ring-[#005AFF]" />
                 </label>
                 
-                <label className="flex items-center gap-3 p-4 rounded-lg border border-line-light hover:bg-gray-50 cursor-pointer transition-colors">
+                <label className="flex items-center gap-3 p-4 rounded-2xl border border-line-light hover:bg-bg-secondary cursor-pointer transition-colors">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${settings.delivery_email === 1 ? 'bg-blue-100 text-accent-blue' : 'bg-bg-secondary text-text-muted'}`}>
                     <Mail size={20} />
                   </div>
@@ -126,7 +126,7 @@ export default function EmployeeSettings() {
                     <p className="font-bold text-sm text-text-primary">Email Notifications</p>
                     <p className="text-xs text-text-secondary mt-0.5">Receive digests directly in your inbox</p>
                   </div>
-                  <input type="checkbox" checked={settings.delivery_email === 1} onChange={() => toggleSetting('delivery_email')} className="w-4 h-4 text-accent-blue rounded border-line focus:ring-[#005AFF]" />
+                  <input type="checkbox" checked={settings.delivery_email === 1} onChange={() => toggleSetting('delivery_email')} className="w-4 h-4 text-accent-blue rounded-xl border-line focus:ring-[#005AFF]" />
                 </label>
               </div>
             </div>
@@ -138,7 +138,7 @@ export default function EmployeeSettings() {
           <button 
             onClick={handleSave}
             disabled={saving}
-            className="px-6 py-2 bg-accent-blue text-white font-bold text-sm rounded-lg hover:bg-blue-700 shadow-sm transition-colors disabled:opacity-50"
+            className="px-6 py-2 bg-accent-blue text-white font-bold text-sm rounded-2xl hover:bg-blue-700 shadow-sm transition-colors disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save Preferences'}
           </button>

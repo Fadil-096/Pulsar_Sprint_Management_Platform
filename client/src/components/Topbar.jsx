@@ -1,28 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
-import { LogOut, Sun, Moon } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import NotificationBell from './NotificationBell';
+import axios from 'axios';
 
-const ThemeToggle = () => {
-  const { theme, toggleTheme } = useTheme();
-  const isDark = theme === 'dark';
-
-  return (
-    <button
-      onClick={toggleTheme}
-      className={`relative inline-flex h-[28px] w-[56px] shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 ${isDark ? 'bg-[#1E293B]' : 'bg-[#0066CC]'}`}
-      title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
-    >
-      <span className="sr-only">Toggle Theme</span>
-      <span
-        className={`pointer-events-none absolute flex h-[22px] w-[22px] items-center justify-center rounded-full bg-white shadow ring-0 transition-transform duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] ${isDark ? 'translate-x-[14px]' : '-translate-x-[14px]'}`}
-      >
-        {isDark ? <Moon size={12} className="text-gray-800" /> : <Sun size={12} className="text-[#0066CC]" />}
-      </span>
-    </button>
-  );};
 
 const LiveClock = () => {
   const [time, setTime] = useState(new Date());
@@ -80,14 +62,71 @@ const LiveClock = () => {
 
 
 export default function Topbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
+  const [attendance, setAttendance] = useState(null);
+  const [showCheckInModal, setShowCheckInModal] = useState(false);
+  const [showCheckOutConfirm, setShowCheckOutConfirm] = useState(false);
+  const [showCheckInToast, setShowCheckInToast] = useState(false);
+  const [showCheckOutToast, setShowCheckOutToast] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    if (token) {
+      axios.get('/api/attendance/today', { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => {
+          setAttendance(res.data);
+          if (!res.data.check_in_time) {
+            setShowCheckInModal(true);
+          }
+        })
+        .catch(err => console.error(err));
+    }
+  }, [token]);
+
+  const handleCheckIn = async () => {
+    try {
+      await axios.post('/api/attendance/check-in', {}, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.get('/api/attendance/today', { headers: { Authorization: `Bearer ${token}` } });
+      setAttendance(res.data);
+      setShowCheckInModal(false);
+      setShowCheckInToast(true);
+      setTimeout(() => setShowCheckInToast(false), 3000);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to check in');
+    }
+  };
+
+  const handleCheckOutClick = () => {
+    setShowCheckOutConfirm(true);
+  };
+
+  const confirmCheckOut = async () => {
+    setShowCheckOutConfirm(false);
+    try {
+      await axios.post('/api/attendance/check-out', {}, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.get('/api/attendance/today', { headers: { Authorization: `Bearer ${token}` } });
+      setAttendance(res.data);
+      setShowCheckOutToast(true);
+      setTimeout(() => setShowCheckOutToast(false), 3000);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to check out');
+    }
+  };
 
   return (
     <nav className="flex items-center justify-between px-6 h-[64px] bg-nav-bg sticky top-0 z-50 text-nav-text">
       <div className="flex items-center">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 338.667 79.687" aria-label="Nokia" style={{ height: '20px', width: 'auto', display: 'block' }} className="fill-nav-text">
-          <path d="M114.194 1.145c-21.865 0-38.831 15.914-38.831 38.698 0 23.81 16.965 38.699 38.831 38.698s38.866-14.889 38.831-38.698c-.032-21.587-16.965-38.698-38.831-38.698zm0 10.654c15.258 0 27.627 11.484 27.627 28.044 0 16.867-12.369 28.045-27.627 28.045S86.567 56.709 86.567 39.843c0-16.561 12.369-28.044 27.627-28.044zm119.913-9.376v74.839h11.224V2.423zm-30.985 0l-41.655 37.419 41.655 37.42h16.702l-41.718-37.42 41.718-37.419zM296.843 0l-6.092 11.252 20.667 38.388h-41.447l-14.953 27.623h12.348l9.03-16.573h40.895l9.029 16.573h12.347zM0 0v77.263h11.455v-51.06L70.98 79.686V63.667z"/>
-        </svg>
+        <img 
+          src="/Pulsar_logo_dark.png" 
+          alt="Pulsar" 
+          style={{ height: '52px', width: 'auto' }} 
+          className="hidden dark:block mix-blend-lighten contrast-125 brightness-125 origin-left object-contain translate-y-1" 
+        />
+        <div className="dark:hidden text-[20px] font-bold text-[#020024] tracking-widest" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+          PULSAR
+        </div>
         <div className="h-[20px] w-[1px] bg-nav-text opacity-20 mx-4"></div>
         <div className="text-[18px] font-semibold text-accent-blue tracking-tight" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
           Sprint
@@ -95,10 +134,29 @@ export default function Topbar() {
       </div>
       
       <div className="flex items-center gap-4 lg:gap-5">
+        
+        {/* Check In / Out Widget */}
+        <div className="hidden md:flex items-center">
+          {attendance?.check_in_time && !attendance?.check_out_time ? (
+            <button 
+              onClick={handleCheckOutClick}
+              className="bg-orange-500/10 text-orange-400 border border-orange-500 px-3 py-1 rounded-xl text-xs font-bold hover:bg-orange-500 hover:text-white hover:shadow-[0_0_12px_rgba(249,115,22,0.4)] transition-all outline-none focus:outline-none"
+            >
+              Check Out
+            </button>
+          ) : attendance?.check_out_time ? (
+            <span className="text-green-500 text-xs font-bold px-3 py-1 bg-green-500/10 rounded-xl border border-green-500 shadow-[0_0_8px_rgba(34,197,94,0.2)]">Checked Out</span>
+          ) : (
+            <button 
+              onClick={() => setShowCheckInModal(true)}
+              className="bg-accent-blue/10 text-accent-blue border border-accent-blue px-3 py-1 rounded-xl text-xs font-bold hover:bg-accent-blue hover:text-white hover:shadow-[0_0_12px_rgba(37,99,235,0.4)] transition-all outline-none focus:outline-none"
+            >
+              Check In
+            </button>
+          )}
+        </div>
 
         <LiveClock />
-
-        <ThemeToggle />
         
         <NotificationBell />
 
@@ -111,15 +169,111 @@ export default function Topbar() {
         
         <div className="hidden sm:block ml-2 mr-2 w-px h-6 bg-nav-text opacity-20"></div>
 
-        <span className="border-[1px] border-nav-text opacity-80 text-nav-text text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-widest hidden sm:inline-block">
+        <span className="border-[1px] border-nav-text opacity-80 text-nav-text text-[10px] font-bold px-2.5 py-1 rounded-xl uppercase tracking-widest hidden sm:inline-block">
           {user?.role === 'administrator' ? 'Admin' : user?.role === 'manager' ? 'Manager' : 'Employee'}
         </span>
         <button 
           onClick={logout} 
-          className="ml-2 bg-bg-card text-text-primary border border-line px-4 py-1.5 rounded-sm text-[13px] font-bold hover:bg-sidebar-active-bg transition-colors shadow-sm"
+          className="ml-2 bg-white text-black px-4 py-1.5 rounded-[4px] text-[13px] font-semibold hover:bg-[#e5e5e5] transition-all shadow-sm"
         >
           Sign out
         </button>
+      </div>
+
+      {/* Forced Check-In Modal */}
+      {showCheckInModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-bg-card border border-line rounded-2xl w-full max-w-md shadow-2xl p-6 text-center animate-fade-in-up">
+            <div className="w-16 h-16 bg-accent-blue/10 text-accent-blue rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            </div>
+            <h2 className="text-2xl font-bold text-text-primary mb-2">Welcome Back, {user?.name.split(' ')[0]}!</h2>
+            <p className="text-text-secondary mb-6">Please check in to start your work day.</p>
+            
+            <div className="flex gap-3 justify-center">
+              <button 
+                onClick={() => setShowCheckInModal(false)}
+                className="px-6 py-2.5 text-sm font-medium text-text-secondary hover:text-text-primary bg-bg-secondary rounded-2xl transition-colors"
+              >
+                Remind Me Later
+              </button>
+              <button 
+                onClick={handleCheckIn}
+                className="px-8 py-2.5 bg-accent-blue hover:bg-accent-blue/90 text-white rounded-2xl font-bold shadow-md transition-colors"
+              >
+                Check In Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Check Out Confirmation Modal */}
+      {showCheckOutConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-bg-primary border border-line p-6 rounded-2xl shadow-2xl max-w-sm w-full mx-4 text-center animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-accent-blue/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <LogOut className="w-8 h-8 text-accent-blue" />
+            </div>
+            <h2 className="text-2xl font-bold text-text-primary mb-2">Check Out?</h2>
+            <p className="text-text-secondary mb-6">Are you sure you want to end your shift and check out for the day?</p>
+            
+            <div className="flex gap-3 w-full">
+              <button 
+                onClick={() => setShowCheckOutConfirm(false)}
+                className="flex-1 py-2.5 rounded-2xl border border-line text-text-primary font-bold hover:bg-bg-secondary transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmCheckOut}
+                className="flex-1 py-2.5 rounded-2xl bg-accent-blue text-white font-bold shadow-lg shadow-accent-blue/20 hover:brightness-110 transition-all"
+              >
+                Yes, Check Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Check In Success Toast */}
+      <div 
+        className={`fixed left-1/2 transform -translate-x-1/2 z-[200] transition-all duration-500 ease-in-out ${
+          showCheckInToast 
+            ? 'top-6 opacity-100 scale-100 pointer-events-auto' 
+            : '-top-10 opacity-0 scale-95 pointer-events-none'
+        }`}
+      >
+        <div className="bg-green-500 text-white px-6 py-3 rounded-full shadow-[0_4px_20px_rgba(34,197,94,0.4)] flex items-center gap-3">
+          <div className="bg-white/20 p-1 rounded-full flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <span className="font-semibold text-sm tracking-wide">
+            Hi {user?.name?.split(' ')[0] || user?.name}, you've successfully checked in
+          </span>
+        </div>
+      </div>
+
+      {/* Check Out Success Toast */}
+      <div 
+        className={`fixed left-1/2 transform -translate-x-1/2 z-[200] transition-all duration-500 ease-in-out ${
+          showCheckOutToast 
+            ? 'top-6 opacity-100 scale-100 pointer-events-auto' 
+            : '-top-10 opacity-0 scale-95 pointer-events-none'
+        }`}
+      >
+        <div className="bg-orange-500 text-white px-6 py-3 rounded-full shadow-[0_4px_20px_rgba(249,115,22,0.4)] flex items-center gap-3">
+          <div className="bg-white/20 p-1 rounded-full flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <span className="font-semibold text-sm tracking-wide">
+            Hi {user?.name?.split(' ')[0] || user?.name}, you've successfully checked out
+          </span>
+        </div>
       </div>
     </nav>
   );

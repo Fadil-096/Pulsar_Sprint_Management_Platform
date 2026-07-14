@@ -6,6 +6,8 @@ import { ThemeProvider } from './context/ThemeContext';
 import Login from './pages/Login';
 import AppLayout from './layouts/AppLayout';
 import PageLoader from './components/PageLoader';
+import { LoaderProvider } from './context/LoaderContext';
+import { PostLoginLoader } from './components/PostLoginLoader';
 
 // Code splitting for page components
 const ManagerDashboard = React.lazy(() => import('./pages/manager/ManagerDashboard'));
@@ -31,6 +33,7 @@ const EmployeeSettings = React.lazy(() => import('./pages/employee/EmployeeSetti
 const AttendanceLog = React.lazy(() => import('./pages/shared/AttendanceLog'));
 const ProjectsList = React.lazy(() => import('./pages/shared/ProjectsList'));
 const ProjectDetail = React.lazy(() => import('./pages/shared/ProjectDetail'));
+const CalendarView = React.lazy(() => import('./pages/shared/CalendarView'));
 
 // Admin pages
 const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
@@ -38,6 +41,7 @@ const UserManagement = React.lazy(() => import('./pages/admin/UserManagement'));
 const AdminSettings = React.lazy(() => import('./pages/admin/AdminSettings'));
 const AdminSprints = React.lazy(() => import('./pages/admin/SprintManagement'));
 const AdminTeam = React.lazy(() => import('./pages/admin/AdminTeam'));
+const Departments = React.lazy(() => import('./pages/admin/Departments'));
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -59,10 +63,12 @@ const RoleRedirect = () => {
 function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <NotificationProvider>
-          <BrowserRouter>
-            <Suspense fallback={<PageLoader />}>
+      <LoaderProvider>
+        <AuthProvider>
+          <NotificationProvider>
+            <BrowserRouter>
+              <PostLoginLoader />
+              <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/login" element={<Login />} />
                 
@@ -76,12 +82,14 @@ function App() {
                   <Route path="sprints/:sprintId" element={<SprintDetail />} />
                   <Route path="tasks" element={<Tasks />} />
                   <Route path="team" element={<Team />} />
+                  <Route path="leaves" element={<ManagerLeaves />} />
                   <Route path="reports" element={<Reports />} />
                   <Route path="reminders" element={<Reminders />} />
                   <Route path="notifications" element={<Notifications />} />
                   <Route path="settings" element={<Settings />} />
                   <Route path="attendance" element={<AttendanceLog />} />
                   <Route path="team-attendance" element={<TeamAttendance />} />
+                  <Route path="calendar" element={<CalendarView />} />
                 </Route>
 
                 <Route path="/employee" element={<ProtectedRoute allowedRoles={['employee']}><AppLayout /></ProtectedRoute>}>
@@ -93,6 +101,7 @@ function App() {
                   <Route path="leaves" element={<EmployeeLeave />} />
                   <Route path="notifications" element={<EmployeeNotifications />} />
                   <Route path="settings" element={<EmployeeSettings />} />
+                  <Route path="calendar" element={<CalendarView />} />
                 </Route>
 
                 <Route path="/admin" element={<ProtectedRoute allowedRoles={['administrator']}><AppLayout /></ProtectedRoute>}>
@@ -101,8 +110,10 @@ function App() {
                   <Route path="sprints" element={<AdminSprints />} />
                   <Route path="team" element={<AdminTeam />} />
                   <Route path="leaves" element={<ManagerLeaves />} />
-                  <Route path="departments" element={<AdminSettings />} />
+                  <Route path="departments" element={<Departments />} />
+                  <Route path="attendance" element={<AttendanceLog />} />
                   <Route path="settings" element={<AdminSettings />} />
+                  <Route path="calendar" element={<CalendarView />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
@@ -110,6 +121,7 @@ function App() {
           </BrowserRouter>
         </NotificationProvider>
       </AuthProvider>
+      </LoaderProvider>
     </ThemeProvider>
   );
 }

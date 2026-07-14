@@ -86,7 +86,7 @@ export default function AdminTeam() {
             const extraMembers = sprint.members.length > 6 ? sprint.members.length - 6 : 0;
 
             return (
-              <div key={sprint.sprintId} className={`bg-bg-card border border-line rounded-xl overflow-hidden flex flex-col hover:shadow-lg transition-shadow border-l-4 ${colors.border}`}>
+              <div key={sprint.sprintId} className={`bg-bg-card border border-line rounded-2xl overflow-hidden flex flex-col hover:shadow-lg transition-shadow border-l-4 ${colors.border}`}>
                 <div className="p-5 flex-1">
                   <div className="flex justify-between items-start mb-2">
                     <div>
@@ -95,7 +95,7 @@ export default function AdminTeam() {
                         {sprint.sprintName}
                       </h4>
                     </div>
-                    <span className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${colors.badge}`}>
+                    <span className={`px-2.5 py-1 rounded-xl text-[10px] font-bold uppercase tracking-wider border ${colors.badge}`}>
                       {getStatusLabel(sprint.status)}
                     </span>
                   </div>
@@ -189,14 +189,14 @@ export default function AdminTeam() {
             placeholder="Search sprints, managers, or members..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-bg-card border border-line rounded-lg pl-10 pr-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue transition-all"
+            className="w-full bg-bg-card border border-line rounded-2xl pl-10 pr-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue transition-all"
           />
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted" />
         </div>
       </div>
 
       {filteredSprints.length === 0 ? (
-        <div className="bg-bg-card rounded-xl border border-line p-12 flex flex-col items-center justify-center text-center">
+        <div className="bg-bg-card rounded-2xl border border-line p-12 flex flex-col items-center justify-center text-center">
           <div className="w-16 h-16 rounded-full bg-bg-secondary flex items-center justify-center mb-4">
             <Info size={24} className="text-text-muted" />
           </div>

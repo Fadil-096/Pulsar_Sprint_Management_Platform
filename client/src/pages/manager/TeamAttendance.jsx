@@ -184,7 +184,7 @@ export default function TeamAttendance() {
       <td className="px-6 py-3 text-text-secondary">{record.check_out || '-'}</td>
       <td className="px-6 py-3 font-mono text-xs font-bold text-text-primary">{record.total_hours > 0 ? `${record.total_hours}h` : '-'}</td>
       <td className="px-6 py-3">
-        <span className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold rounded ${getStatusBadge(record.status)}`}>
+        <span className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold rounded-xl ${getStatusBadge(record.status)}`}>
           {record.status}
         </span>
       </td>
@@ -205,7 +205,7 @@ export default function TeamAttendance() {
           <div className="relative" ref={dropdownRef}>
             <button 
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2 px-3 py-2 bg-bg-card border border-line rounded-md text-sm font-medium hover:bg-table-row-alt shadow-sm transition-colors min-w-[200px] justify-between"
+              className="flex items-center gap-2 px-3 py-2 bg-bg-card border border-line rounded-2xl text-sm font-medium hover:bg-table-row-alt shadow-sm transition-colors min-w-[200px] justify-between"
             >
               <div className="flex items-center gap-2">
                 {selectedEmployeeId === 'all' ? (
@@ -223,7 +223,7 @@ export default function TeamAttendance() {
             </button>
             
             {dropdownOpen && (
-              <div className="absolute right-0 mt-1 w-64 bg-bg-card border border-line rounded-md shadow-xl z-50 py-1">
+              <div className="absolute right-0 mt-1 w-64 bg-bg-card border border-line rounded-2xl shadow-xl z-50 py-1">
                 <div className="max-h-80 overflow-y-auto">
                   <button
                     className={`w-full text-left px-4 py-2 text-sm hover:bg-table-row-alt flex items-center gap-3 border-b border-line-light ${selectedEmployeeId === 'all' ? 'bg-blue-50/50' : ''}`}
@@ -253,7 +253,7 @@ export default function TeamAttendance() {
           </div>
 
           {/* Date Range Selector */}
-          <div className="flex items-center gap-2 bg-bg-card border border-line rounded-md px-3 py-2 shadow-sm">
+          <div className="flex items-center gap-2 bg-bg-card border border-line rounded-2xl px-3 py-2 shadow-sm">
             <Calendar size={16} className="text-text-muted" />
             <select 
               className="text-sm bg-transparent outline-none font-medium text-text-primary cursor-pointer"
@@ -274,7 +274,7 @@ export default function TeamAttendance() {
               placeholder="Search name or date..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-8 py-2 text-sm bg-bg-card text-text-primary border border-line rounded-md focus:outline-none focus:border-accent-blue w-56 shadow-sm"
+              className="pl-8 pr-8 py-2 text-sm bg-bg-card text-text-primary border border-line rounded-2xl focus:outline-none focus:border-accent-blue w-56 shadow-sm"
             />
             {searchQuery && (
               <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-gray-600">
@@ -283,7 +283,7 @@ export default function TeamAttendance() {
             )}
           </div>
 
-          <button onClick={exportCSV} className="flex items-center gap-2 px-3 py-2 bg-bg-secondary border border-line rounded-md text-sm font-medium hover:bg-gray-200 transition-colors">
+          <button onClick={exportCSV} className="flex items-center gap-2 px-3 py-2 bg-bg-secondary border border-line rounded-2xl text-sm font-medium hover:bg-gray-200 transition-colors">
             <Download size={16} /> Export
           </button>
         </div>
@@ -297,21 +297,21 @@ export default function TeamAttendance() {
         /* ================= GROUPED VIEW ================= */
         <div className="space-y-4">
           {groupedData.length === 0 ? (
-            <div className="bg-bg-card rounded-lg p-12 text-center text-text-secondary border border-line">
+            <div className="bg-bg-card rounded-2xl p-12 text-center text-text-secondary border border-line">
               No attendance records found for this period.
             </div>
           ) : (
             groupedData.map(group => {
               const isExpanded = expandedUsers.has(group.user_id);
               return (
-                <div key={group.user_id} className="bg-bg-card rounded-lg shadow-sm border border-line overflow-hidden transition-all">
+                <div key={group.user_id} className="bg-bg-card rounded-2xl shadow-sm border border-line overflow-hidden transition-all">
                   {/* Header Row */}
                   <div 
                     className="flex flex-col sm:flex-row sm:items-center justify-between p-4 cursor-pointer hover:bg-table-row-alt transition-colors"
                     onClick={() => toggleUserExpanded(group.user_id)}
                   >
                     <div className="flex items-center gap-4">
-                      <button className="p-1 text-text-muted hover:text-[#005AFF] hover:bg-blue-50 rounded">
+                      <button className="p-1 text-text-muted hover:text-[#005AFF] hover:bg-blue-50 rounded-xl">
                         {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                       </button>
                       <div className="flex items-center gap-3">
@@ -325,16 +325,16 @@ export default function TeamAttendance() {
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-3 mt-3 sm:mt-0 pl-14 sm:pl-0">
-                      <div className="bg-green-50 border border-green-100 text-green-800 px-3 py-1 rounded text-xs font-bold">Present: {group.stats.present}</div>
-                      <div className="bg-red-50 border border-red-100 text-red-800 px-3 py-1 rounded text-xs font-bold">Absent: {group.stats.absent}</div>
-                      <div className="bg-amber-50 border border-amber-100 text-amber-800 px-3 py-1 rounded text-xs font-bold">Half-Day: {group.stats.halfday}</div>
+                      <div className="bg-green-50 border border-green-100 text-green-800 px-3 py-1 rounded-xl text-xs font-bold">Present: {group.stats.present}</div>
+                      <div className="bg-red-50 border border-red-100 text-red-800 px-3 py-1 rounded-xl text-xs font-bold">Absent: {group.stats.absent}</div>
+                      <div className="bg-amber-50 border border-amber-100 text-amber-800 px-3 py-1 rounded-xl text-xs font-bold">Half-Day: {group.stats.halfday}</div>
                     </div>
                   </div>
 
                   {/* Expanded Table */}
                   {isExpanded && (
                     <div className="border-t border-line-light bg-bg-secondary/50 p-4">
-                      <table className="w-full text-left bg-bg-card rounded-lg overflow-hidden border border-line shadow-sm">
+                      <table className="w-full text-left bg-bg-card rounded-2xl overflow-hidden border border-line shadow-sm">
                         <thead className="bg-bg-secondary text-[10px] text-text-secondary uppercase tracking-wider border-b border-line">
                           <tr>
                             <th className="px-6 py-2.5 font-bold">Date</th>
@@ -360,26 +360,26 @@ export default function TeamAttendance() {
         <Fragment>
           {individualStats && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-bg-card p-4 rounded-xl shadow-sm border border-line">
+              <div className="bg-bg-card p-4 rounded-2xl shadow-sm border border-line">
                 <div className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-1">Total Present</div>
                 <div className="text-2xl font-black text-semantic-success-text">{individualStats.present} <span className="text-sm font-medium text-text-muted">days</span></div>
               </div>
-              <div className="bg-bg-card p-4 rounded-xl shadow-sm border border-line">
+              <div className="bg-bg-card p-4 rounded-2xl shadow-sm border border-line">
                 <div className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-1">Total Absent</div>
                 <div className="text-2xl font-black text-red-600">{individualStats.absent} <span className="text-sm font-medium text-text-muted">days</span></div>
               </div>
-              <div className="bg-bg-card p-4 rounded-xl shadow-sm border border-line">
+              <div className="bg-bg-card p-4 rounded-2xl shadow-sm border border-line">
                 <div className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-1">Total Logged</div>
                 <div className="text-2xl font-black text-accent-blue">{individualStats.totalHours} <span className="text-sm font-medium text-text-muted">hours</span></div>
               </div>
-              <div className="bg-bg-card p-4 rounded-xl shadow-sm border border-line">
+              <div className="bg-bg-card p-4 rounded-2xl shadow-sm border border-line">
                 <div className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-1">Daily Average</div>
                 <div className="text-2xl font-black text-text-primary">{individualStats.avgHours} <span className="text-sm font-medium text-text-muted">hours/day</span></div>
               </div>
             </div>
           )}
 
-          <div className="bg-bg-card rounded-xl shadow-sm border border-line overflow-hidden">
+          <div className="bg-bg-card rounded-2xl shadow-sm border border-line overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead className="bg-bg-secondary text-[11px] text-text-secondary uppercase tracking-wider border-b border-line">

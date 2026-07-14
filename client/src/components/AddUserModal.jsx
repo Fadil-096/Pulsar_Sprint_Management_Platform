@@ -1,21 +1,20 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { X, UserPlus, AlertCircle, CheckCircle2, ChevronDown } from 'lucide-react';
+import { X, UserPlus, AlertCircle, CheckCircle2, ChevronDown, Eye, EyeOff } from 'lucide-react';
 
 export default function AddUserModal({ onClose, onSuccess }) {
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     role: 'employee',
-    team: '',
-    subTeam: '',
     department: 'Engineering'
   });
 
@@ -51,7 +50,7 @@ export default function AddUserModal({ onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
       <div 
-        className="bg-bg-card rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
+        className="bg-bg-card rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -73,14 +72,14 @@ export default function AddUserModal({ onClose, onSuccess }) {
         {/* Body */}
         <div className="p-6">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm font-medium flex items-center gap-2">
+            <div className="mb-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-2xl text-sm font-medium flex items-center gap-2">
               <AlertCircle size={16} />
               {error}
             </div>
           )}
           
           {success && (
-            <div className="mb-4 p-3 bg-green-50 text-green-700 border border-green-200 rounded-lg text-sm font-medium flex items-center gap-2">
+            <div className="mb-4 p-3 bg-green-50 text-green-700 border border-green-200 rounded-2xl text-sm font-medium flex items-center gap-2">
               <CheckCircle2 size={16} />
               {success}
             </div>
@@ -95,7 +94,7 @@ export default function AddUserModal({ onClose, onSuccess }) {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full p-2.5 bg-bg-secondary border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full p-2.5 bg-bg-secondary border border-line rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   placeholder="e.g. Jane Doe"
                   required
                 />
@@ -108,7 +107,7 @@ export default function AddUserModal({ onClose, onSuccess }) {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full p-2.5 bg-bg-secondary border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  className="w-full p-2.5 bg-bg-secondary border border-line rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   placeholder="jane@company.com"
                   required
                 />
@@ -116,15 +115,24 @@ export default function AddUserModal({ onClose, onSuccess }) {
 
               <div>
                 <label className="block text-[11px] font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Password</label>
-                <input
-                  type="text"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="w-full p-2.5 bg-bg-secondary border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                  placeholder="Temporary password"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="w-full p-2.5 pr-10 bg-bg-secondary border border-line rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    placeholder="Temporary password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary focus:outline-none transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -134,7 +142,7 @@ export default function AddUserModal({ onClose, onSuccess }) {
                     name="role"
                     value={formData.role}
                     onChange={handleChange}
-                    className="w-full p-2.5 bg-bg-secondary border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none transition-all"
+                    className="w-full p-2.5 bg-bg-secondary border border-line rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 appearance-none transition-all"
                   >
                     <option value="employee">Employee</option>
                     <option value="manager">Manager</option>
@@ -143,48 +151,16 @@ export default function AddUserModal({ onClose, onSuccess }) {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Department</label>
-                <input
-                  type="text"
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  className="w-full p-2.5 bg-bg-secondary border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                  placeholder="e.g. Engineering"
-                />
-              </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Team (Optional)</label>
-                <input
-                  type="text"
-                  name="team"
-                  value={formData.team}
-                  onChange={handleChange}
-                  className="w-full p-2.5 bg-bg-secondary border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                  placeholder="e.g. Frontend"
-                />
-              </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Sub Team (Optional)</label>
-                <input
-                  type="text"
-                  name="subTeam"
-                  value={formData.subTeam}
-                  onChange={handleChange}
-                  className="w-full p-2.5 bg-bg-secondary border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                  placeholder="e.g. Core UI"
-                />
-              </div>
+
             </div>
 
             <div className="pt-4 flex justify-end gap-3 border-t border-line-light mt-6">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-bold text-text-secondary bg-bg-card border border-line rounded-lg hover:bg-table-row-alt transition-colors"
+                className="px-4 py-2 text-sm font-bold text-text-secondary bg-bg-card border border-line rounded-2xl hover:bg-table-row-alt transition-colors"
                 disabled={loading}
               >
                 Cancel
@@ -192,7 +168,7 @@ export default function AddUserModal({ onClose, onSuccess }) {
               <button
                 type="submit"
                 disabled={loading || success}
-                className="px-6 py-2 text-sm font-bold text-white bg-accent-blue rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2 shadow-sm"
+                className="px-6 py-2 text-sm font-bold text-white bg-accent-blue rounded-2xl hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2 shadow-sm"
               >
                 {loading ? (
                   <>

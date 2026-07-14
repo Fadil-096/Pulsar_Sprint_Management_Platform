@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, KanbanSquare, BarChart2, Settings, ClipboardList, Users, Contact, CalendarCheck, CalendarMinus, CheckSquare, FilePlus, TrendingUp, ChevronDown, ChevronRight, Folder, Archive } from 'lucide-react';
+import { LayoutDashboard, KanbanSquare, BarChart2, Settings, ClipboardList, Users, Contact, CalendarCheck, CalendarMinus, CheckSquare, FilePlus, TrendingUp, ChevronDown, ChevronRight, Folder, Archive, CalendarDays } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -30,6 +30,7 @@ export default function Sidebar() {
     { id: 'projects', label: 'Projects', icon: <Folder size={20} />, path: '/manager/projects' },
     { id: 'sprints', label: 'Sprints', icon: <KanbanSquare size={20} />, path: '/manager/sprints' },
     { id: 'tasks', label: 'All Tasks', icon: <ClipboardList size={20} />, path: '/manager/tasks' },
+    { id: 'calendar', label: 'Calendar', icon: <CalendarDays size={20} />, path: '/manager/calendar' },
     { 
       id: 'team', 
       label: 'Team', 
@@ -37,32 +38,44 @@ export default function Sidebar() {
       isMenu: true,
       children: [
         { id: 'employees', label: 'Team Directory', icon: <Contact size={16} />, path: '/manager/team' },
-        { id: 'team-attendance', label: 'Team Attendance', icon: <CalendarCheck size={16} />, path: '/manager/team-attendance' }
+        { id: 'manager-leaves', label: 'Leave Requests', icon: <CalendarMinus size={16} />, path: '/manager/leaves' },
+        { id: 'team-attendance', label: 'Attendance Log', icon: <CalendarCheck size={16} />, path: '/manager/attendance' }
       ]
     },
     { id: 'reports', label: 'Reports', icon: <BarChart2 size={20} />, path: '/manager/reports' },
+    { id: 'settings', label: 'Settings', icon: <Settings size={20} />, path: '/manager/settings' },
   ];
 
   const employeeNav = [
     { section: 'Navigation' },
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/employee/dashboard' },
     { id: 'my-tasks', label: 'My Tasks', icon: <CheckSquare size={20} />, path: '/employee/tasks' },
-    { id: 'log-task', label: 'Log Task', icon: <FilePlus size={20} />, path: '/employee/log' },
+    { id: 'calendar', label: 'Calendar', icon: <CalendarDays size={20} />, path: '/employee/calendar' },
     { id: 'leaves', label: 'Leaves', icon: <CalendarMinus size={20} />, path: '/employee/leaves' },
+    { id: 'attendance', label: 'Attendance', icon: <CalendarCheck size={20} />, path: '/employee/attendance' },
+    { id: 'settings', label: 'Settings', icon: <Settings size={20} />, path: '/employee/settings' },
   ];
 
   const adminNav = [
-    { section: 'Platform' },
+    { section: 'Navigation Bar' },
     { id: 'admin-dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/admin/dashboard' },
     { id: 'admin-projects', label: 'Backlogs', icon: <Archive size={20} />, path: '/manager/projects' },
     { id: 'admin-sprints', label: 'Sprint Management', icon: <KanbanSquare size={20} />, path: '/manager/sprints' },
-    { id: 'admin-tasks', label: 'All Tasks', icon: <ClipboardList size={20} />, path: '/manager/tasks' },
-    { id: 'admin-team', label: 'Team', icon: <Users size={20} />, path: '/admin/team' },
-    { id: 'admin-leaves', label: 'Leaves', icon: <CalendarMinus size={20} />, path: '/admin/leaves' },
-    { id: 'admin-reports', label: 'Reports', icon: <BarChart2 size={20} />, path: '/manager/reports' },
-    { section: 'Administration' },
-    { id: 'admin-users', label: 'User Management', icon: <Users size={20} />, path: '/admin/users' },
-    { id: 'admin-departments', label: 'Departments', icon: <Users size={20} />, path: '/admin/departments' },
+    { id: 'admin-tasks', label: 'Global Tasks', icon: <ClipboardList size={20} />, path: '/manager/tasks' },
+    { id: 'calendar', label: 'Calendar', icon: <CalendarDays size={20} />, path: '/admin/calendar' },
+    { 
+      id: 'admin-team', 
+      label: 'Organization', 
+      icon: <Users size={20} />,
+      isMenu: true,
+      children: [
+        { id: 'admin-users', label: 'All Users', icon: <Contact size={16} />, path: '/admin/users' },
+        { id: 'admin-leaves', label: 'Leave Requests', icon: <CalendarMinus size={16} />, path: '/admin/leaves' },
+        { id: 'admin-departments', label: 'Departments', icon: <TrendingUp size={16} />, path: '/admin/departments' },
+        { id: 'admin-attendance', label: 'Attendance Log', icon: <CalendarCheck size={16} />, path: '/admin/attendance' }
+      ]
+    },
+    { id: 'admin-reports', label: 'Analytics', icon: <BarChart2 size={20} />, path: '/manager/reports' },
     { id: 'admin-settings', label: 'Settings', icon: <Settings size={20} />, path: '/admin/settings' },
   ];
 
@@ -93,9 +106,9 @@ export default function Sidebar() {
               <div key={item.id}>
                 <button
                   onClick={() => toggleMenu(item.id)}
-                  className="w-full text-left px-6 py-3.5 text-[14px] font-medium text-gray-400 hover:bg-white/5 hover:text-white transition-colors flex items-center justify-between border-l-4 border-transparent group"
+                  className="w-full text-left px-6 py-3.5 text-[14px] font-medium text-gray-400 hover:bg-white/5 hover:text-white hover:text-[15px] hover:tracking-wide transition-all duration-200 flex items-center justify-between border-l-4 border-transparent group"
                 >
-                  <div className="flex items-center gap-3 transition-transform duration-200 group-hover:scale-105 origin-left">
+                  <div className="flex items-center gap-3">
                     {item.icon && <span className="opacity-80">{item.icon}</span>}
                     <span>{item.label}</span>
                   </div>
@@ -108,13 +121,13 @@ export default function Sidebar() {
                         key={child.id}
                         to={child.path}
                         className={({ isActive }) => `
-                          block px-10 py-2.5 text-[13px] font-medium transition-colors border-l-4 group
+                          block px-10 py-2.5 text-[13px] font-medium transition-all duration-200 border-l-4 group
                           ${isActive 
-                            ? 'bg-accent-blue/10 text-accent-blue border-accent-blue' 
-                            : 'text-gray-400 border-transparent hover:bg-white/5 hover:text-white'}
+                            ? 'bg-accent-blue/10 text-accent-blue border-accent-blue text-[14px] tracking-wide' 
+                            : 'text-gray-400 border-transparent hover:bg-white/5 hover:text-white hover:text-[14px] hover:tracking-wide'}
                         `}
                       >
-                        <div className="flex items-center gap-2 transition-transform duration-200 group-hover:scale-105 origin-left">
+                        <div className="flex items-center gap-2">
                           {child.icon && <span className="opacity-80">{child.icon}</span>}
                           <span>{child.label}</span>
                         </div>
@@ -131,13 +144,13 @@ export default function Sidebar() {
               key={item.id}
               to={item.path}
               className={({ isActive }) => `
-                block px-6 py-3.5 text-[14px] font-medium transition-colors border-l-4 flex items-center justify-between group
+                block px-6 py-3.5 text-[14px] font-medium transition-all duration-200 border-l-4 flex items-center justify-between group
                 ${isActive 
-                  ? 'bg-accent-blue/10 text-accent-blue border-accent-blue' 
-                  : 'text-gray-400 border-transparent hover:bg-white/5 hover:text-white'}
+                  ? 'bg-accent-blue/10 text-accent-blue border-accent-blue text-[15px] tracking-wide' 
+                  : 'text-gray-400 border-transparent hover:bg-white/5 hover:text-white hover:text-[15px] hover:tracking-wide'}
               `}
             >
-              <div className="flex items-center gap-3 transition-transform duration-200 group-hover:scale-105 origin-left">
+              <div className="flex items-center gap-3">
                 {item.icon && <span className="opacity-80">{item.icon}</span>}
                 <span>{item.label}</span>
               </div>

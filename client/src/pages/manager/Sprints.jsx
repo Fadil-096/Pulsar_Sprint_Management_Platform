@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { Calendar, Users, CheckCircle, Clock, Edit2, Trash2, Plus, X, AlertCircle, FileText, Paperclip, ChevronDown, ChevronRight, Search, Flag, Video } from 'lucide-react';
+import { Calendar, Users, CheckCircle, Clock, Edit2, Trash2, Plus, X, AlertCircle, FileText, Paperclip, ChevronDown, ChevronRight, Search, Flag, Video, Play, CalendarPlus } from 'lucide-react';
 import ConfirmModal from '../../components/ConfirmModal';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -31,7 +31,6 @@ export default function Sprints() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(location.state?.fromTab || 'created');
   const [searchQuery, setSearchQuery] = useState('');
-  const [sprintMeetingToEnd, setSprintMeetingToEnd] = useState(null);
 
   const [showModal, setShowModal] = useState(false);
   const [editSprintId, setEditSprintId] = useState(null);
@@ -39,6 +38,8 @@ export default function Sprints() {
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [confirmMoveToPlannerId, setConfirmMoveToPlannerId] = useState(null);
+  const [confirmMoveToActiveId, setConfirmMoveToActiveId] = useState(null);
   const [confirmReviewSprintId, setConfirmReviewSprintId] = useState(null);
   const [memberSearch, setMemberSearch] = useState('');
   const [expandedMembers, setExpandedMembers] = useState(new Set());
@@ -117,6 +118,19 @@ export default function Sprints() {
       .then(res => setSprints(res.data))
       .catch(err => console.error(err))
       .finally(() => setLoading(false));
+  };
+
+  const handleDeleteSprint = async () => {
+    if (!confirmDeleteId) return;
+    try {
+      await axios.delete(`/api/sprints/${confirmDeleteId}`, { headers: { Authorization: `Bearer ${token}` } });
+      fetchSprints();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || 'Failed to delete sprint');
+    } finally {
+      setConfirmDeleteId(null);
+    }
   };
 
   const fetchEmployees = () => {
@@ -256,50 +270,38 @@ export default function Sprints() {
     }
   };
 
-  const handleStartMeeting = async (e, sprintId) => {
+  const handleMoveToPlanner = async () => {
+    if (confirmMoveToPlannerId) {
+      await handleStatusChange(confirmMoveToPlannerId, 'planner');
+      setConfirmMoveToPlannerId(null);
+    }
+  };
+
+  const handleMoveToActive = async () => {
+    if (confirmMoveToActiveId) {
+      await handleStatusChange(confirmMoveToActiveId, 'active');
+      setConfirmMoveToActiveId(null);
+    }
+  };
+
+  const handleMoveToReview = async () => {
+    if (confirmReviewSprintId) {
+      try {
+        await axios.post(`/api/sprints/${confirmReviewSprintId}/review/init`, {}, { headers: { Authorization: `Bearer ${token}` } });
+        fetchSprints();
+      } catch (err) {
+        alert(err.response?.data?.error || 'Failed to move to review');
+      }
+      setConfirmReviewSprintId(null);
+    }
+  };
+
+  const handleScheduleMeeting = (e, sprintName) => {
     e.stopPropagation();
-    try {
-      await axios.post(`/api/sprints/${sprintId}/meeting`, {}, { headers: { Authorization: `Bearer ${token}` } });
-      fetchSprints();
-    } catch (err) {
-      console.error(err);
-      alert('Failed to start meeting');
-    }
+    const title = encodeURIComponent(`Sprint Meeting: ${sprintName}`);
+    window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}`, '_blank');
   };
 
-  const handleEndMeeting = (e, sprintId) => {
-    e.stopPropagation();
-    setSprintMeetingToEnd(sprintId);
-  };
-
-  const confirmEndMeeting = async () => {
-    if (!sprintMeetingToEnd) return;
-    const sprintId = sprintMeetingToEnd;
-    setSprintMeetingToEnd(null);
-    try {
-      await axios.delete(`/api/sprints/${sprintId}/meeting`, { headers: { Authorization: `Bearer ${token}` } });
-      fetchSprints();
-    } catch (err) {
-      console.error(err);
-      alert('Failed to end meeting');
-    }
-  };
-
-  const handleDeleteSprint = async (sprintId) => {
-    if (confirmDeleteId !== sprintId) {
-      setConfirmDeleteId(sprintId);
-      setTimeout(() => setConfirmDeleteId(null), 3000);
-      return;
-    }
-    
-    try {
-      await axios.delete(`/api/sprints/${sprintId}`, { headers: { Authorization: `Bearer ${token}` } });
-      setConfirmDeleteId(null);
-      fetchSprints();
-    } catch (err) {
-      alert(err.response?.data?.error || 'Failed to delete sprint');
-    }
-  };
 
   const openReport = async (sprintId) => {
     try {
@@ -456,11 +458,11 @@ export default function Sprints() {
                 placeholder="Search sprints..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-64 pl-9 pr-4 py-2 text-sm border border-line bg-input-bg text-text-primary rounded-md focus:ring-1 focus:ring-accent-blue outline-none transition-all shadow-sm"
+                className="w-64 pl-9 pr-4 py-2 text-sm border border-line bg-input-bg text-text-primary rounded-2xl focus:ring-1 focus:ring-accent-blue outline-none transition-all shadow-sm"
               />
             </div>
             <button 
-              className="bg-accent-blue hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium text-sm transition-colors shadow-sm flex items-center gap-2"
+              className="bg-accent-blue hover:bg-blue-700 text-white px-4 py-2 rounded-2xl font-medium text-sm transition-colors shadow-sm flex items-center gap-2"
               onClick={() => openModal()}
             >
               <Plus size={16} /> New Sprint
@@ -494,7 +496,7 @@ export default function Sprints() {
             <div key={sprint.sprintId} className="flex flex-col mb-6">
               <div 
                 onClick={() => navigate(`/manager/sprints/${sprint.sprintId}`, { state: { fromTab: activeTab } })}
-                className="bg-bg-card border border-line rounded-xl p-0 hover:shadow-xl hover:border-gray-500/30 transition-all duration-300 relative overflow-hidden group cursor-pointer"
+                className="bg-bg-card border border-line rounded-2xl p-0 hover:shadow-xl hover:border-gray-500/30 transition-all duration-300 relative overflow-hidden group cursor-pointer"
               >
                 <div className={`absolute left-0 top-0 bottom-0 w-2 ${
                 sprint.status === 'active' ? 'bg-blue-600' :
@@ -504,7 +506,8 @@ export default function Sprints() {
                 'bg-gray-400'
               }`} />
               
-              <div className="flex justify-between items-center p-6">
+              <div className="flex flex-col p-6 gap-4">
+                <div className="flex justify-between items-start">
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center gap-2">
                     <span className="text-[12px] font-mono font-medium text-text-muted">{sprint.sprintId}</span>
@@ -518,6 +521,11 @@ export default function Sprints() {
                       {sprint.status === 'active' && <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>}
                       <span className="text-[10px] font-bold uppercase tracking-wider">{sprint.status}</span>
                     </div>
+                    {['planner', 'active', 'review'].includes(sprint.status) && (
+                      <button onClick={(e) => handleScheduleMeeting(e, sprint.sprintName)} className="flex items-center gap-1.5 bg-bg-secondary text-text-secondary border border-line px-2 py-1 rounded-xl text-[11px] font-bold hover:bg-line hover:text-text-primary transition-colors shadow-sm" title="Schedule Meeting">
+                        <CalendarPlus size={14} /> Schedule
+                      </button>
+                    )}
                     {sprint.status === 'active' && sprint.reviewData && sprint.reviewData.returnReason && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 flex items-center gap-1" title={sprint.reviewData.returnReason}>
                         <AlertCircle size={10} /> Revision Needed
@@ -525,6 +533,11 @@ export default function Sprints() {
                     )}
                   </div>
                   <h3 className="text-[22px] font-extrabold text-text-primary tracking-tight mt-1 mb-1">{sprint.sprintName}</h3>
+                  {sprint.description && (
+                    <p className="text-[13px] text-text-secondary mb-3 mt-1 leading-relaxed max-w-3xl line-clamp-2">
+                      {sprint.description}
+                    </p>
+                  )}
                   <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-text-secondary font-medium mt-1">
                     <div className="flex items-center gap-1.5">
                       <Calendar size={14} className="text-text-muted" />
@@ -543,31 +556,37 @@ export default function Sprints() {
                   </div>
                 </div>
                 
-                <div className="flex flex-col items-end gap-2">
-                  <div className="flex items-center gap-2 mb-1">
-                    {sprint.meetingLink ? (
-                      <div className="flex items-center gap-1 bg-green-500/10 border border-green-500/20 rounded p-1 pr-2 shadow-sm">
-                        <button onClick={(e) => { e.stopPropagation(); window.open(sprint.meetingLink, '_blank'); }} className="flex items-center gap-1.5 text-green-600 dark:text-green-400 text-[11px] font-bold px-2 py-1 rounded hover:bg-green-500/10 transition-colors" title="Join Meeting">
-                          <Video size={14} /> Join
-                        </button>
-                        <button onClick={(e) => handleEndMeeting(e, sprint.sprintId)} className="text-red-500 text-[11px] font-bold px-2 py-1 rounded hover:bg-red-500/10 transition-colors" title="End Meeting">
-                          End
-                        </button>
-                      </div>
-                    ) : (
-                      ['planner', 'active', 'review'].includes(sprint.status) && (
-                        <button onClick={(e) => handleStartMeeting(e, sprint.sprintId)} className="flex items-center gap-1.5 bg-bg-secondary text-text-secondary border border-line px-2 py-1 rounded text-[11px] font-bold hover:bg-line hover:text-text-primary transition-colors mr-2 shadow-sm" title="Start Meeting">
-                          <Video size={14} /> Start Meet
-                        </button>
-                      )
-                    )}
-                    {(sprint.status === 'created' || sprint.status === 'planner') && (
-                      <button onClick={(e) => { e.stopPropagation(); openModal(sprint); }} className="p-1.5 text-text-muted hover:text-accent-blue hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded transition-colors" title="Edit Sprint">
-                        <Edit2 size={16} />
+                <div className="flex flex-col items-end justify-between self-stretch">
+                  <div className="flex items-center gap-2 my-auto">
+                    {sprint.status === 'created' && (
+                      <button onClick={(e) => { e.stopPropagation(); setConfirmMoveToPlannerId(sprint.sprintId); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white hover:bg-green-700 rounded-full transition-colors shadow-sm" title="Move to Planner">
+                        <Calendar size={14} />
+                        <span className="text-[11px] font-bold uppercase tracking-wider">Move to Planner</span>
                       </button>
                     )}
-                    <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(sprint.sprintId); }} className="p-1.5 text-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors" title="Delete Sprint">
-                      <Trash2 size={16} />
+                    {sprint.status === 'planner' && (
+                      <button onClick={(e) => { e.stopPropagation(); setConfirmMoveToActiveId(sprint.sprintId); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-full transition-colors shadow-sm" title="Move to Active">
+                        <Play size={14} />
+                        <span className="text-[11px] font-bold uppercase tracking-wider">Move to Active</span>
+                      </button>
+                    )}
+                    {sprint.status === 'active' && (
+                      <button onClick={(e) => { e.stopPropagation(); setConfirmReviewSprintId(sprint.sprintId); }} className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white hover:bg-purple-700 rounded-full transition-colors shadow-sm" title="Move to Review">
+                        <Search size={14} />
+                        <span className="text-[11px] font-bold uppercase tracking-wider">Move to Review</span>
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 mt-auto">
+                    {(sprint.status === 'created' || sprint.status === 'planner') && (
+                      <button onClick={(e) => { e.stopPropagation(); openModal(sprint); }} className="flex items-center gap-1 p-1.5 text-blue-500 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10 rounded-xl transition-colors" title="Edit Sprint">
+                        <Edit2 size={14} />
+                        <span className="text-[11px] font-bold uppercase tracking-wider">Edit</span>
+                      </button>
+                    )}
+                    <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(sprint.sprintId); }} className="flex items-center gap-1 p-1.5 text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10 rounded-xl transition-colors" title="Delete Sprint">
+                      <Trash2 size={14} />
+                      <span className="text-[11px] font-bold uppercase tracking-wider">Delete</span>
                     </button>
                   </div>
                   {!['created', 'planner'].includes(sprint.status) && (
@@ -578,6 +597,7 @@ export default function Sprints() {
                       </div>
                     </>
                   )}
+                </div>
                 </div>
               </div>
 
@@ -607,8 +627,7 @@ export default function Sprints() {
       {showModal && (
         <div className="fixed inset-0 bg-[rgba(0,0,0,0.65)] backdrop-blur-[2px] flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <div 
-            className="bg-bg-card rounded-xl flex flex-col overflow-hidden shadow-2xl shadow-black/50"
-            style={{ width: 'max(860px, 75vw)', maxWidth: '960px', minHeight: '80vh' }}
+            className="bg-bg-card rounded-2xl flex flex-col overflow-hidden shadow-2xl shadow-black/50 w-[90vw] max-w-[860px]"
           >
             {/* Header */}
             <div className="px-8 py-5 border-b border-line flex justify-between items-center shrink-0">
@@ -620,18 +639,17 @@ export default function Sprints() {
                   <p className="text-[14px] text-text-muted mt-0.5">Define details, assign members, and attach requirements</p>
                 </div>
               </div>
-              <button onClick={() => setShowModal(false)} className="text-text-muted hover:text-text-primary transition-colors p-1.5 rounded hover:bg-black/5">
+              <button onClick={() => setShowModal(false)} className="text-text-muted hover:text-text-primary transition-colors p-1.5 rounded-xl hover:bg-black/5">
                 <X size={20} />
               </button>
             </div>
             
             {/* Body */}
             <div 
-              className="px-8 py-6 overflow-y-auto flex-1 custom-scrollbar"
-              style={{ maxHeight: 'calc(80vh - 120px)' }}
+              className="px-8 py-6 overflow-y-auto flex-1 custom-scrollbar max-h-[75vh]"
             >
               {formError && (
-                <div className="mb-4 px-3 py-2 bg-red-50 border border-red-200 text-red-700 rounded text-[12px] font-medium flex items-center gap-2">
+                <div className="mb-4 px-3 py-2 bg-red-50 border border-red-200 text-red-700 rounded-xl text-[12px] font-medium flex items-center gap-2">
                   <AlertCircle size={14} />
                   {formError}
                 </div>
@@ -649,26 +667,26 @@ export default function Sprints() {
                     <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
                       <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">Sprint Name <span className="text-accent-blue">*</span></label>
-                      <input type="text" placeholder="e.g. Q3 Mobile Overhaul" className="w-full h-10 px-3 border border-line bg-bg-primary rounded-md text-[14px] text-text-primary placeholder-text-muted/70 focus:border-accent-blue focus:ring-4 focus:ring-accent-blue/15 shadow-inner outline-none transition-all disabled:bg-bg-secondary disabled:text-text-muted" disabled={editSprintStatus === 'active'} value={formData.sprintName} onChange={e => setFormData({...formData, sprintName: e.target.value})} />
+                      <input type="text" placeholder="e.g. Q3 Mobile Overhaul" className="w-full h-10 px-3 border border-line bg-bg-primary rounded-xl text-[14px] text-text-primary placeholder-text-muted/70 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 shadow-inner outline-none transition-all disabled:bg-bg-secondary disabled:text-text-muted" disabled={editSprintStatus === 'active'} value={formData.sprintName} onChange={e => setFormData({...formData, sprintName: e.target.value})} />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">Start Date <span className="text-accent-blue">*</span></label>
                       <div className="relative">
-                        <input type="date" className="w-full h-10 pl-3 pr-8 border border-line bg-bg-primary rounded-md text-[14px] text-text-primary focus:border-accent-blue focus:ring-4 focus:ring-accent-blue/15 shadow-inner outline-none transition-all disabled:bg-bg-secondary disabled:text-text-muted appearance-none relative z-10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" disabled={editSprintStatus === 'active'} value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} />
+                        <input type="date" className="w-full h-10 pl-3 pr-8 border border-line bg-bg-primary rounded-xl text-[14px] text-text-primary focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 shadow-inner outline-none transition-all disabled:bg-bg-secondary disabled:text-text-muted appearance-none relative z-10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" disabled={editSprintStatus === 'active'} value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} />
                         <Calendar size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-muted pointer-events-none z-0" />
                       </div>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">End Date <span className="text-accent-blue">*</span></label>
                       <div className="relative">
-                        <input type="date" className="w-full h-10 pl-3 pr-8 border border-line bg-bg-primary rounded-md text-[14px] text-text-primary focus:border-accent-blue focus:ring-4 focus:ring-accent-blue/15 shadow-inner outline-none transition-all disabled:bg-bg-secondary disabled:text-text-muted appearance-none relative z-10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" disabled={editSprintStatus === 'active'} value={formData.endDate} onChange={e => setFormData({...formData, endDate: e.target.value})} />
+                        <input type="date" className="w-full h-10 pl-3 pr-8 border border-line bg-bg-primary rounded-xl text-[14px] text-text-primary focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 shadow-inner outline-none transition-all disabled:bg-bg-secondary disabled:text-text-muted appearance-none relative z-10 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" disabled={editSprintStatus === 'active'} value={formData.endDate} onChange={e => setFormData({...formData, endDate: e.target.value})} />
                         <Calendar size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-muted pointer-events-none z-0" />
                       </div>
                     </div>
                     
                     {(formData.startDate && formData.endDate) && (
                       <div className="col-span-2 -mt-1">
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-accent-blue/10 text-accent-blue text-[12px] font-bold rounded-md">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-accent-blue/10 text-accent-blue text-[12px] font-bold rounded-2xl">
                            <Clock size={12} /> {calculateWorkingDays(formData.startDate, formData.endDate)} working days
                         </div>
                       </div>
@@ -676,7 +694,7 @@ export default function Sprints() {
 
                     <div className="col-span-2 relative">
                       <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">Description</label>
-                      <textarea placeholder="High-level details about this sprint..." className="w-full min-h-[80px] px-3 py-2.5 border border-line bg-bg-primary rounded-md text-[14px] text-text-primary placeholder-text-muted/70 focus:border-accent-blue focus:ring-4 focus:ring-accent-blue/15 shadow-inner outline-none transition-all resize-y disabled:bg-bg-secondary disabled:text-text-muted" disabled={editSprintStatus === 'active'} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}></textarea>
+                      <textarea placeholder="High-level details about this sprint..." className="w-full min-h-[80px] px-3 py-2.5 border border-line bg-bg-primary rounded-xl text-[14px] text-text-primary placeholder-text-muted/70 focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/30 shadow-inner outline-none transition-all resize-y disabled:bg-bg-secondary disabled:text-text-muted" disabled={editSprintStatus === 'active'} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}></textarea>
                       <div className="absolute bottom-1.5 right-2 text-[10px] text-text-muted pointer-events-none">
                         {(formData.description || '').length} / 500
                       </div>
@@ -695,7 +713,7 @@ export default function Sprints() {
                 {editSprintStatus === 'active' ? 'Close' : 'Cancel'}
               </button>
               {editSprintStatus !== 'active' && (
-                <button type="button" onClick={handleCreateOrEditSprint} disabled={submitting} className="h-10 px-6 text-[14px] font-bold bg-gradient-to-r from-accent-blue to-blue-600 text-white rounded-md hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-accent-blue/30 transition-all disabled:opacity-70 flex items-center justify-center gap-2">
+                <button type="button" onClick={handleCreateOrEditSprint} disabled={submitting} className="h-10 px-6 text-[14px] font-bold bg-gradient-to-r from-accent-blue to-blue-600 text-white rounded-2xl hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-accent-blue/30 transition-all disabled:opacity-70 flex items-center justify-center gap-2">
                   {submitting ? (
                     <>
                       <svg className="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -722,7 +740,7 @@ export default function Sprints() {
       {/* Report Modal */}
       {showReportModal && reportData && (
         <div className="fixed inset-0 bg-[#020024]/90 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-bg-card rounded-xl shadow-2xl w-full max-w-[900px] max-h-[90vh] flex flex-col overflow-hidden animate-[slideUp_0.3s_ease-out]">
+          <div className="bg-bg-card rounded-2xl shadow-2xl w-full max-w-[900px] max-h-[90vh] flex flex-col overflow-hidden animate-[slideUp_0.3s_ease-out]">
             <div className="px-6 py-5 border-b border-line flex justify-between items-center bg-bg-card">
               <div>
                 <h2 className="text-xl font-bold text-text-primary uppercase tracking-tight">Sprint Report: {reportData.sprint.sprint_id}</h2>
@@ -736,15 +754,15 @@ export default function Sprints() {
             <div className="p-6 overflow-y-auto flex-1 custom-scrollbar space-y-6">
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-4 bg-bg-secondary/50 rounded-xl border border-line hover:border-line-light transition-colors">
+                <div className="p-4 bg-bg-secondary/50 rounded-2xl border border-line hover:border-line-light transition-colors">
                   <div className="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-1">Dates</div>
                   <div className="text-[13px] font-bold text-text-primary">{formatDate(reportData.sprint.start_date)} <span className="text-text-muted font-normal mx-0.5">→</span> {formatDate(reportData.sprint.end_date)}</div>
                 </div>
-                <div className="p-4 bg-bg-secondary/50 rounded-xl border border-line hover:border-line-light transition-colors">
+                <div className="p-4 bg-bg-secondary/50 rounded-2xl border border-line hover:border-line-light transition-colors">
                   <div className="text-[10px] text-text-muted font-bold uppercase tracking-wider mb-1">Goal</div>
                   <div className="text-[13px] font-bold text-text-primary line-clamp-2" title={reportData.sprint.sprint_goal}>{reportData.sprint.sprint_goal || 'None'}</div>
                 </div>
-                <div className="p-4 bg-amber-50 dark:bg-amber-500/10 rounded-xl border border-amber-200 dark:border-amber-500/20">
+                <div className="p-4 bg-amber-50 dark:bg-amber-500/10 rounded-2xl border border-amber-200 dark:border-amber-500/20">
                   <div className="text-[10px] text-amber-700 dark:text-amber-400 font-bold uppercase tracking-wider mb-1">Unresolved Queries</div>
                   <div className="text-xl font-extrabold text-amber-700 dark:text-amber-400">{reportData.unresolvedQueries.length}</div>
                 </div>
@@ -752,7 +770,7 @@ export default function Sprints() {
 
               <div>
                 <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider mb-3">Team Performance</h3>
-                <div className="overflow-x-auto border border-line rounded-lg">
+                <div className="overflow-x-auto border border-line rounded-2xl">
                   <table className="w-full text-left text-[13px] whitespace-nowrap">
                     <thead className="bg-bg-secondary text-text-secondary text-[11px] uppercase tracking-wider border-b border-line">
                       <tr>
@@ -791,7 +809,7 @@ export default function Sprints() {
                   </h3>
                   <div className="space-y-2.5">
                     {reportData.unresolvedQueries.map(q => (
-                      <div key={q.id} className="p-3.5 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl text-[13px] leading-relaxed shadow-sm">
+                      <div key={q.id} className="p-3.5 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl text-[13px] leading-relaxed shadow-sm">
                         <span className="font-extrabold text-amber-900 dark:text-amber-300">{q.raiserName}:</span> <span className="text-amber-800 dark:text-amber-100/90 ml-1">{q.query_text}</span>
                       </div>
                     ))}
@@ -805,13 +823,43 @@ export default function Sprints() {
       )}
 
       <ConfirmModal
-        isOpen={!!sprintMeetingToEnd}
-        onCancel={() => setSprintMeetingToEnd(null)}
-        onConfirm={confirmEndMeeting}
-        title="End Meeting?"
-        bodyText="Are you sure you want to end the meeting for everyone? This action cannot be undone."
-        confirmText="End Meeting"
+        isOpen={!!confirmDeleteId}
+        onCancel={() => setConfirmDeleteId(null)}
+        onConfirm={handleDeleteSprint}
+        title="Delete Sprint?"
+        bodyText="Are you sure you want to delete this sprint? This action will permanently remove all tasks and data associated with it and cannot be undone."
+        confirmText="Delete Sprint"
         iconType="danger"
+      />
+
+      <ConfirmModal
+        isOpen={!!confirmMoveToPlannerId}
+        onCancel={() => setConfirmMoveToPlannerId(null)}
+        onConfirm={handleMoveToPlanner}
+        title="Move to Planner?"
+        bodyText="Are you sure you want to move this sprint to the Planner? The team will be notified."
+        confirmText="Move to Planner"
+        iconType="primary"
+      />
+
+      <ConfirmModal
+        isOpen={!!confirmMoveToActiveId}
+        onCancel={() => setConfirmMoveToActiveId(null)}
+        onConfirm={handleMoveToActive}
+        title="Move to Active?"
+        bodyText="Are you sure you want to move this sprint to Active? The sprint will officially start."
+        confirmText="Move to Active"
+        iconType="primary"
+      />
+
+      <ConfirmModal
+        isOpen={!!confirmReviewSprintId}
+        onCancel={() => setConfirmReviewSprintId(null)}
+        onConfirm={handleMoveToReview}
+        title="Move to Review?"
+        bodyText="Are you sure you want to move this sprint to Review? The sprint tasks will be locked for review."
+        confirmText="Move to Review"
+        iconType="primary"
       />
     </div>
   );

@@ -4,7 +4,7 @@ import axios from 'axios';
 import { 
   ChevronRight, Loader2, Clock, AlertTriangle, Copy, 
   Calendar, CheckCircle, Users, User, AlertCircle, ArrowLeft, 
-  Flag, X, CheckSquare, Save, CornerUpLeft, Edit2, FileText, Trash2, GripVertical, Undo2, UserCog, Video, Settings, ChevronDown, Play, Plus, Search
+  Flag, X, CheckSquare, Save, CornerUpLeft, Edit2, FileText, Trash2, GripVertical, Undo2, UserCog, Video, Settings, ChevronDown, Play, Plus, Search, CalendarPlus
 } from 'lucide-react';
 import ConfirmModal from '../../components/ConfirmModal';
 import { useAuth } from '../../context/AuthContext';
@@ -12,11 +12,11 @@ import { useAuth } from '../../context/AuthContext';
 // Helper functions for UI
 const getStatusBadge = (status) => {
   switch(status.toLowerCase()) {
-    case 'todo': return <span className="inline-flex items-center justify-center px-2 py-0.5 bg-gray-100 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 rounded text-[10px] font-bold uppercase tracking-wider border border-gray-200 dark:border-gray-700">To Do</span>;
-    case 'inprogress': return <span className="inline-flex items-center justify-center px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded text-[10px] font-bold uppercase tracking-wider border border-blue-200 dark:border-blue-800/50">In Progress</span>;
-    case 'blocked': return <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded text-[10px] font-bold uppercase tracking-wider border border-red-200 dark:border-red-800/50"><AlertTriangle size={10} /> Blocked</span>;
-    case 'done': return <span className="inline-flex items-center justify-center px-2 py-0.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded text-[10px] font-bold uppercase tracking-wider border border-green-200 dark:border-green-800/50">Done</span>;
-    default: return <span className="inline-flex items-center justify-center px-2 py-0.5 bg-gray-100 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 rounded text-[10px] font-bold uppercase tracking-wider border border-gray-200 dark:border-gray-700">{status}</span>;
+    case 'todo': return <span className="inline-flex items-center justify-center px-2 py-0.5 bg-gray-100 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 rounded-xl text-[10px] font-bold uppercase tracking-wider border border-gray-200 dark:border-gray-700">To Do</span>;
+    case 'inprogress': return <span className="inline-flex items-center justify-center px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-xl text-[10px] font-bold uppercase tracking-wider border border-blue-200 dark:border-blue-800/50">In Progress</span>;
+    case 'blocked': return <span className="inline-flex items-center justify-center gap-1 px-2 py-0.5 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-xl text-[10px] font-bold uppercase tracking-wider border border-red-200 dark:border-red-800/50"><AlertTriangle size={10} /> Blocked</span>;
+    case 'done': return <span className="inline-flex items-center justify-center px-2 py-0.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-xl text-[10px] font-bold uppercase tracking-wider border border-green-200 dark:border-green-800/50">Done</span>;
+    default: return <span className="inline-flex items-center justify-center px-2 py-0.5 bg-gray-100 dark:bg-gray-800/50 text-gray-700 dark:text-gray-300 rounded-xl text-[10px] font-bold uppercase tracking-wider border border-gray-200 dark:border-gray-700">{status}</span>;
   }
 };
 
@@ -36,7 +36,8 @@ export default function SprintDetail() {
   const navigate = useNavigate();
   const location = useLocation();
   const { token, user } = useAuth();
-  const isManager = user?.role === 'manager';
+  const isManager = user?.role === 'manager' || user?.role === 'administrator';
+  const isEmployee = user?.role === 'employee';
   
   const fromTab = location.state?.fromTab || 'created';
 
@@ -72,10 +73,13 @@ export default function SprintDetail() {
   // DnD Created Mode State
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState('');
+  const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
+  const projectDropdownRef = React.useRef(null);
   const [backlogTasks, setBacklogTasks] = useState([]);
   const [draggedTask, setDraggedTask] = useState(null);
   const [isDraggingOverSprint, setIsDraggingOverSprint] = useState(false);
   const [isHoveringBacklog, setIsHoveringBacklog] = useState(false);
+  const [highlightedTasks, setHighlightedTasks] = useState(new Set());
 
   // DnD Planner Mode State
   const [poolMembers, setPoolMembers] = useState([]);
@@ -93,12 +97,21 @@ export default function SprintDetail() {
     { key: 'todo', label: 'To Do', color: 'bg-gray-500', dotColor: 'bg-gray-400', borderColor: 'border-gray-400', desc: 'Task has not been started yet' },
     { key: 'inprogress', label: 'In Progress', color: 'bg-blue-500', dotColor: 'bg-blue-500', borderColor: 'border-blue-500', desc: 'Task is actively being worked on' },
     { key: 'done', label: 'Done', color: 'bg-green-500', dotColor: 'bg-green-500', borderColor: 'border-green-500', desc: 'Task has been completed successfully' },
-    { key: 'blocked', label: 'Blocked', color: 'bg-red-500', dotColor: 'bg-red-500', borderColor: 'border-red-500', desc: 'Task cannot proceed due to a dependency or blocker' },
-    { key: 'failed', label: 'Failed', color: 'bg-red-900', dotColor: 'bg-red-800', borderColor: 'border-red-800', desc: 'Task was attempted but could not be completed' }
+    { key: 'blocked', label: 'Blocked', color: 'bg-red-500', dotColor: 'bg-red-500', borderColor: 'border-red-500', desc: 'Task cannot proceed due to a dependency or blocker' }
   ];
   const [statusConfigOpen, setStatusConfigOpen] = useState(false);
   const [statusConfigDraft, setStatusConfigDraft] = useState([]);
   const statusConfigRef = React.useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (projectDropdownRef.current && !projectDropdownRef.current.contains(e.target)) {
+        setProjectDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -487,32 +500,9 @@ export default function SprintDetail() {
     }
   };
 
-  const handleStartMeeting = async () => {
-    try {
-      const res = await axios.post(`/api/sprints/${sprintId}/meeting`, {}, { headers: { Authorization: `Bearer ${token}` } });
-      setSprint(prev => ({ ...prev, meetingLink: res.data.link }));
-    } catch (err) {
-      console.error(err);
-      alert('Failed to start meeting');
-    }
-  };
-
-  const handleEndMeeting = () => {
-    setConfirmModalData({
-      title: "End Meeting?",
-      bodyText: "Are you sure you want to end the meeting for everyone? This action cannot be undone.",
-      confirmText: "End Meeting",
-      iconType: "danger",
-      onConfirm: async () => {
-        try {
-          await axios.delete(`/api/sprints/${sprintId}/meeting`, { headers: { Authorization: `Bearer ${token}` } });
-          setSprint(prev => ({ ...prev, meetingLink: null }));
-        } catch (err) {
-          console.error(err);
-          alert('Failed to end meeting');
-        }
-      }
-    });
+  const handleScheduleMeeting = () => {
+    const title = encodeURIComponent(`Sprint Meeting: ${sprint.sprintName}`);
+    window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}`, '_blank');
   };
 
   const handleStatusChange = async (newStatus) => {
@@ -532,6 +522,7 @@ export default function SprintDetail() {
       navigate('/manager/sprints', { state: { fromTab: 'review' } });
     } catch (err) {
       console.error(err);
+      alert(err.response?.data?.error || "Failed to initiate review");
     }
   };
 
@@ -605,11 +596,17 @@ export default function SprintDetail() {
   const completionPct = taskCount > 0 ? Math.round((doneCount / taskCount) * 100) : 0;
   const allChecked = dodMet && qaPassed && stakeholderSignoff;
 
-  const performAutoSave = async (tasksToAdd, tasksToRemove, attempt = 1) => {
+  const performAutoSave = async (tasksToAdd, tasksToRemove, attempt = 1, previousTasksState = null, previousBacklogState = null) => {
     const addedIds = new Set(tasksToAdd.map(t => t.task_id || t.taskId));
     const removedIds = new Set(tasksToRemove.map(t => t.task_id || t.taskId));
 
+    let currentTasks = tasks;
+    let currentBacklog = backlogTasks;
+
     if (attempt === 1) {
+      currentTasks = [...tasks];
+      currentBacklog = [...backlogTasks];
+
       setTasks(prev => {
         const remaining = prev.filter(t => !removedIds.has(t.task_id) && !removedIds.has(t.taskId));
         const newSprintTasks = tasksToAdd.map(t => ({
@@ -621,7 +618,9 @@ export default function SprintDetail() {
 
       setBacklogTasks(prev => {
         const remaining = prev.filter(t => !addedIds.has(t.task_id));
-        const returningToBacklog = tasksToRemove.filter(t => t.project_id === selectedProjectId);
+        const returningToBacklog = tasksToRemove
+          .filter(t => String(t.project_id) === String(selectedProjectId))
+          .map(t => ({ ...t, task_id: t.task_id || t.taskId }));
         return [...remaining, ...returningToBacklog];
       });
     }
@@ -635,16 +634,31 @@ export default function SprintDetail() {
       
       setSaveStatus('saved');
       setLastFailedSave(null);
+      
+      if (tasksToAdd.length > 0) {
+        setHighlightedTasks(prev => new Set([...prev, ...addedIds]));
+        setTimeout(() => {
+          setHighlightedTasks(prev => {
+            const updated = new Set(prev);
+            addedIds.forEach(id => updated.delete(id));
+            return updated;
+          });
+        }, 2000);
+      }
+
       setTimeout(() => {
         setSaveStatus(prev => prev === 'saved' ? null : prev);
       }, 2000);
     } catch (err) {
       console.error(err);
       if (attempt === 1) {
-        await performAutoSave(tasksToAdd, tasksToRemove, 2);
+        await performAutoSave(tasksToAdd, tasksToRemove, 2, currentTasks, currentBacklog);
       } else {
         setSaveStatus('failed');
         setLastFailedSave({ tasksToAdd, tasksToRemove });
+        if (previousTasksState) setTasks(previousTasksState);
+        if (previousBacklogState) setBacklogTasks(previousBacklogState);
+        alert("Failed to save changes to the database. The tasks have been reverted to their original state.");
       }
     }
   };
@@ -654,43 +668,25 @@ export default function SprintDetail() {
   };
 
   const renderTopActions = () => {
-    const meetingControls = (() => {
+    const meetingButton = (() => {
       if (sprint.status !== 'planner' && sprint.status !== 'active' && sprint.status !== 'review') return null;
       
       const isManager = user?.role === 'administrator' || user?.role === 'manager';
-      
-      if (sprint.meetingLink) {
-        return (
-          <>
-            <a href={sprint.meetingLink} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 bg-green-500 text-white px-4 py-1.5 rounded text-[12px] font-bold hover:bg-green-600 shadow-sm transition-colors">
-              <Video size={14} /> Join Meeting
-            </a>
-            {isManager && (
-              <button onClick={handleEndMeeting} className="flex items-center gap-1.5 border border-red-500/50 text-red-500 px-4 py-1.5 rounded text-[12px] font-bold hover:bg-red-500/10 shadow-sm transition-colors ml-1">
-                End Meeting
-              </button>
-            )}
-            <div className="w-px h-6 bg-line mx-3"></div>
-          </>
-        );
-      }
-      
       if (isManager) {
         return (
           <>
-            <button onClick={handleStartMeeting} className="flex items-center gap-1.5 bg-bg-secondary text-text-primary border border-line px-4 py-1.5 rounded text-[12px] font-bold hover:bg-line shadow-sm transition-colors">
-              <Video size={14} /> Start Meeting
+            <button onClick={handleScheduleMeeting} className="flex items-center gap-1.5 bg-bg-secondary text-text-primary border border-line px-4 py-1.5 rounded-xl text-[12px] font-bold hover:bg-line shadow-sm transition-colors">
+              <CalendarPlus size={14} /> Schedule Meeting
             </button>
             <div className="w-px h-6 bg-line mx-3"></div>
           </>
         );
       }
-      
       return null;
     })();
 
     const editButton = (sprint.status === 'created' || sprint.status === 'planner') && (
-      <button onClick={() => navigate('/manager/sprints', { state: { fromTab, editSprintId: sprint.sprintId } })} className="bg-bg-secondary text-text-secondary px-4 py-1.5 rounded text-[12px] font-bold hover:bg-line transition-colors shadow-sm" title="Edit Sprint">
+      <button onClick={() => navigate('/manager/sprints', { state: { fromTab, editSprintId: sprint.sprintId } })} className="bg-bg-secondary text-text-secondary px-4 py-1.5 rounded-xl text-[12px] font-bold hover:bg-line transition-colors shadow-sm" title="Edit Sprint">
         Edit
       </button>
     );
@@ -711,7 +707,7 @@ export default function SprintDetail() {
             }
           }
         });
-      }} className="bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 px-4 py-1.5 rounded text-[12px] font-bold hover:bg-red-500/20 transition-colors shadow-sm" title="Delete Sprint">
+      }} className="bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 px-4 py-1.5 rounded-xl text-[12px] font-bold hover:bg-red-500/20 transition-colors shadow-sm" title="Delete Sprint">
         Delete
       </button>
     );
@@ -753,7 +749,15 @@ export default function SprintDetail() {
           {saveIndicator}
           {editButton}
           {deleteButton}
-          <button onClick={() => handleStatusChange('planner')} className="bg-purple-600 text-white px-4 py-1.5 rounded text-[12px] font-bold hover:bg-purple-700 transition-colors shadow-sm ml-2">
+          <button onClick={() => {
+            setConfirmModalData({
+              title: "Move to Planner?",
+              bodyText: "Are you sure you want to move this sprint to the Planner? The team will be notified.",
+              confirmText: "Move to Planner",
+              iconType: "primary",
+              onConfirm: () => handleStatusChange('planner')
+            });
+          }} className="bg-purple-600 text-white px-4 py-1.5 rounded-xl text-[12px] font-bold hover:bg-purple-700 transition-colors shadow-sm ml-2">
             Move to Planner
           </button>
         </div>
@@ -763,10 +767,28 @@ export default function SprintDetail() {
       return (
         <div className="flex items-center gap-2">
           {saveIndicator}
-          {meetingControls}
+          {meetingButton}
           {editButton}
           {deleteButton}
-          <button onClick={() => handleStatusChange('active')} className="bg-accent-blue text-white px-4 py-1.5 rounded text-[12px] font-bold hover:bg-blue-600 shadow-sm ml-2">
+          <button onClick={() => {
+            if (!sprint.ownerId) {
+              setConfirmModalData({
+                title: "Manager Required",
+                bodyText: "Please assign a Sprint Manager before starting the sprint.",
+                confirmText: "Okay",
+                iconType: "warning",
+                onConfirm: () => setConfirmModalData(null)
+              });
+              return;
+            }
+            setConfirmModalData({
+              title: "Start Sprint?",
+              bodyText: "Are you sure you want to start this sprint? The sprint will officially become active.",
+              confirmText: "Start Sprint",
+              iconType: "primary",
+              onConfirm: () => handleStatusChange('active')
+            });
+          }} className="bg-accent-blue text-white px-4 py-1.5 rounded-xl text-[12px] font-bold hover:bg-blue-600 shadow-sm ml-2">
             Start Sprint
           </button>
         </div>
@@ -775,7 +797,7 @@ export default function SprintDetail() {
     if (sprint.status === 'active') {
       return (
         <div className="flex items-center gap-2">
-          {meetingControls}
+          {meetingButton}
           {user?.role === 'administrator' && (
             <button onClick={() => { 
               setConfirmModalData({
@@ -785,19 +807,19 @@ export default function SprintDetail() {
                 iconType: "danger",
                 onConfirm: () => handleStatusChange('completed')
               });
-            }} className="bg-red-600 text-white px-4 py-1.5 rounded text-[12px] font-bold hover:bg-red-700 shadow-sm ml-2">
+            }} className="bg-red-600 text-white px-4 py-1.5 rounded-xl text-[12px] font-bold hover:bg-red-700 shadow-sm ml-2">
               Force Close
             </button>
           )}
           {deleteButton}
           {confirmReview ? (
-            <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-500/10 p-1 rounded border border-yellow-200 dark:border-yellow-500/20 ml-2">
+            <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-500/10 p-1 rounded-xl border border-yellow-200 dark:border-yellow-500/20 ml-2">
               <span className="text-xs text-yellow-800 dark:text-yellow-400 font-medium px-1">Ready for review?</span>
-              <button onClick={handleReadyForReview} className="bg-yellow-600 text-white px-2 py-1 rounded-[3px] text-[11px] font-bold hover:bg-yellow-700">Confirm</button>
+              <button onClick={handleReadyForReview} className="bg-yellow-600 text-white px-2 py-1 rounded-xl-[3px] text-[11px] font-bold hover:bg-yellow-700">Confirm</button>
               <button onClick={() => setConfirmReview(false)} className="text-text-muted hover:text-gray-700 px-1"><X size={14} /></button>
             </div>
           ) : (
-            <button onClick={() => setConfirmReview(true)} className="flex items-center gap-1.5 bg-yellow-500 text-white px-4 py-1.5 rounded text-[12px] font-bold hover:bg-yellow-600 shadow-sm ml-2">
+            <button onClick={() => setConfirmReview(true)} className="flex items-center gap-1.5 bg-yellow-500 text-white px-4 py-1.5 rounded-xl text-[12px] font-bold hover:bg-yellow-600 shadow-sm ml-2">
               <Flag size={14} /> Ready for Review
             </button>
           )}
@@ -808,10 +830,10 @@ export default function SprintDetail() {
       return (
         <div className="flex items-center gap-2">
           {deleteButton}
-          <button onClick={() => navigate('/manager/sprints', { state: { fromTab: 'completed', viewReportSprintId: sprint.sprintId } })} className="flex items-center gap-1.5 bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20 px-4 py-1.5 rounded text-[12px] font-bold hover:bg-blue-500/20 transition-colors shadow-sm ml-2">
+          <button onClick={() => navigate('/manager/sprints', { state: { fromTab: 'completed', viewReportSprintId: sprint.sprintId } })} className="flex items-center gap-1.5 bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20 px-4 py-1.5 rounded-xl text-[12px] font-bold hover:bg-blue-500/20 transition-colors shadow-sm ml-2">
             <FileText size={14} /> View Report
           </button>
-          <div className="bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20 px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1.5 ml-2">
+          <div className="bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 ml-2">
             <CheckCircle size={14} /> Completed on {formatDate(sprint.end_date)}
           </div>
         </div>
@@ -821,7 +843,7 @@ export default function SprintDetail() {
     // Default fallback (e.g. for review)
     return (
       <div className="flex items-center gap-2">
-        {meetingControls}
+        {meetingButton}
         {deleteButton}
       </div>
     );
@@ -901,6 +923,50 @@ export default function SprintDetail() {
     }
   };
 
+  const handleClearAllTasks = async () => {
+    if (tasks.length === 0) return;
+    
+    if (tasks.some(t => !t.project_id) && !selectedProjectId) {
+      setConfirmModalData({
+        title: "Target Project Required",
+        bodyText: "Some tasks do not have a recorded original project. Please select a target project in the Backlog Tasks panel first before clearing all tasks.",
+        confirmText: "Understood",
+        iconType: "warning",
+        onConfirm: () => setConfirmModalData(null)
+      });
+      return;
+    }
+    
+    setConfirmModalData({
+      title: "Clear All Tasks",
+      bodyText: "Are you sure you want to remove all tasks from this sprint? They will be returned to the backlog.",
+      confirmText: "Clear All",
+      iconType: "danger",
+      onConfirm: async () => {
+        const tasksToRemove = tasks.map(t => ({
+          ...t, 
+          project_id: t.project_id || selectedProjectId
+        }));
+        await performAutoSave([], tasksToRemove);
+        setConfirmModalData(null);
+      }
+    });
+  };
+
+  const activeEmployeeIds = new Set();
+  const activeManagerIds = new Set();
+  if (sprint?.ownerId) activeManagerIds.add(sprint.ownerId);
+  tasks.forEach(t => {
+    (t.assignees || []).forEach(a => {
+      if (a.role === 'employee') activeEmployeeIds.add(a.id);
+      else activeManagerIds.add(a.id);
+    });
+  });
+  
+  const displayEmployeeCount = activeEmployeeIds.size > 0 ? activeEmployeeIds.size : members.filter(m => m.role === 'employee').length;
+  const displayManagerCount = activeManagerIds.size > 0 ? activeManagerIds.size : members.filter(m => m.role !== 'employee').length;
+
+
   return (
     <div className="flex-1 flex flex-col h-full bg-bg-primary overflow-hidden">
       {/* Frozen Top Navigation Bar */}
@@ -908,7 +974,7 @@ export default function SprintDetail() {
         <div className="flex items-center gap-4">
           <button 
             onClick={handleBackClick}
-            className="flex items-center gap-1.5 text-text-secondary hover:text-text-primary transition-colors text-sm font-bold bg-bg-secondary hover:bg-line px-3 py-1.5 rounded"
+            className="flex items-center gap-1.5 text-text-secondary hover:text-text-primary transition-colors text-sm font-bold bg-bg-secondary hover:bg-line px-3 py-1.5 rounded-xl"
           >
             <ArrowLeft size={16} /> Back to Sprints
           </button>
@@ -949,17 +1015,25 @@ export default function SprintDetail() {
           </div>
           <div className="flex items-center gap-4 mb-4">
             <h1 className="text-3xl font-extrabold text-text-primary tracking-tight">{sprint.sprintName}</h1>
-            <div className="flex items-center gap-2 mt-1">
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[11px] font-bold uppercase tracking-wider">
-                <Users size={12} />
-                <span>{members.filter(m => m.role === 'employee').length} Employees</span>
+            {sprint.status !== 'created' && (
+              <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[11px] font-bold uppercase tracking-wider">
+                  <Users size={12} />
+                  <span>{displayEmployeeCount} Employees</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[11px] font-bold uppercase tracking-wider">
+                  <UserCog size={12} />
+                  <span>{displayManagerCount} Managers</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[11px] font-bold uppercase tracking-wider">
-                <UserCog size={12} />
-                <span>{members.filter(m => m.role !== 'employee').length} Managers</span>
-              </div>
-            </div>
+            )}
           </div>
+          
+          {sprint.description && (
+            <p className="text-sm text-text-secondary leading-relaxed mb-6 max-w-4xl">
+              {sprint.description}
+            </p>
+          )}
           
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-text-secondary font-medium mb-6">
             <div className="flex items-center gap-2">
@@ -971,14 +1045,14 @@ export default function SprintDetail() {
               <span>{taskCount} tasks</span>
             </div>
             {sprint.goal && (
-              <div className="flex items-center gap-2 bg-bg-secondary px-3 py-1 rounded text-text-primary italic">
+              <div className="flex items-center gap-2 bg-bg-secondary px-3 py-1 rounded-xl text-text-primary italic">
                 Goal: {sprint.goal}
               </div>
             )}
           </div>
 
           {(sprint.status === 'active' || sprint.status === 'completed' || sprint.status === 'review') && (
-            <div className="bg-bg-card border border-line rounded-xl p-5 mb-8">
+            <div className="bg-bg-card border border-line rounded-2xl p-5 mb-8">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex flex-wrap gap-4">
                   <span className="text-xs font-bold text-text-secondary flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-green-500"></div>{doneCount} Done</span>
@@ -1013,91 +1087,17 @@ export default function SprintDetail() {
           <div className="mb-8 relative" ref={statusConfigRef}>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-[11px] font-bold text-text-muted uppercase tracking-widest">Progress Status Configuration</h2>
-              <button
-                onClick={() => { setStatusConfigDraft(sprint.allowedStatuses || ALL_STATUSES.map(s => s.key)); setStatusConfigOpen(!statusConfigOpen); }}
-                className="flex items-center gap-1.5 text-[11px] font-bold text-text-secondary bg-bg-secondary border border-line px-3 py-1.5 rounded hover:bg-line hover:text-text-primary transition-colors"
-              >
-                <Settings size={13} /> Configure Statuses
-              </button>
             </div>
 
             {/* Summary pills */}
             <div className="flex items-center gap-2 flex-wrap">
-              {(sprint.allowedStatuses || ALL_STATUSES.map(s => s.key)).map(statusKey => {
-                const cfg = ALL_STATUSES.find(s => s.key === statusKey);
-                if (!cfg) return null;
-                return (
-                  <span key={statusKey} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold text-white/90 ${cfg.color}`}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-white/60"></span>
-                    {cfg.label}
-                  </span>
-                );
-              })}
-              <button
-                onClick={() => { setStatusConfigDraft(sprint.allowedStatuses || ALL_STATUSES.map(s => s.key)); setStatusConfigOpen(true); }}
-                className="text-[11px] text-text-muted hover:text-accent-blue transition-colors font-medium ml-1"
-              >
-                Edit
-              </button>
+              {ALL_STATUSES.map(cfg => (
+                <span key={cfg.key} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold text-white/90 ${cfg.color}`}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/60"></span>
+                  {cfg.label}
+                </span>
+              ))}
             </div>
-
-            {/* Popover Panel */}
-            {statusConfigOpen && (
-              <div className="absolute top-full right-0 mt-2 w-[420px] bg-bg-card border border-line rounded-xl shadow-2xl z-50 p-5 animate-in fade-in slide-in-from-top-2">
-                <p className="text-xs text-text-muted mb-4">Select which status options employees can use to update task progress</p>
-                <div className="space-y-1">
-                  {ALL_STATUSES.map(s => {
-                    const checked = (sprint.allowedStatuses || ALL_STATUSES.map(a => a.key)).includes(s.key);
-                    return (
-                      <label
-                        key={s.key}
-                        className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                          checked ? 'bg-bg-secondary/80' : 'hover:bg-bg-secondary/40'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={async () => {
-                            const current = sprint.allowedStatuses || ALL_STATUSES.map(a => a.key);
-                            const next = current.includes(s.key) ? current.filter(k => k !== s.key) : [...current, s.key];
-                            if (next.length === 0) { alert('At least one status must be selected.'); return; }
-                            
-                            setSprint(prev => ({ ...prev, allowedStatuses: next }));
-                            setSaveStatus('saving');
-                            try {
-                              await axios.patch(`/api/sprints/${sprintId}/statuses`, { allowedStatuses: next }, { headers: { Authorization: `Bearer ${token}` } });
-                              setSaveStatus('saved');
-                              setTimeout(() => setSaveStatus(null), 2500);
-                            } catch (err) {
-                              console.error(err);
-                              setSaveStatus('failed');
-                              setTimeout(() => setSaveStatus(null), 3000);
-                            }
-                          }}
-                          className="mt-0.5 w-4 h-4 rounded border-line text-accent-blue focus:ring-accent-blue accent-accent-blue"
-                        />
-                        <div className="flex items-center gap-2 flex-1">
-                          <span className={`w-3 h-3 rounded-full ${s.dotColor} shrink-0`}></span>
-                          <div>
-                            <span className="text-sm font-bold text-text-primary">{s.label}</span>
-                            <p className="text-[11px] text-text-muted mt-0.5">{s.desc}</p>
-                          </div>
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
-                <div className="flex items-center justify-end gap-3 mt-5 pt-4 border-t border-line">
-                  <button
-                    onClick={() => setStatusConfigOpen(false)}
-                    className="text-xs text-text-muted hover:text-text-primary transition-colors font-medium"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -1106,14 +1106,24 @@ export default function SprintDetail() {
           <div className="flex gap-6 h-[calc(100vh-250px)] min-h-[500px]">
             {/* Left Column - Sprint Tasks Drop Zone */}
             <div 
-              className={`flex-1 flex flex-col border rounded-xl p-4 transition-colors duration-200 ${isDraggingOverSprint ? 'border-accent-blue bg-accent-blue/5 border-dashed' : 'border-line border-dashed bg-bg-card'}`}
+              className={`flex-1 flex flex-col border rounded-2xl p-4 transition-colors duration-200 ${isDraggingOverSprint ? 'border-accent-blue bg-accent-blue/5 border-dashed' : 'border-line border-dashed bg-bg-card'}`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
             >
               <h2 className="text-[11px] font-bold text-text-muted uppercase tracking-widest mb-4 flex items-center justify-between">
                 <span>Sprint Tasks</span>
-                <span className="bg-bg-secondary px-2 py-0.5 rounded text-text-primary normal-case font-medium">Total Tasks: {tasks.length}</span>
+                <div className="flex items-center gap-2">
+                  {tasks.length > 0 && (
+                    <button 
+                      onClick={handleClearAllTasks}
+                      className="bg-red-500/10 text-red-500 hover:bg-red-500/20 px-2 py-0.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-colors border border-red-500/20"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                  <span className="bg-bg-secondary px-2 py-0.5 rounded-xl text-text-primary normal-case font-medium">Total Tasks: {tasks.length}</span>
+                </div>
               </h2>
               
               {tasks.length === 0 ? (
@@ -1124,7 +1134,7 @@ export default function SprintDetail() {
                   <p className="text-sm font-medium">Drag tasks from the backlog to add them to this sprint.</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto bg-bg-secondary/20 rounded-lg border border-line">
+                <div className="overflow-hidden bg-bg-secondary/20 rounded-2xl border border-line">
                   <table className="w-full text-left text-[12px] whitespace-nowrap">
                     <thead className="bg-bg-secondary text-text-muted text-[11px] uppercase tracking-wider border-b-2 border-line">
                       <tr>
@@ -1135,11 +1145,11 @@ export default function SprintDetail() {
                     </thead>
                     <tbody className="divide-y divide-line">
                       {tasks.map(task => (
-                        <tr 
+                          <tr 
                           key={task.taskId} 
                           draggable
                           onDragStart={(e) => handleSprintTaskDragStart(e, task)}
-                          className={`h-12 transition-colors cursor-grab active:cursor-grabbing group select-none ${draggedTask?.source === 'sprint' && (draggedTask.taskId || draggedTask.task_id) === task.taskId ? 'opacity-50 border-dashed border border-line bg-bg-secondary' : 'hover:bg-bg-secondary/40'}`}
+                          className={`h-12 transition-colors cursor-grab active:cursor-grabbing group select-none ${highlightedTasks.has(task.taskId) || highlightedTasks.has(task.task_id) ? 'bg-green-500/20 border-green-500/50 border' : draggedTask?.source === 'sprint' && (draggedTask.taskId || draggedTask.task_id) === task.taskId ? 'opacity-50 border-dashed border border-line bg-bg-secondary' : 'hover:bg-bg-secondary/40'}`}
                         >
                           <td className="py-2 px-4 font-medium text-text-primary flex items-center gap-2">
                             <div className="text-text-muted opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1150,9 +1160,6 @@ export default function SprintDetail() {
                           <td className="py-2 px-4">{getPriorityDot(task.priority)}</td>
                           <td className="py-2 px-4">
                             <div className="flex items-center justify-center gap-3">
-                              <button onClick={() => handleRemoveSprintTask(task.taskId)} className="text-text-muted hover:text-accent-blue transition-colors flex items-center gap-1" title="Revert to Backlog">
-                                <Undo2 size={16} />
-                              </button>
                               <button onClick={() => handleRemoveSprintTask(task.taskId)} className="text-text-muted hover:text-red-500 transition-colors" title="Remove from Sprint">
                                 <X size={16} />
                               </button>
@@ -1168,7 +1175,7 @@ export default function SprintDetail() {
 
             {/* Right Column - Backlog Source */}
             <div 
-              className={`flex-1 flex flex-col border rounded-xl p-4 transition-colors duration-200 ${isHoveringBacklog ? 'border-accent-blue bg-accent-blue/5 shadow-[0_0_15px_rgba(59,130,246,0.15)] border-solid' : 'border-line bg-bg-card border-solid'}`}
+              className={`flex-1 flex flex-col border rounded-2xl p-4 transition-colors duration-200 ${isHoveringBacklog ? 'border-accent-blue bg-accent-blue/5 shadow-[0_0_15px_rgba(59,130,246,0.15)] border-solid' : 'border-line bg-bg-card border-solid'}`}
               onDragOver={handleBacklogDragOver}
               onDragLeave={handleBacklogDragLeave}
               onDrop={handleBacklogDrop}
@@ -1176,21 +1183,42 @@ export default function SprintDetail() {
               <h2 className="text-[11px] font-bold text-text-muted uppercase tracking-widest mb-4 flex items-center justify-between">
                 <span>Backlog Tasks</span>
                 {selectedProjectId && (
-                  <span className="bg-bg-secondary px-2 py-0.5 rounded text-text-primary normal-case font-medium">Total Tasks: {backlogTasks.length}</span>
+                  <span className="bg-bg-secondary px-2 py-0.5 rounded-xl text-text-primary normal-case font-medium">Total Tasks: {backlogTasks.length}</span>
                 )}
               </h2>
               
-              <div className="mb-4">
-                <select 
-                  value={selectedProjectId} 
-                  onChange={(e) => setSelectedProjectId(e.target.value)}
-                  className="w-full p-2.5 text-sm bg-input-bg border border-line rounded text-text-primary focus:outline-none focus:border-accent-blue"
+              <div className="mb-4 relative" ref={projectDropdownRef}>
+                <div 
+                  onClick={() => setProjectDropdownOpen(!projectDropdownOpen)}
+                  className="w-full pl-4 pr-4 py-2.5 text-sm bg-input-bg border border-line rounded-2xl text-text-primary focus:outline-none focus:border-accent-blue cursor-pointer flex items-center justify-between"
                 >
-                  <option value="" disabled>Select a project...</option>
-                  {projects.map(p => (
-                    <option key={p.project_id} value={p.project_id}>{p.title}</option>
-                  ))}
-                </select>
+                  <span className={!selectedProjectId ? "text-text-muted" : ""}>
+                    {selectedProjectId ? projects.find(p => p.project_id === selectedProjectId)?.title : 'Select a project...'}
+                  </span>
+                  <ChevronDown size={16} className={`text-text-muted transition-transform ${projectDropdownOpen ? 'rotate-180' : ''}`} />
+                </div>
+                
+                {projectDropdownOpen && (
+                  <div className="absolute z-10 w-full mt-2 bg-bg-card border border-line rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
+                    <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                      {projects.map(p => (
+                        <div 
+                          key={p.project_id}
+                          onClick={() => {
+                            setSelectedProjectId(p.project_id);
+                            setProjectDropdownOpen(false);
+                          }}
+                          className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-bg-secondary transition-colors ${selectedProjectId === p.project_id ? 'bg-accent-blue/10 text-accent-blue font-medium' : 'text-text-primary'}`}
+                        >
+                          {p.title}
+                        </div>
+                      ))}
+                      {projects.length === 0 && (
+                        <div className="px-4 py-3 text-sm text-text-muted italic text-center">No projects available</div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
@@ -1208,7 +1236,7 @@ export default function SprintDetail() {
                       key={task.task_id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, task)}
-                      className="flex items-center gap-3 p-3 rounded-lg border border-line bg-bg-secondary/30 hover:bg-bg-secondary/80 hover:border-line-light transition-all cursor-grab active:cursor-grabbing group select-none"
+                      className="flex items-center gap-3 p-3 rounded-2xl border border-line bg-bg-secondary/30 hover:bg-bg-secondary/80 hover:border-line-light transition-all cursor-grab active:cursor-grabbing group select-none"
                     >
                       <div className="text-text-muted group-hover:text-text-secondary cursor-grab active:cursor-grabbing">
                         <GripVertical size={16} />
@@ -1226,11 +1254,11 @@ export default function SprintDetail() {
         ) : sprint.status === 'planner' ? (
           <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-250px)] min-h-[500px]">
             {/* Left Column - Sprint Tasks */}
-            <div className={`flex flex-col border rounded-xl p-4 transition-colors duration-200 border-line bg-bg-card ${user?.role === 'administrator' || user?.role === 'manager' ? 'lg:w-[65%]' : 'w-full'}`}>
+            <div className={`flex flex-col border rounded-2xl p-4 transition-colors duration-200 border-line bg-bg-card ${user?.role === 'administrator' || user?.role === 'manager' ? 'lg:w-[65%]' : 'w-full'}`}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-[11px] font-bold text-text-muted uppercase tracking-widest flex items-center gap-2">
                   <span>Sprint Tasks</span>
-                  <span className="bg-bg-secondary px-2 py-0.5 rounded text-text-primary normal-case font-medium">{tasks.length}</span>
+                  <span className="bg-bg-secondary px-2 py-0.5 rounded-xl text-text-primary normal-case font-medium">{tasks.length}</span>
                 </h2>
                 <div className="flex items-center gap-4">
                   {/* Sprint Manager Drag and Drop Box */}
@@ -1238,7 +1266,7 @@ export default function SprintDetail() {
                     onDragOver={(e) => { e.preventDefault(); setIsHoveringManagerBox(true); }}
                     onDragLeave={(e) => { e.preventDefault(); setIsHoveringManagerBox(false); }}
                     onDrop={handleManagerDrop}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md border-2 border-dashed transition-colors ${
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl border-2 border-dashed transition-colors ${
                       isHoveringManagerBox 
                         ? 'border-accent-blue bg-accent-blue/10' 
                         : 'border-line hover:border-line-light bg-bg-secondary/50'
@@ -1249,7 +1277,7 @@ export default function SprintDetail() {
                       <div 
                         draggable={user?.role === 'administrator' || user?.role === 'manager'}
                         onDragStart={handleManagerChipDragStart}
-                        className={`group/mgrchip relative flex items-center gap-1.5 bg-amber-500/20 px-2 py-0.5 rounded text-amber-500 text-xs font-medium transition-shadow select-none ${(user?.role === 'administrator' || user?.role === 'manager') ? 'cursor-grab active:cursor-grabbing hover:shadow-sm' : ''} ${draggedChip?.type === 'sprint_manager' ? 'opacity-50 dashed border border-amber-500' : 'border border-transparent'}`}
+                        className={`group/mgrchip relative flex items-center gap-1.5 bg-amber-500/20 px-2 py-0.5 rounded-xl text-amber-500 text-xs font-medium transition-shadow select-none ${(user?.role === 'administrator' || user?.role === 'manager') ? 'cursor-grab active:cursor-grabbing hover:shadow-sm' : ''} ${draggedChip?.type === 'sprint_manager' ? 'opacity-50 dashed border border-amber-500' : 'border border-transparent'}`}
                       >
                         {(user?.role === 'administrator' || user?.role === 'manager') && (
                           <div className="hidden group-hover/mgrchip:flex text-amber-500/50 -ml-1 pr-0.5">
@@ -1271,7 +1299,7 @@ export default function SprintDetail() {
                   {(user?.role === 'administrator' || user?.role === 'manager') && undoStack.length > 0 && (
                     <button 
                       onClick={handleUndoAssignment}
-                      className="flex items-center gap-1.5 px-3 py-1 bg-bg-secondary hover:bg-bg-secondary/80 text-text-primary rounded-md text-xs font-medium transition-colors border border-line"
+                      className="flex items-center gap-1.5 px-3 py-1 bg-bg-secondary hover:bg-bg-secondary/80 text-text-primary rounded-2xl text-xs font-medium transition-colors border border-line"
                     >
                       <Undo2 size={14} /> Undo
                     </button>
@@ -1282,7 +1310,7 @@ export default function SprintDetail() {
                 </div>
               </div>
               
-              <div className="bg-bg-secondary/20 rounded-lg border border-line flex-1 overflow-hidden flex flex-col">
+              <div className="bg-bg-secondary/20 rounded-2xl border border-line flex-1 overflow-hidden flex flex-col">
                 <div className="overflow-y-auto flex-1 custom-scrollbar">
                   <table className="w-full text-left text-[12px]">
                     <thead className="bg-bg-secondary text-text-muted text-[11px] uppercase tracking-wider border-b-2 border-line sticky top-0 z-10">
@@ -1306,7 +1334,7 @@ export default function SprintDetail() {
                           >
                             <td className="py-3 px-4 font-medium text-text-primary truncate max-w-xs">{task.title}</td>
                             <td className="py-3 px-4">{getPriorityDot(task.priority)}</td>
-                            <td className={`py-3 px-4 transition-opacity ${draggedChip?.sourceTaskId === task.taskId ? 'opacity-50 border-dashed border-2 border-line rounded' : ''}`}>
+                            <td className={`py-3 px-4 transition-opacity ${draggedChip?.sourceTaskId === task.taskId ? 'opacity-50 border-dashed border-2 border-line rounded-xl' : ''}`}>
                               {assignees.length === 0 ? (
                                 <span className="text-text-muted italic">— Unassigned —</span>
                               ) : (
@@ -1353,7 +1381,7 @@ export default function SprintDetail() {
             {/* Right Column - Team Member Pool */}
             {(user?.role === 'administrator' || user?.role === 'manager') && (
               <div 
-                className={`lg:w-[35%] flex flex-col bg-bg-card border rounded-xl p-4 transition-colors duration-200 ${isHoveringRightPanel ? 'border-accent-blue bg-accent-blue/5 shadow-[0_0_15px_rgba(59,130,246,0.15)]' : 'border-line'}`}
+                className={`lg:w-[35%] flex flex-col bg-bg-card border rounded-2xl p-4 transition-colors duration-200 ${isHoveringRightPanel ? 'border-accent-blue bg-accent-blue/5 shadow-[0_0_15px_rgba(59,130,246,0.15)]' : 'border-line'}`}
                 onDragOver={handleRightPanelDragOver}
                 onDragLeave={handleRightPanelDragLeave}
                 onDrop={handleRightPanelDrop}
@@ -1366,16 +1394,16 @@ export default function SprintDetail() {
                     placeholder="Search by name or role..." 
                     value={plannerSearchQuery}
                     onChange={(e) => setPlannerSearchQuery(e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-input-bg border border-line rounded text-text-primary focus:outline-none focus:border-accent-blue"
+                    className="w-full px-3 py-2 text-sm bg-input-bg border border-line rounded-xl text-text-primary focus:outline-none focus:border-accent-blue"
                   />
                 </div>
                 
-                <div className="flex items-center gap-2 mb-4 p-1 bg-bg-secondary/50 rounded-lg">
+                <div className="flex items-center gap-2 mb-4 p-1 bg-bg-secondary/50 rounded-2xl">
                   {['All', 'Employees', 'Managers'].map(role => (
                     <button 
                       key={role}
                       onClick={() => setPlannerRoleFilter(role)}
-                      className={`flex-1 py-1 text-xs font-medium rounded-md transition-colors ${plannerRoleFilter === role ? 'bg-bg-card text-text-primary shadow-sm border border-line' : 'text-text-muted hover:text-text-secondary'}`}
+                      className={`flex-1 py-1 text-xs font-medium rounded-2xl transition-colors ${plannerRoleFilter === role ? 'bg-bg-card text-text-primary shadow-sm border border-line' : 'text-text-muted hover:text-text-secondary'}`}
                     >
                       {role}
                     </button>
@@ -1405,7 +1433,7 @@ export default function SprintDetail() {
                           key={m.id}
                           draggable={canDrag}
                           onDragStart={(e) => handlePlannerDragStart(e, m)}
-                          className={`flex items-center gap-3 p-3 rounded-lg border border-line bg-bg-secondary/30 transition-all select-none ${disableManagerVisuals ? 'opacity-60' : 'hover:bg-bg-secondary/80 hover:border-line-light hover:-translate-y-0.5 hover:shadow-md'} ${canDrag ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                          className={`flex items-center gap-3 p-3 rounded-2xl border border-line bg-bg-secondary/30 transition-all select-none ${disableManagerVisuals ? 'opacity-60' : 'hover:bg-bg-secondary/80 hover:border-line-light hover:-translate-y-0.5 hover:shadow-md'} ${canDrag ? 'cursor-grab active:cursor-grabbing' : ''}`}
                           title={disableManagerVisuals ? "A manager is already assigned to a task. Only one manager allowed per sprint task." : ""}
                         >
                           {canDrag && (
@@ -1421,7 +1449,7 @@ export default function SprintDetail() {
                             <span className="text-[10px] text-text-muted truncate capitalize">{m.designation}</span>
                           </div>
                           <div className="flex flex-col items-end gap-1 shrink-0">
-                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${isMgr ? 'bg-amber-500/20 text-amber-500' : 'bg-blue-500/20 text-blue-400'}`}>
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-xl ${isMgr ? 'bg-amber-500/20 text-amber-500' : 'bg-blue-500/20 text-blue-400'}`}>
                               {isMgr ? 'MGR' : 'EMP'}
                             </span>
                             {isSprintManager ? (
@@ -1444,8 +1472,8 @@ export default function SprintDetail() {
             {/* Left Column - Task Table */}
           <div className="flex-1 min-w-0">
             <h2 className="text-[11px] font-bold text-text-muted uppercase tracking-widest mb-4">Task Table</h2>
-            <div className="bg-bg-card border border-line rounded-xl overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
+            <div className="bg-bg-card border border-line rounded-2xl overflow-visible shadow-sm">
+              <div className="overflow-visible">
                 <table className="w-full text-left text-[12px] whitespace-nowrap">
                   <thead className="bg-bg-secondary text-text-muted text-[11px] uppercase tracking-wider border-b-2 border-line">
                     <tr>
@@ -1468,7 +1496,7 @@ export default function SprintDetail() {
                         <Fragment key={task.id}>
                           <tr className={`group h-12 hover:bg-bg-secondary/40 transition-colors ${isExpanded ? 'bg-blue-50/10 dark:bg-blue-900/5' : ''}`}>
                             <td className="py-2 px-3 text-center">
-                              <button onClick={() => toggleTaskExpanded(task.taskId)} className="p-1 hover:bg-bg-secondary rounded text-text-secondary transition-colors">
+                              <button onClick={() => toggleTaskExpanded(task.taskId)} className="p-1 hover:bg-bg-secondary rounded-xl text-text-secondary transition-colors">
                                 <ChevronRight size={16} className={`transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} />
                               </button>
                             </td>
@@ -1479,9 +1507,27 @@ export default function SprintDetail() {
                               </div>
                             </td>
                             <td className="py-2 px-4">
-                              <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 flex items-center justify-center text-[10px] font-bold border border-blue-200 dark:border-blue-500/20">{task.assigneeInitials}</div>
-                                <span className="font-medium text-text-primary">{task.assigneeName?.split(' ')[0] || 'Unassigned'}</span>
+                              <div className="flex items-center -space-x-2 pl-2">
+                                {(task.assignees && task.assignees.length > 0) ? task.assignees.map((a, index) => {
+                                  const isMgr = a.role === 'manager';
+                                  return (
+                                    <div 
+                                      key={a.id} 
+                                      className="avatar-container cursor-default"
+                                      style={{ zIndex: task.assignees.length - index }}
+                                    >
+                                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-bg-card shadow-sm transition-transform duration-200 ${isMgr ? 'bg-amber-500' : 'bg-blue-600'}`}>
+                                        {a.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+                                      </div>
+                                      
+                                      <div className="avatar-tooltip px-3 py-1.5 bg-gray-800 dark:bg-gray-700 text-white text-[11px] font-medium rounded-2xl flex items-center gap-1 shadow-xl whitespace-nowrap">
+                                        <span>{a.name}</span>
+                                        {isMgr && <span className="text-amber-400 text-[10px]">(Manager)</span>}
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-gray-800 dark:border-t-gray-700"></div>
+                                      </div>
+                                    </div>
+                                  );
+                                }) : <span className="text-sm font-medium text-text-muted italic -ml-2">Unassigned</span>}
                               </div>
                             </td>
                             <td className="py-2 px-4">{getPriorityDot(task.priority)}</td>
@@ -1523,17 +1569,17 @@ export default function SprintDetail() {
               <h2 className="text-[11px] font-bold text-text-muted uppercase tracking-widest mb-4">Requirements & References</h2>
               <div className="space-y-3">
                 {requirements.notes.length === 0 && requirements.attachments.length === 0 && (
-                  <div className="text-sm text-text-secondary italic bg-bg-card border border-line rounded-xl p-4 shadow-sm">No notes or attachments.</div>
+                  <div className="text-sm text-text-secondary italic bg-bg-card border border-line rounded-2xl p-4 shadow-sm">No notes or attachments.</div>
                 )}
                 {requirements.notes.map(note => (
-                  <div key={note.id} className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-700/30 p-4 rounded-xl shadow-sm">
+                  <div key={note.id} className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-700/30 p-4 rounded-2xl shadow-sm">
                     <h4 className="text-sm font-bold text-yellow-800 dark:text-yellow-400 mb-1">{note.title}</h4>
                     <p className="text-sm text-yellow-700 dark:text-yellow-500/80 whitespace-pre-wrap">{note.content}</p>
                   </div>
                 ))}
                 {requirements.attachments.map(att => (
-                  <a key={att.id} href={att.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3 bg-bg-card border border-line p-3 rounded-xl shadow-sm hover:bg-bg-secondary transition-colors group">
-                    <div className="w-10 h-10 rounded bg-blue-50 dark:bg-blue-900/20 text-accent-blue flex items-center justify-center flex-shrink-0">
+                  <a key={att.id} href={att.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3 bg-bg-card border border-line p-3 rounded-2xl shadow-sm hover:bg-bg-secondary transition-colors group">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-accent-blue flex items-center justify-center flex-shrink-0">
                       <FileText size={18} />
                     </div>
                     <div className="min-w-0">
@@ -1554,18 +1600,18 @@ export default function SprintDetail() {
             {sprint.status === 'review' && (
               <div>
                 <h2 className="text-[11px] font-bold text-text-muted uppercase tracking-widest mb-4">Manager Review</h2>
-                <div className="bg-bg-card border border-line rounded-xl p-5 shadow-sm space-y-5">
+                <div className="bg-bg-card border border-line rounded-2xl p-5 shadow-sm space-y-5">
                   <div className="space-y-3">
                     <label className={`flex items-center gap-3 ${!isManager ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}>
-                      <input type="checkbox" checked={dodMet} onChange={(e) => handleChecklistChange('dod', e.target.checked)} disabled={!isManager || savingChecklist} className="w-4 h-4 text-accent-blue rounded border-gray-300 focus:ring-accent-blue" />
+                      <input type="checkbox" checked={dodMet} onChange={(e) => handleChecklistChange('dod', e.target.checked)} disabled={!isManager || savingChecklist} className="w-4 h-4 text-accent-blue rounded-xl border-gray-300 focus:ring-accent-blue" />
                       <span className="text-sm font-medium text-text-primary">DoD criteria met</span>
                     </label>
                     <label className={`flex items-center gap-3 ${!isManager ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}>
-                      <input type="checkbox" checked={qaPassed} onChange={(e) => handleChecklistChange('qa', e.target.checked)} disabled={!isManager || savingChecklist} className="w-4 h-4 text-accent-blue rounded border-gray-300 focus:ring-accent-blue" />
+                      <input type="checkbox" checked={qaPassed} onChange={(e) => handleChecklistChange('qa', e.target.checked)} disabled={!isManager || savingChecklist} className="w-4 h-4 text-accent-blue rounded-xl border-gray-300 focus:ring-accent-blue" />
                       <span className="text-sm font-medium text-text-primary">QA / testing passed</span>
                     </label>
                     <label className={`flex items-center gap-3 ${!isManager ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}>
-                      <input type="checkbox" checked={stakeholderSignoff} onChange={(e) => handleChecklistChange('stake', e.target.checked)} disabled={!isManager || savingChecklist} className="w-4 h-4 text-accent-blue rounded border-gray-300 focus:ring-accent-blue" />
+                      <input type="checkbox" checked={stakeholderSignoff} onChange={(e) => handleChecklistChange('stake', e.target.checked)} disabled={!isManager || savingChecklist} className="w-4 h-4 text-accent-blue rounded-xl border-gray-300 focus:ring-accent-blue" />
                       <span className="text-sm font-medium text-text-primary">Stakeholder sign-off</span>
                     </label>
                   </div>
@@ -1574,31 +1620,31 @@ export default function SprintDetail() {
                     <label className="block text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">Reviewer Notes</label>
                     {isManager ? (
                       <div className="flex flex-col gap-2">
-                        <textarea value={reviewerNotes} onChange={(e) => setReviewerNotes(e.target.value)} placeholder="Add feedback..." className="w-full min-h-[80px] p-2.5 text-sm border border-line bg-input-bg text-text-primary rounded focus:ring-1 focus:ring-accent-blue focus:border-accent-blue outline-none resize-y" />
-                        <button onClick={handleSaveNotes} disabled={savingNotes || reviewerNotes === sprint.reviewer_notes} className="self-end flex items-center gap-1 bg-bg-secondary hover:bg-dropdown-hover-bg text-text-primary px-3 py-1.5 rounded text-xs font-bold transition-colors disabled:opacity-50"><Save size={14} /> Save Notes</button>
+                        <textarea value={reviewerNotes} onChange={(e) => setReviewerNotes(e.target.value)} placeholder="Add feedback..." className="w-full min-h-[80px] p-2.5 text-sm border border-line bg-input-bg text-text-primary rounded-xl focus:ring-1 focus:ring-accent-blue focus:border-accent-blue outline-none resize-y" />
+                        <button onClick={handleSaveNotes} disabled={savingNotes || reviewerNotes === sprint.reviewer_notes} className="self-end flex items-center gap-1 bg-bg-secondary hover:bg-dropdown-hover-bg text-text-primary px-3 py-1.5 rounded-xl text-xs font-bold transition-colors disabled:opacity-50"><Save size={14} /> Save Notes</button>
                       </div>
                     ) : (
-                      <div className="bg-bg-secondary p-3 rounded text-sm text-text-primary italic">{reviewerNotes || 'No notes provided yet.'}</div>
+                      <div className="bg-bg-secondary p-3 rounded-xl text-sm text-text-primary italic">{reviewerNotes || 'No notes provided yet.'}</div>
                     )}
                   </div>
                   
                   <div className="pt-4 flex flex-col gap-3 border-t border-line">
                     {showReturnInput ? (
                       <div className="flex flex-col gap-2">
-                        <input type="text" value={returnReason} onChange={(e) => setReturnReason(e.target.value)} placeholder="Reason for return..." className="w-full text-sm p-2 border border-line bg-input-bg text-text-primary rounded focus:ring-1 focus:ring-red-500 outline-none" autoFocus />
+                        <input type="text" value={returnReason} onChange={(e) => setReturnReason(e.target.value)} placeholder="Reason for return..." className="w-full text-sm p-2 border border-line bg-input-bg text-text-primary rounded-xl focus:ring-1 focus:ring-red-500 outline-none" autoFocus />
                         <div className="flex items-center justify-end gap-2">
                           <button onClick={() => setShowReturnInput(false)} className="text-text-muted hover:text-text-primary text-xs font-bold px-2 py-1.5">Cancel</button>
-                          <button onClick={handleReturn} disabled={!returnReason.trim()} className="bg-red-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-red-700 disabled:opacity-50">Confirm Return</button>
+                          <button onClick={handleReturn} disabled={!returnReason.trim()} className="bg-red-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-red-700 disabled:opacity-50">Confirm Return</button>
                         </div>
                       </div>
                     ) : (
-                      <button onClick={() => setShowReturnInput(true)} disabled={!isManager} className="w-full flex items-center justify-center gap-1.5 border border-line text-text-secondary hover:text-text-primary hover:bg-dropdown-hover-bg px-4 py-2 rounded text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                      <button onClick={() => setShowReturnInput(true)} disabled={!isManager} className="w-full flex items-center justify-center gap-1.5 border border-line text-text-secondary hover:text-text-primary hover:bg-dropdown-hover-bg px-4 py-2 rounded-xl text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                         <CornerUpLeft size={16} /> Send Back to Active
                       </button>
                     )}
                     
                     {!showReturnInput && (
-                      <button onClick={handleComplete} disabled={!isManager || !allChecked || completing} className="w-full flex items-center justify-center gap-1.5 bg-accent-blue text-white px-4 py-2 rounded text-sm font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                      <button onClick={handleComplete} disabled={!isManager || !allChecked || completing} className="w-full flex items-center justify-center gap-1.5 bg-accent-blue text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                         <CheckCircle size={16} /> Mark as Completed
                       </button>
                     )}
@@ -1610,15 +1656,15 @@ export default function SprintDetail() {
             {/* Team Members Panel */}
             <div>
               <h2 className="text-[11px] font-bold text-text-muted uppercase tracking-widest mb-4">Team Members ({members.length})</h2>
-              <div className="bg-bg-card border border-line rounded-xl p-4 shadow-sm space-y-3">
+              <div className="bg-bg-card border border-line rounded-2xl p-4 shadow-sm space-y-3">
                 {members.length === 0 ? (
                   <div className="text-sm text-text-secondary italic">No team members assigned.</div>
                 ) : (
                   members.map(member => {
-                    const memberTasks = tasks.filter(t => t.assignedTo === member.userId);
+                    const memberTasks = tasks.filter(t => t.assignees && t.assignees.some(a => a.id === member.userId));
                     const memberSubtasksCount = memberTasks.reduce((acc, t) => acc + (t.subtasksList?.length || 0), 0);
                     return (
-                      <div key={member.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-bg-secondary/50 transition-colors">
+                      <div key={member.id} className="flex items-center justify-between p-2 rounded-2xl hover:bg-bg-secondary/50 transition-colors">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 flex items-center justify-center text-[12px] font-bold border border-blue-200 dark:border-blue-500/20">
                             {member.initials}
@@ -1642,7 +1688,7 @@ export default function SprintDetail() {
           </div>
         </div>
         )}
-
+      </div>
       <ConfirmModal
         isOpen={!!confirmModalData}
         onCancel={() => setConfirmModalData(null)}

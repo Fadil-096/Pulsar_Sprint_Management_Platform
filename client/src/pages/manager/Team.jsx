@@ -114,39 +114,39 @@ export default function Team() {
 
         <div className="flex items-center gap-3">
           {/* View Toggle */}
-          <div className="flex items-center bg-bg-secondary p-1 rounded-lg border border-line">
+          <div className="flex items-center bg-bg-secondary p-1 rounded-2xl border border-line">
             <button 
               onClick={() => setViewMode('card')}
-              className={`p-1.5 rounded-md transition-all ${viewMode === 'card' ? 'bg-bg-card shadow-sm text-accent-blue' : 'text-text-secondary hover:text-gray-700'}`}
+              className={`p-1.5 rounded-2xl transition-all ${viewMode === 'card' ? 'bg-bg-card shadow-sm text-accent-blue' : 'text-text-secondary hover:text-gray-700'}`}
             >
               <LayoutGrid size={18} />
             </button>
             <button 
               onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded-md transition-all ${viewMode === 'table' ? 'bg-bg-card shadow-sm text-accent-blue' : 'text-text-secondary hover:text-gray-700'}`}
+              className={`p-1.5 rounded-2xl transition-all ${viewMode === 'table' ? 'bg-bg-card shadow-sm text-accent-blue' : 'text-text-secondary hover:text-gray-700'}`}
             >
               <List size={18} />
             </button>
           </div>
 
           {/* Time Range Filter */}
-          <div className="flex items-center gap-2 bg-bg-card border border-line rounded-md px-3 py-1.5 shadow-sm">
+          <div className="flex items-center gap-2 bg-bg-card border border-line rounded-2xl px-3 py-1.5 shadow-sm">
             <Calendar size={16} className="text-text-muted" />
             <select 
               className="text-sm bg-transparent outline-none font-medium text-text-primary cursor-pointer"
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
             >
-              <option value="this_month">This Month</option>
-              <option value="last_3_months">Last 3 Months</option>
-              <option value="all_time">All Time</option>
+              <option value="this_month" className="bg-bg-card text-text-primary">This Month</option>
+              <option value="last_3_months" className="bg-bg-card text-text-primary">Last 3 Months</option>
+              <option value="all_time" className="bg-bg-card text-text-primary">All Time</option>
             </select>
           </div>
 
           {/* Add Team Member Button */}
           <button
             onClick={() => setShowAddUserModal(true)}
-            className="flex items-center gap-2 bg-accent-blue hover:bg-blue-700 text-white px-4 py-1.5 rounded-md text-sm font-bold shadow-sm transition-colors"
+            className="flex items-center gap-2 bg-accent-blue hover:bg-blue-700 text-white px-4 py-1.5 rounded-2xl text-sm font-bold shadow-sm transition-colors"
           >
             <UserPlus size={16} />
             <span>Add Member</span>
@@ -173,7 +173,7 @@ export default function Team() {
                 onMouseLeave={handleMouseLeave}
               >
                 {/* Compact Chip */}
-                <div className={`bg-bg-card rounded-xl shadow-sm border p-4 flex items-center gap-3 transition-all duration-300 h-full ${isHovered ? 'border-accent-blue shadow-lg ring-4 ring-accent-blue/10 bg-gradient-to-br from-bg-card to-blue-50/10' : 'border-line hover:border-blue-300 hover:shadow-md'}`}>
+                <div className={`bg-bg-card rounded-2xl shadow-sm border p-4 flex items-center gap-3 transition-all duration-300 h-full ${isHovered ? 'border-accent-blue shadow-lg ring-4 ring-accent-blue/10 bg-gradient-to-br from-bg-card to-blue-50/10' : 'border-line hover:border-blue-300 hover:shadow-md'}`}>
                   <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold border transition-colors shrink-0 ${isHovered ? 'bg-gradient-to-br from-blue-100 to-blue-200 text-blue-900 border-blue-300 shadow-inner' : 'bg-blue-50/50 text-blue-800 border-blue-100'}`}>
                     {member.initials}
                   </div>
@@ -185,12 +185,12 @@ export default function Team() {
 
                 {/* Hover Tooltip (Popup Details) */}
                 {isHovered && (
-                  <div className={`absolute ${alignRight ? 'right-0' : 'left-0'} w-[300px] bg-bg-card/95 backdrop-blur-sm rounded-xl shadow-2xl border border-line overflow-visible pointer-events-none animate-in fade-in zoom-in-95 duration-200 ease-out z-50 ${flipTooltip ? 'bottom-full mb-3 origin-bottom' : 'top-full mt-3 origin-top'}`}>
+                  <div className={`absolute ${alignRight ? 'right-0' : 'left-0'} w-[300px] bg-bg-card/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-line overflow-visible pointer-events-none animate-in fade-in zoom-in-95 duration-200 ease-out z-50 ${flipTooltip ? 'bottom-full mb-3 origin-bottom' : 'top-full mt-3 origin-top'}`}>
                     {/* Tooltip Arrow */}
                     <div className={`absolute ${alignRight ? 'right-8' : 'left-8'} w-4 h-4 bg-bg-card border-line rotate-45 ${flipTooltip ? '-bottom-2 border-b border-r' : '-top-2 border-t border-l'}`}></div>
                     
                     {/* Tooltip Content (Relative to stay above arrow) */}
-                    <div className="relative bg-bg-card rounded-xl overflow-hidden">
+                    <div className="relative bg-bg-card rounded-2xl overflow-hidden">
                       {/* Header */}
                       <div className="p-4 border-b border-line-light flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-800 flex items-center justify-center text-sm font-bold border border-blue-100 shrink-0">
@@ -241,7 +241,7 @@ export default function Team() {
         </div>
       ) : (
         /* ================= TABLE VIEW ================= */
-        <div className="bg-bg-card rounded-xl shadow-sm border border-line overflow-hidden">
+        <div className="bg-bg-card rounded-2xl shadow-sm border border-line overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-bg-secondary text-[11px] text-text-secondary uppercase tracking-wider border-b border-line">
@@ -282,7 +282,7 @@ export default function Team() {
                         {member.activeSprints && member.activeSprints.length > 0 ? (
                           <div className="flex items-center gap-1.5 flex-wrap">
                             {member.activeSprints.map(s => (
-                              <span key={s.id} className="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded text-[10px] font-bold uppercase">{s.id}</span>
+                              <span key={s.id} className="bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-xl text-[10px] font-bold uppercase">{s.id}</span>
                             ))}
                           </div>
                         ) : (

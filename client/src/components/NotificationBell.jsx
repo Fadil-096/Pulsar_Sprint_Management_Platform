@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bell, CheckCircle2, MessageSquare, Calendar, AlertCircle, Clock, ArrowRight, BellRing } from 'lucide-react';
+import { Bell, BellRing, Check, Calendar, MessageSquare, AlertCircle, CheckCircle2, FileText, Video, Clock, ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
@@ -37,6 +37,8 @@ export default function NotificationBell() {
     
     if (notification.type === 'leave') {
       navigate(`${baseRoute}/leaves${notification.reference_id ? `?leaveId=${notification.reference_id}` : ''}`);
+    } else if (notification.type === 'meeting' && notification.reference_id && notification.reference_id.startsWith('http')) {
+      window.open(notification.reference_id, '_blank');
     } else if (notification.type === 'query' || notification.type === 'sprint' || notification.type === 'task' || notification.type === 'subtask') {
       navigate(`${baseRoute}/${user?.role === 'manager' ? 'sprints' : 'tasks'}`); 
     } else {
@@ -57,6 +59,12 @@ export default function NotificationBell() {
         color: 'bg-orange-500', 
         badgeLabel: 'Query', 
         badgeColor: 'text-badge-created-text bg-badge-created-bg border-badge-created-text/30' 
+      };
+      case 'meeting': return { 
+        icon: <Video size={12} className="text-white" />, 
+        color: 'bg-green-500', 
+        badgeLabel: 'Meeting', 
+        badgeColor: 'text-green-700 bg-green-100 border-green-700/30 dark:text-green-400 dark:bg-green-900/30' 
       };
       case 'sprint': return { 
         icon: <CheckCircle2 size={12} className="text-white" />, 
@@ -116,7 +124,7 @@ export default function NotificationBell() {
 
       {isOpen && (
         <div 
-          className="absolute right-0 mt-3 w-[400px] bg-bg-card rounded-xl border border-line z-50 overflow-hidden transform origin-top-right transition-all duration-150 ease-out shadow-xl"
+          className="absolute right-0 mt-3 w-[400px] bg-bg-card rounded-2xl border border-line z-50 overflow-hidden transform origin-top-right transition-all duration-150 ease-out shadow-xl"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-line">
@@ -189,7 +197,7 @@ export default function NotificationBell() {
                               <p className={`text-[14px] ${!notification.is_read ? 'font-semibold text-text-primary' : 'font-medium text-text-primary opacity-90'}`}>
                                 {notification.title}
                               </p>
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded border font-semibold ${config.badgeColor}`}>
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded-xl border font-semibold ${config.badgeColor}`}>
                                 {config.badgeLabel}
                               </span>
                             </div>

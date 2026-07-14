@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
-import { Calendar, CheckCircle2, XCircle, Clock, ChevronDown, AlertCircle, FileText, CalendarDays, HeartPulse, Briefcase, Filter, Tag } from 'lucide-react';
+import { Calendar, CheckCircle2, XCircle, Clock, ChevronDown, AlertCircle, FileText, CalendarDays, HeartPulse, Briefcase, Filter, Tag, X } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import ExpandableTextCell from '../../components/ExpandableTextCell';
 
@@ -26,17 +26,45 @@ export default function EmployeeLeave() {
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
   const [successMsg, setSuccessMsg] = useState('');
+  const [showCautionModal, setShowCautionModal] = useState(false);
 
   // Filter State
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterType, setFilterType] = useState('All');
 
-  // Hardcoded balances as per current UI
+  // Custom Dropdown State
+  const [isManagerDropdownOpen, setIsManagerDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsManagerDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Dynamically calculate used and remaining balances
+  const calculateUsed = (type) => {
+    return leaves
+      .filter(l => l.leaveType === type && (l.status === 'approved' || l.status === 'accepted' || l.status === 'pending'))
+      .reduce((total, l) => total + l.durationDays, 0);
+  };
+
+  const usedLeaves = {
+    sick: calculateUsed('sick'),
+    casual: calculateUsed('casual'),
+    emergency: calculateUsed('emergency'),
+    planned: calculateUsed('planned')
+  };
+
   const leaveBalances = {
-    sick: 5,
-    casual: 8,
-    emergency: 2,
-    planned: 10
+    sick: 10 - usedLeaves.sick,
+    casual: 10 - usedLeaves.casual,
+    emergency: 10 - usedLeaves.emergency,
+    planned: 10 - usedLeaves.planned
   };
 
   useEffect(() => {
@@ -107,7 +135,10 @@ export default function EmployeeLeave() {
     e.preventDefault();
     setSuccessMsg('');
     
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      setShowCautionModal(true);
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -209,21 +240,21 @@ export default function EmployeeLeave() {
       <div className="grid grid-cols-1 lg:grid-cols-[60%_40%] gap-6">
         
         {/* LEFT COLUMN: Apply for Leave */}
-        <div className="bg-bg-card rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-line-light p-8">
+        <div className="bg-bg-card rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-line-light p-8">
           <div className="mb-6 border-l-4 border-accent-blue pl-4">
             <h2 className="text-xl font-bold text-text-primary">Apply for Leave</h2>
             <p className="text-sm text-text-secondary mt-1">Submit a leave request to your manager for approval.</p>
           </div>
 
           {successMsg && (
-            <div className="mb-6 p-3 bg-green-50 text-green-700 border border-green-200 rounded-lg text-sm font-medium flex items-center gap-2">
+            <div className="mb-6 p-3 bg-green-50 text-green-700 border border-green-200 rounded-2xl text-sm font-medium flex items-center gap-2">
               <CheckCircle2 size={16} />
               {successMsg}
             </div>
           )}
           
           {errors.submit && (
-            <div className="mb-6 p-3 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm font-medium flex items-center gap-2">
+            <div className="mb-6 p-3 bg-red-50 text-red-700 border border-red-200 rounded-2xl text-sm font-medium flex items-center gap-2">
               <AlertCircle size={16} />
               {errors.submit}
             </div>
@@ -232,18 +263,42 @@ export default function EmployeeLeave() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-[11px] font-bold text-text-secondary mb-2 uppercase tracking-wide">Select Manager</label>
-              <div className="relative max-w-sm">
-                <select
-                  className={`w-full p-3 bg-bg-card border ${errors.managerId ? 'border-red-300' : 'border-line'} rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF] appearance-none shadow-sm transition-all`}
-                  value={formData.managerId}
-                  onChange={(e) => setFormData({...formData, managerId: e.target.value})}
+              <div className="relative max-w-sm" ref={dropdownRef}>
+                <div 
+                  className={`w-full p-3 bg-bg-card border ${errors.managerId ? 'border-red-300' : 'border-line'} rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF] cursor-pointer flex justify-between items-center shadow-sm transition-all`}
+                  onClick={() => setIsManagerDropdownOpen(!isManagerDropdownOpen)}
                 >
-                  <option value="">-- Choose Manager --</option>
-                  {managers.map(m => (
-                    <option key={m.id} value={m.id}>{m.name}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" size={16} />
+                  <span className={formData.managerId ? 'text-text-primary' : 'text-text-muted'}>
+                    {formData.managerId ? managers.find(m => String(m.id) === String(formData.managerId))?.name : '-- Choose Manager --'}
+                  </span>
+                  <ChevronDown className={`text-text-muted transition-transform ${isManagerDropdownOpen ? 'rotate-180' : ''}`} size={16} />
+                </div>
+                
+                {isManagerDropdownOpen && (
+                  <div className="absolute z-50 w-full mt-2 py-2 bg-bg-card border border-line rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.2)] max-h-60 overflow-y-auto">
+                    <div 
+                      className="px-4 py-2.5 text-sm text-text-muted hover:bg-bg-secondary cursor-pointer transition-colors"
+                      onClick={() => {
+                        setFormData({...formData, managerId: ''});
+                        setIsManagerDropdownOpen(false);
+                      }}
+                    >
+                      -- Choose Manager --
+                    </div>
+                    {managers.map(m => (
+                      <div 
+                        key={m.id}
+                        className={`px-4 py-2.5 text-sm cursor-pointer transition-colors ${String(formData.managerId) === String(m.id) ? 'bg-[#005AFF]/10 text-[#005AFF] font-bold border-l-2 border-[#005AFF]' : 'text-text-primary border-l-2 border-transparent hover:bg-bg-secondary'}`}
+                        onClick={() => {
+                          setFormData({...formData, managerId: m.id});
+                          setIsManagerDropdownOpen(false);
+                        }}
+                      >
+                        {m.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               {errors.managerId && <p className="text-semantic-error-text text-xs mt-1 flex items-center gap-1"><AlertCircle size={12}/>{errors.managerId}</p>}
             </div>
@@ -260,11 +315,11 @@ export default function EmployeeLeave() {
                       role="radio"
                       aria-checked={isSelected}
                       onClick={() => setFormData({ ...formData, leaveType: type.id })}
-                      className={`relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all duration-200 ${getColorClasses(type.color, isSelected)}`}
+                      className={`relative flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all duration-200 ${getColorClasses(type.color, isSelected)}`}
                     >
                       {isSelected && (
-                        <div className="absolute top-1.5 right-1.5 text-current">
-                          <CheckCircle2 size={14} className="fill-current text-white" />
+                        <div className="absolute top-1.5 right-1.5 flex items-center justify-center w-3.5 h-3.5 bg-white rounded-full shadow-sm">
+                          <div className="w-1.5 h-1.5 bg-[#005AFF] rounded-full"></div>
                         </div>
                       )}
                       <div className="mb-2">
@@ -286,7 +341,7 @@ export default function EmployeeLeave() {
                 <label className="block text-[11px] font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Start Date</label>
                 <input
                   type="date"
-                  className={`w-full p-3 bg-bg-card border ${errors.startDate ? 'border-red-300' : 'border-line'} rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF] shadow-sm transition-all`}
+                  className={`w-full p-3 bg-bg-card border ${errors.startDate ? 'border-red-300' : 'border-line'} rounded-2xl text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF] shadow-sm transition-all`}
                   value={formData.startDate}
                   onChange={(e) => setFormData({...formData, startDate: e.target.value})}
                 />
@@ -297,7 +352,7 @@ export default function EmployeeLeave() {
                 <label className="block text-[11px] font-bold text-text-secondary mb-1.5 uppercase tracking-wide">End Date</label>
                 <input
                   type="date"
-                  className={`w-full p-3 bg-bg-card border ${errors.endDate ? 'border-red-300' : 'border-line'} rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF] shadow-sm transition-all`}
+                  className={`w-full p-3 bg-bg-card border ${errors.endDate ? 'border-red-300' : 'border-line'} rounded-2xl text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF] shadow-sm transition-all`}
                   value={formData.endDate}
                   onChange={(e) => setFormData({...formData, endDate: e.target.value})}
                   min={formData.startDate}
@@ -308,7 +363,7 @@ export default function EmployeeLeave() {
 
             {totalDays > 0 && formData.startDate && formData.endDate && (
               <div className="flex justify-end -mt-2">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-lg text-blue-700 text-xs font-bold">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-2xl text-blue-700 text-xs font-bold">
                   <Calendar size={14} />
                   Total: {totalDays} working day(s)
                 </div>
@@ -319,7 +374,7 @@ export default function EmployeeLeave() {
               <label className="block text-[11px] font-bold text-text-secondary mb-1.5 uppercase tracking-wide">Brief Reason for Leave</label>
               <textarea
                 rows="3"
-                className={`w-full p-3 bg-bg-card border ${errors.reason ? 'border-red-300' : 'border-line'} rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF] shadow-sm transition-all resize-y min-h-[100px] placeholder:italic placeholder:text-text-muted`}
+                className={`w-full p-3 bg-bg-card border ${errors.reason ? 'border-red-300' : 'border-line'} rounded-2xl text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-[#005AFF]/20 focus:border-[#005AFF] shadow-sm transition-all resize-y min-h-[100px] placeholder:italic placeholder:text-text-muted`}
                 placeholder="E.g., Medical appointment, family event..."
                 value={formData.reason}
                 onChange={(e) => setFormData({...formData, reason: e.target.value})}
@@ -331,7 +386,7 @@ export default function EmployeeLeave() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full h-12 bg-accent-blue text-white font-bold rounded-lg text-sm hover:bg-[#0047CC] transition-all shadow-sm hover:shadow disabled:opacity-70 flex items-center justify-center gap-2"
+                className="w-full h-12 bg-accent-blue text-white font-bold rounded-2xl text-sm hover:bg-[#0047CC] transition-all shadow-sm hover:shadow disabled:opacity-70 flex items-center justify-center gap-2"
               >
                 {submitting ? (
                   <>
@@ -350,47 +405,47 @@ export default function EmployeeLeave() {
         {/* RIGHT COLUMN: Summary & Recent */}
         <div className="space-y-6">
           {/* Leave Balance Card */}
-          <div className="bg-bg-card rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-line-light p-6">
+          <div className="bg-bg-card rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-line-light p-6">
             <h3 className="text-lg font-bold text-text-primary mb-4">Leave Balance <span className="text-xs font-normal text-text-muted ml-2">(This Year)</span></h3>
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-bg-card border border-line-light rounded-lg p-3 border-l-4 border-l-orange-500 shadow-sm hover:shadow transition-shadow">
+              <div className="bg-bg-card border border-line-light rounded-2xl p-3 border-l-4 border-l-orange-500 shadow-sm hover:shadow transition-shadow">
                 <p className="text-[11px] uppercase font-bold text-text-secondary mb-1">Sick Leave</p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-bold text-text-primary">5</span>
+                  <span className="text-2xl font-bold text-text-primary">{leaveBalances.sick}</span>
                   <span className="text-xs text-text-muted">rem</span>
                 </div>
-                <p className="text-xs text-text-muted mt-1">Used: 2</p>
+                <p className="text-xs text-text-muted mt-1">Used: {usedLeaves.sick}</p>
               </div>
-              <div className="bg-bg-card border border-line-light rounded-lg p-3 border-l-4 border-l-blue-500 shadow-sm hover:shadow transition-shadow">
+              <div className="bg-bg-card border border-line-light rounded-2xl p-3 border-l-4 border-l-blue-500 shadow-sm hover:shadow transition-shadow">
                 <p className="text-[11px] uppercase font-bold text-text-secondary mb-1">Casual Leave</p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-bold text-text-primary">8</span>
+                  <span className="text-2xl font-bold text-text-primary">{leaveBalances.casual}</span>
                   <span className="text-xs text-text-muted">rem</span>
                 </div>
-                <p className="text-xs text-text-muted mt-1">Used: 1</p>
+                <p className="text-xs text-text-muted mt-1">Used: {usedLeaves.casual}</p>
               </div>
-              <div className="bg-bg-card border border-line-light rounded-lg p-3 border-l-4 border-l-red-500 shadow-sm hover:shadow transition-shadow">
+              <div className="bg-bg-card border border-line-light rounded-2xl p-3 border-l-4 border-l-red-500 shadow-sm hover:shadow transition-shadow">
                 <p className="text-[11px] uppercase font-bold text-text-secondary mb-1">Emergency</p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-bold text-text-primary">2</span>
+                  <span className="text-2xl font-bold text-text-primary">{leaveBalances.emergency}</span>
                   <span className="text-xs text-text-muted">rem</span>
                 </div>
-                <p className="text-xs text-text-muted mt-1">Used: 0</p>
+                <p className="text-xs text-text-muted mt-1">Used: {usedLeaves.emergency}</p>
               </div>
-              <div className="bg-bg-card border border-line-light rounded-lg p-3 border-l-4 border-l-green-500 shadow-sm hover:shadow transition-shadow">
+              <div className="bg-bg-card border border-line-light rounded-2xl p-3 border-l-4 border-l-green-500 shadow-sm hover:shadow transition-shadow">
                 <p className="text-[11px] uppercase font-bold text-text-secondary mb-1">Planned Leave</p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-bold text-text-primary">10</span>
+                  <span className="text-2xl font-bold text-text-primary">{leaveBalances.planned}</span>
                   <span className="text-xs text-text-muted">rem</span>
                 </div>
-                <p className="text-xs text-text-muted mt-1">Used: 2</p>
+                <p className="text-xs text-text-muted mt-1">Used: {usedLeaves.planned}</p>
               </div>
             </div>
             <p className="text-[10px] text-text-muted italic text-center mt-4">*Configure leave policy in settings</p>
           </div>
 
           {/* Recent Requests Card */}
-          <div className="bg-bg-card rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-line-light p-6">
+          <div className="bg-bg-card rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-line-light p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold text-text-primary">Recent Requests</h3>
               <a href="#history" className="text-xs font-bold text-semantic-link hover:underline">View All</a>
@@ -400,7 +455,7 @@ export default function EmployeeLeave() {
               {loading ? (
                 <div className="text-xs text-text-secondary text-center py-4">Loading requests...</div>
               ) : recentRequests.length === 0 ? (
-                <div className="text-xs text-text-secondary text-center py-4 bg-bg-secondary rounded border border-line-light border-dashed">No recent requests</div>
+                <div className="text-xs text-text-secondary text-center py-4 bg-bg-secondary rounded-xl border border-line-light border-dashed">No recent requests</div>
               ) : (
                 recentRequests.map(req => (
                   <div key={req.id} className="flex justify-between items-start pb-3 border-b border-line-light last:border-0 last:pb-0">
@@ -423,12 +478,12 @@ export default function EmployeeLeave() {
       </div>
 
       {/* FULL LEAVE HISTORY TABLE */}
-      <div id="history" className="bg-bg-card rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-line-light overflow-hidden mt-8">
-        <div className="px-6 py-5 border-b border-[#E5E7EB] bg-bg-card flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div id="history" className="bg-bg-card rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] border border-line-light overflow-hidden mt-8">
+        <div className="px-6 py-5 border-b border-line bg-bg-card flex flex-col md:flex-row md:items-center justify-between gap-4">
           <h2 className="text-xl font-bold text-text-primary">All Leave Requests</h2>
           
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 bg-bg-secondary border border-line rounded-lg px-3 py-1.5 h-10">
+            <div className="flex items-center gap-2 bg-bg-secondary border border-line rounded-2xl px-3 py-1.5 h-10">
               <Filter size={16} className="text-text-muted"/>
               <select 
                 className="bg-transparent text-xs font-bold text-text-secondary focus:outline-none cursor-pointer"
@@ -441,7 +496,7 @@ export default function EmployeeLeave() {
                 <option value="Rejected">Rejected</option>
               </select>
             </div>
-            <div className="flex items-center gap-2 bg-bg-secondary border border-line rounded-lg px-3 py-1.5 h-10">
+            <div className="flex items-center gap-2 bg-bg-secondary border border-line rounded-2xl px-3 py-1.5 h-10">
               <Tag size={16} className="text-text-muted"/>
               <select 
                 className="bg-transparent text-xs font-bold text-text-secondary focus:outline-none cursor-pointer"
@@ -475,17 +530,18 @@ export default function EmployeeLeave() {
             </div>
           ) : (
             <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-[#FFFFFF] text-text-secondary text-[11px] uppercase tracking-wider font-semibold border-b border-[#E5E7EB]">
+              <thead className="bg-bg-secondary text-text-secondary text-[11px] uppercase tracking-wider font-semibold border-b border-line">
                 <tr>
-                  <th className="px-6 py-4 font-semibold group cursor-pointer hover:text-gray-900 transition-colors">Leave Type</th>
-                  <th className="px-6 py-4 font-semibold group cursor-pointer hover:text-gray-900 transition-colors">Dates <span className="opacity-0 group-hover:opacity-100 transition-opacity">▼</span></th>
-                  <th className="px-6 py-4 font-semibold group cursor-pointer hover:text-gray-900 transition-colors">Days <span className="opacity-0 group-hover:opacity-100 transition-opacity">▼</span></th>
+                  <th className="px-6 py-4 font-semibold group cursor-pointer hover:text-text-primary transition-colors">Leave Type</th>
+                  <th className="px-6 py-4 font-semibold group cursor-pointer hover:text-text-primary transition-colors">Dates <span className="opacity-0 group-hover:opacity-100 transition-opacity">▼</span></th>
+                  <th className="px-6 py-4 font-semibold group cursor-pointer hover:text-text-primary transition-colors">Days <span className="opacity-0 group-hover:opacity-100 transition-opacity">▼</span></th>
                   <th className="px-6 py-4 font-semibold max-w-[200px]">Reason</th>
                   <th className="px-6 py-4 font-semibold">Status</th>
-                  <th className="px-6 py-4 font-semibold group cursor-pointer hover:text-gray-900 transition-colors">Applied On <span className="opacity-0 group-hover:opacity-100 transition-opacity">▼</span></th>
+                  <th className="px-6 py-4 font-semibold max-w-[200px]">Manager's Note</th>
+                  <th className="px-6 py-4 font-semibold group cursor-pointer hover:text-text-primary transition-colors">Applied On <span className="opacity-0 group-hover:opacity-100 transition-opacity">▼</span></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E5E7EB]">
+              <tbody className="divide-y divide-line">
                 {filteredHistory.map((leave, index) => {
                   const isHighlighted = highlightedLeaveId === String(leave.id);
                   const isEven = index % 2 === 0;
@@ -493,7 +549,7 @@ export default function EmployeeLeave() {
                     <tr 
                       key={leave.id} 
                       ref={isHighlighted ? highlightedRef : null}
-                      className={`hover:bg-[#F8F9FA] hover:cursor-pointer transition-colors ${isEven ? 'bg-bg-card' : 'bg-[#FAFBFC]'} ${isHighlighted ? 'bg-blue-50/40 ring-2 ring-[#005AFF]/30 relative z-10' : ''}`}
+                      className={`hover:bg-table-row-alt hover:cursor-pointer transition-colors ${isEven ? 'bg-bg-card' : 'bg-bg-secondary'} ${isHighlighted ? 'bg-blue-500/20 ring-2 ring-blue-500/50 relative z-10' : ''}`}
                     >
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-2.5">
@@ -501,33 +557,34 @@ export default function EmployeeLeave() {
                           <span className="font-bold text-text-primary capitalize">{leave.leaveType}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-5 text-[#4A4A4A] font-medium">
+                      <td className="px-6 py-5 text-text-primary font-medium">
                         {formatDateRange(leave.startDate, leave.endDate)}
                       </td>
                       <td className="px-6 py-5">
-                        <span className="font-medium text-[#4A4A4A]">{leave.durationDays} days</span>
+                        <span className="font-medium text-text-primary">{leave.durationDays} days</span>
                       </td>
                       <td className="px-6 py-5 max-w-[280px] whitespace-normal group">
                         <ExpandableTextCell 
                           text={leave.reason} 
                           modalTitle="Leave Reason"
                         />
-                        {leave.managerRemark && (
-                          <div className="mt-2.5 pl-2.5 border-l-2 border-line">
-                            <span className="block text-[10px] uppercase font-bold text-text-secondary mb-0.5 tracking-wide">Manager's note:</span>
-                            <ExpandableTextCell 
-                              text={leave.managerRemark} 
-                              modalTitle="Manager's Note"
-                              maxLength={40}
-                            />
-                          </div>
-                        )}
                       </td>
                       <td className="px-6 py-5">
                         {getStatusBadge(leave.status)}
                       </td>
+                      <td className="px-6 py-5 max-w-[250px] whitespace-normal group">
+                        {leave.managerRemark ? (
+                          <ExpandableTextCell 
+                            text={leave.managerRemark} 
+                            modalTitle="Manager's Note"
+                            maxLength={40}
+                          />
+                        ) : (
+                          <span className="text-text-muted">-</span>
+                        )}
+                      </td>
                       <td className="px-6 py-5 text-text-secondary text-sm font-medium">
-                        {new Date(leave.appliedAt.replace(' ', 'T') + 'Z').toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}
+                        {leave.appliedAt ? new Date(leave.appliedAt).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'}) : 'N/A'}
                       </td>
                     </tr>
                   );
@@ -537,6 +594,34 @@ export default function EmployeeLeave() {
           )}
         </div>
       </div>
+
+      {showCautionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in zoom-in duration-200">
+          <div className="bg-bg-card border border-line-light rounded-3xl shadow-2xl w-full max-w-sm p-6 relative">
+            <button 
+              onClick={() => setShowCautionModal(false)}
+              className="absolute top-4 right-4 p-2 text-text-muted hover:text-text-primary hover:bg-bg-secondary rounded-full transition-all"
+            >
+              <X size={20} />
+            </button>
+            <div className="flex flex-col items-center text-center mt-2">
+              <div className="w-14 h-14 rounded-full bg-yellow-500/10 flex items-center justify-center text-yellow-500 mb-5 border border-yellow-500/20 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
+                <AlertCircle size={32} />
+              </div>
+              <h3 className="text-xl font-bold text-text-primary mb-2">Caution!</h3>
+              <p className="text-[15px] font-medium text-text-secondary leading-relaxed mb-6">
+                Please make sure to fill out all required fields before submitting your leave request.
+              </p>
+              <button 
+                onClick={() => setShowCautionModal(false)}
+                className="w-full py-3 bg-accent-blue hover:bg-[#0047CC] text-white font-bold rounded-2xl transition-all shadow-[0_4px_14px_rgba(0,90,255,0.3)] hover:shadow-[0_6px_20px_rgba(0,90,255,0.4)]"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

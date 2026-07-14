@@ -120,10 +120,10 @@ export default function Tasks() {
 
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'done': return <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1 w-max"><CheckCircle2 size={10}/>Done</span>;
-      case 'inprogress': return <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1 w-max"><PlayCircle size={10}/>In Progress</span>;
-      case 'blocked': return <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1 w-max"><AlertCircle size={10}/>Blocked</span>;
-      default: return <span className="bg-bg-secondary text-text-secondary px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1 w-max"><Clock size={10}/>To Do</span>;
+      case 'done': return <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-xl text-[10px] font-bold uppercase flex items-center gap-1 w-max"><CheckCircle2 size={10}/>Done</span>;
+      case 'inprogress': return <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-xl text-[10px] font-bold uppercase flex items-center gap-1 w-max"><PlayCircle size={10}/>In Progress</span>;
+      case 'blocked': return <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-xl text-[10px] font-bold uppercase flex items-center gap-1 w-max"><AlertCircle size={10}/>Blocked</span>;
+      default: return <span className="bg-bg-secondary text-text-secondary px-2 py-0.5 rounded-xl text-[10px] font-bold uppercase flex items-center gap-1 w-max"><Clock size={10}/>To Do</span>;
     }
   };
 
@@ -216,11 +216,14 @@ export default function Tasks() {
     
     return (
       <Fragment key={task.id}>
-        <tr className={`border-b-[0.5px] border-line-light hover:bg-bg-secondary transition-colors text-[13px] ${isExpanded ? 'bg-blue-50/30' : ''}`}>
+        <tr 
+          className={`border-b-[0.5px] border-line-light transition-colors text-[13px] ${isExpanded ? '' : 'hover:bg-bg-secondary'}`}
+          style={isExpanded ? { backgroundColor: 'color-mix(in srgb, var(--color-accent-blue) 10%, transparent)' } : {}}
+        >
           <td className="py-2.5 px-3 w-10 text-center">
             <button 
               onClick={() => toggleTaskExpanded(task.taskId)}
-              className="p-1 hover:bg-gray-200 rounded text-text-secondary transition-colors"
+              className="p-1 hover:bg-bg-secondary rounded-xl text-text-secondary transition-colors"
             >
               {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
             </button>
@@ -244,7 +247,7 @@ export default function Tasks() {
           <td className="py-2.5 px-4">
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-bold text-text-secondary">{task.subtaskDoneCount}/{task.subtaskCount}</span>
-              <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+              <div className="w-16 h-1.5 bg-line rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-accent-blue" 
                   style={{ width: `${task.subtaskCount > 0 ? (task.subtaskDoneCount / task.subtaskCount) * 100 : 0}%` }}
@@ -257,7 +260,10 @@ export default function Tasks() {
         {isExpanded && (
           <tr>
             <td colSpan="7" className="p-0 border-b border-line">
-              <div className="bg-table-row-alt px-12 py-3 border-l-4 border-accent-blue">
+              <div 
+                className="px-12 py-3 border-l-4 border-accent-blue"
+                style={{ backgroundColor: 'color-mix(in srgb, var(--color-accent-blue) 4%, transparent)' }}
+              >
                 {isLoadingSubs ? (
                   <div className="flex items-center gap-2 text-sm text-text-secondary py-2">
                     <Loader2 size={16} className="animate-spin" /> Loading subtasks...
@@ -304,7 +310,7 @@ export default function Tasks() {
             <div className="relative" ref={dropdownRef}>
               <button 
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-bg-card border border-line rounded-md text-sm font-medium hover:bg-table-row-alt shadow-sm transition-colors"
+                className="flex items-center gap-2 px-3 py-1.5 bg-bg-card border border-line rounded-2xl text-sm font-medium hover:bg-table-row-alt shadow-sm transition-colors"
               >
                 {selectedSprintId === 'all' ? (
                   <span className="text-text-primary">All Sprints</span>
@@ -320,7 +326,7 @@ export default function Tasks() {
               </button>
               
               {dropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 w-80 bg-bg-card border border-line rounded-md shadow-xl z-50 flex flex-col">
+                <div className="absolute top-full left-0 mt-1 w-80 bg-bg-card border border-line rounded-2xl shadow-xl z-50 flex flex-col">
                   {/* Sprint Status Filter */}
                   <div className="px-3 py-2 border-b border-line bg-bg-secondary/30">
                     <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1">
@@ -388,14 +394,14 @@ export default function Tasks() {
             <input 
               type="text" 
               placeholder="Search tasks..." 
-              className="pl-8 pr-3 py-1.5 text-sm border border-line rounded-md focus:outline-none focus:border-blue-500 w-48 bg-bg-card text-text-primary"
+              className="pl-8 pr-3 py-1.5 text-sm border border-accent-blue rounded-full focus:outline-none focus:border-accent-blue focus:shadow-[0_0_10px_rgba(37,99,235,0.4)] hover:shadow-sm w-48 bg-bg-card text-text-primary transition-all"
               value={filters.search}
               onChange={e => setFilters(p => ({ ...p, search: e.target.value }))}
             />
           </div>
           
           <select 
-            className="text-sm bg-bg-card border border-line rounded-md px-2 py-1.5 outline-none font-medium text-text-secondary"
+            className="text-sm bg-bg-card border border-line rounded-2xl px-2 py-1.5 outline-none font-medium text-text-secondary"
             value={filters.status}
             onChange={e => setFilters(p => ({ ...p, status: e.target.value }))}
           >
@@ -410,20 +416,20 @@ export default function Tasks() {
 
       {/* 4. Sprint Summary Header */}
       {selectedSprintId !== 'all' && sprintSummary && (
-        <div className="bg-bg-card p-4 rounded-lg border border-line shadow-sm mb-6 flex flex-wrap gap-6 items-center justify-between">
+        <div className="bg-bg-card p-4 rounded-2xl border border-line shadow-sm mb-6 flex flex-wrap gap-6 items-center justify-between">
           <div className="flex items-center gap-6">
             <div>
               <div className="text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-1">Total Scope</div>
               <div className="text-sm font-semibold text-text-primary">{filteredTasks.length} Main Tasks <span className="text-line mx-1">|</span> {sprintSummary.subtasksCount} Subtasks</div>
             </div>
-            <div className="h-8 w-px bg-gray-200 hidden sm:block"></div>
+            <div className="h-8 w-px bg-line hidden sm:block"></div>
             <div>
               <div className="text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-1">Status Breakdown</div>
               <div className="flex items-center gap-2">
-                <span className="bg-bg-secondary text-text-secondary px-2 rounded text-[11px] font-bold">To Do: {sprintSummary.statusCounts.todo}</span>
-                <span className="bg-blue-100 text-blue-700 px-2 rounded text-[11px] font-bold">In Progress: {sprintSummary.statusCounts.inprogress}</span>
-                <span className="bg-red-100 text-red-700 px-2 rounded text-[11px] font-bold">Blocked: {sprintSummary.statusCounts.blocked}</span>
-                <span className="bg-green-100 text-green-700 px-2 rounded text-[11px] font-bold">Done: {sprintSummary.statusCounts.done}</span>
+                <span className="bg-bg-secondary text-text-secondary px-2 rounded-xl text-[11px] font-bold">To Do: {sprintSummary.statusCounts.todo}</span>
+                <span className="bg-blue-100 text-blue-700 px-2 rounded-xl text-[11px] font-bold">In Progress: {sprintSummary.statusCounts.inprogress}</span>
+                <span className="bg-red-100 text-red-700 px-2 rounded-xl text-[11px] font-bold">Blocked: {sprintSummary.statusCounts.blocked}</span>
+                <span className="bg-green-100 text-green-700 px-2 rounded-xl text-[11px] font-bold">Done: {sprintSummary.statusCounts.done}</span>
               </div>
             </div>
           </div>
@@ -431,7 +437,7 @@ export default function Tasks() {
       )}
 
       {/* 5. Main Table Area */}
-      <div className="bg-bg-card rounded-lg border border-line overflow-x-auto shadow-sm">
+      <div className="bg-bg-card rounded-2xl border border-line overflow-x-auto shadow-sm">
         <table className="w-full text-left border-collapse min-w-[900px]">
           <thead>
             <tr className="bg-bg-secondary border-b border-line text-[11px] text-text-secondary uppercase tracking-wider">
@@ -464,7 +470,7 @@ export default function Tasks() {
                 return (
                   <Fragment key={sprintId}>
                     {/* Sprint Section Header */}
-                    <tr className="bg-gray-100/80 border-b border-line cursor-pointer hover:bg-gray-200/50 transition-colors" onClick={() => toggleSprintExpanded(sprintId)}>
+                    <tr className="bg-bg-secondary/50 border-b border-line cursor-pointer hover:bg-bg-secondary transition-colors" onClick={() => toggleSprintExpanded(sprintId)}>
                       <td colSpan="7" className="py-3 px-4">
                         <div className="flex items-center gap-3">
                            {isGroupExpanded ? <ChevronDown size={18} className="text-text-secondary" /> : <ChevronRight size={18} className="text-text-secondary" />}

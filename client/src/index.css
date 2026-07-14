@@ -78,24 +78,24 @@
   /* DARK MODE */
   [data-theme="dark"] {
     color-scheme: dark;
-    --color-bg-primary: #1B2333;
-    --color-bg-secondary: #242D3F;
-    --color-bg-card: #242D3F;
-    --color-bg-sidebar: #131A28;
+    --color-bg-primary: #2A2A2A;
+    --color-bg-secondary: #222222;
+    --color-bg-card: #2A2A2A;
+    --color-bg-sidebar: #1C1C1C;
     --color-text-primary: #F1F5F9;
     --color-text-secondary: #CBD5E1;
     --color-text-muted: #94A3B8;
-    --color-border: #334155;
-    --color-border-light: #1E293B;
+    --color-border: #444444;
+    --color-border-light: #333333;
     --color-accent-blue: #3B82F6;
-    --color-accent-blue-light: #1E3A5F;
-    --color-input-bg: #1E293B;
-    --color-input-border: #334155;
-    --color-table-header: #1E293B;
-    --color-table-row-alt: #162032;
+    --color-accent-blue-light: #333333;
+    --color-input-bg: #222222;
+    --color-input-border: #444444;
+    --color-table-header: #222222;
+    --color-table-row-alt: #252525;
     --color-shadow: rgba(0, 0, 0, 0.3);
     --color-shadow-md: rgba(0, 0, 0, 0.4);
-    --color-nav-bg: #020617;
+    --color-nav-bg: #1C1C1C;
     --color-nav-text: #F1F5F9;
     --color-badge-pending-bg: #422006;
     --color-badge-pending-text: #FCD34D;
@@ -112,15 +112,15 @@
     --color-badge-created-bg: #422006;
     --color-badge-created-text: #FCD34D;
     
-    --color-dropdown-hover-bg: #263548;
-    --color-dropdown-hover-border: #4B6280;
-    --color-dropdown-active-bg: #1E3A5F;
-    --color-dropdown-active-text: #93C5FD;
-    --color-sidebar-hover-bg: #0F172A;
-    --color-sidebar-active-bg: #1E293B;
+    --color-dropdown-hover-bg: #3A3A3A;
+    --color-dropdown-hover-border: #4A4A4A;
+    --color-dropdown-active-bg: #222222;
+    --color-dropdown-active-text: #FFFFFF;
+    --color-sidebar-hover-bg: #2A2A2A;
+    --color-sidebar-active-bg: #333333;
     --color-sidebar-hover-text: #CBD5E1;
     --color-sidebar-active-text: #FFFFFF;
-    --color-placeholder: #64748B;
+    --color-placeholder: #B0B0B0;
     --color-link: #60A5FA;
     --color-success-text: #4ADE80;
     --color-warning-text: #FCD34D;
@@ -180,7 +180,7 @@
   }
 
   .card {
-    @apply bg-bg-card rounded-lg border-[0.5px] border-line-light p-5 mb-3.5;
+    @apply bg-bg-card rounded-2xl border border-line p-5 mb-3.5 hover:border-accent-blue hover:shadow-lg transition-all duration-300;
   }
   .card-title {
     @apply text-[14px] font-medium mb-3;
@@ -205,3 +205,8 @@
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(136, 135, 128, 0.3); border-radius: 3px; }
+
+.avatar-container { position: relative; }
+.avatar-tooltip { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) translateY(0px) scale(0.95); margin-bottom: 6px; opacity: 0; visibility: hidden; transition: all 0.2s ease-out; pointer-events: none; z-index: 100; }
+.avatar-container:hover .avatar-tooltip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(-4px) scale(1); }
+.avatar-container:hover > div:first-child { transform: translateY(-4px); z-index: 99; }

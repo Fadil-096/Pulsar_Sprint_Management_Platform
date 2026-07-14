@@ -47,7 +47,7 @@ export default function Reminders() {
           {notifications.map(notif => (
             <div 
               key={notif.id} 
-              className={`p-4 border-[0.5px] rounded-md flex gap-4 ${notif.is_read ? 'bg-bg-primary border-line-light' : 'bg-blue-50/30 border-blue-200'}`}
+              className={`p-4 border-[0.5px] rounded-2xl flex gap-4 ${notif.is_read ? 'bg-bg-primary border-line-light' : 'bg-blue-50/30 border-blue-200'}`}
             >
               <div className="mt-1">{getIcon(notif.type)}</div>
               <div className="flex-1">
