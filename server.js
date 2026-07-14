@@ -73,6 +73,9 @@ class PGStatement {
 
 class PGDatabaseWrapper {
   constructor(config) {
+    if (config.connectionString && config.connectionString.includes('neon.tech')) {
+      config.ssl = { rejectUnauthorized: false };
+    }
     this.pool = new Pool(config);
   }
   
