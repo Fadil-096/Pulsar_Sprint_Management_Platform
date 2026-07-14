@@ -18,8 +18,8 @@ export default function Login() {
   const { startLoader } = useLoader();
   
   // Login form states
-  const [email, setEmail] = useState('shane@arc.com');
-  const [password, setPassword] = useState('arc@123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [role, setRole] = useState('manager');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,16 +27,6 @@ export default function Login() {
 
   const handleRoleChange = (selectedRole) => {
     setRole(selectedRole);
-    if (selectedRole === 'administrator') {
-      setEmail('fadil@arc.com');
-      setPassword('arc@123');
-    } else if (selectedRole === 'manager') {
-      setEmail('shane@arc.com');
-      setPassword('arc@123');
-    } else {
-      setEmail('divi@arc.com');
-      setPassword('arc@123');
-    }
   };
 
   const handleSubmit = async (e) => {
