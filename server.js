@@ -3629,8 +3629,12 @@ setInterval(async () => {
 // ── Serve Frontend in Production ──────────────────────────────────────────
 // When deployed, the frontend build is served by the backend
 app.use(express.static(path.join(__dirname, 'client', 'dist')));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'client', 'dist', 'index.html'));
+app.use((req, res, next) => {
+  if (req.method === 'GET' && !req.path.startsWith('/api')) {
+    res.sendFile(path.join(__dirname, 'client', 'dist', 'index.html'));
+  } else {
+    next();
+  }
 });
 
 // ── Start Server ────────────────────────────────────────────────────────
